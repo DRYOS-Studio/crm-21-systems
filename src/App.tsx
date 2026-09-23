@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import Login from "./pages/Login";
+import SsoBridge from "./pages/SsoBridge";
 import Conversas from "./pages/Conversas";
 import Kanban from "./pages/Kanban";
 import UazapiConfig from "./pages/admin/UazapiConfig";
@@ -25,6 +26,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/sso" element={<SsoBridge />} />
             <Route path="/" element={<ProtectedRoute><Conversas /></ProtectedRoute>} />
             <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
             <Route path="/admin/uazapi" element={<ProtectedRoute><AdminRoute><UazapiConfig /></AdminRoute></ProtectedRoute>} />
