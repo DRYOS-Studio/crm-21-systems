@@ -45,7 +45,8 @@ import { ChevronDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 type Conversation = {
   id: string;
-  contact_phone: string;
+  contact_phone: string | null;
+  contact_email: string | null;
   contact_name: string | null;
   ai_enabled: boolean;
   last_message_at: string;
@@ -384,6 +385,10 @@ export default function Conversas() {
 
   const send = async () => {
     if (!input.trim() || !active) return;
+    if (!active.contact_phone) {
+      toast({ variant: "destructive", title: "Sem WhatsApp", description: "Esse contato só tem email — não dá pra mandar mensagem." });
+      return;
+    }
     setSending(true);
     try {
       // Fetch instance token
@@ -512,13 +517,13 @@ export default function Conversas() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-sm truncate">
-                    {c.contact_name || c.contact_phone}
+                    {c.contact_name || c.contact_phone || c.contact_email}
                   </span>
                   <Badge variant={c.ai_enabled ? "default" : "secondary"} className="text-[10px]">
                     {c.ai_enabled ? "IA" : "Humano"}
                   </Badge>
                 </div>
-                <div className="text-xs text-muted-foreground truncate">{c.contact_phone}</div>
+                <div className="text-xs text-muted-foreground truncate">{c.contact_phone || c.contact_email}</div>
               </button>
             ))}
           </div>
@@ -535,10 +540,10 @@ export default function Conversas() {
               <div className="p-3 border-b flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">
-                    {active.contact_name || active.contact_phone}
+                    {active.contact_name || active.contact_phone || active.contact_email}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {active.contact_phone}
+                    {active.contact_phone || active.contact_email}
                     {!active.ai_enabled && active.human_takeover_at && (
                       <span className="ml-2 text-primary">
                         · Humano assumiu — reative a IA manualmente
@@ -752,11 +757,17 @@ export default function Conversas() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={active.ai_enabled ? "IA responderá automaticamente. Envie mensagem manual mesmo assim..." : "Digite sua resposta..."}
+                  placeholder={
+                    !active.contact_phone
+                      ? "Contato sem WhatsApp — só tem email"
+                      : active.ai_enabled
+                        ? "IA responderá automaticamente. Envie mensagem manual mesmo assim..."
+                        : "Digite sua resposta..."
+                  }
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-                  disabled={sending}
+                  disabled={sending || !active.contact_phone}
                 />
-                <Button onClick={send} disabled={sending || !input.trim()}>
+                <Button onClick={send} disabled={sending || !input.trim() || !active.contact_phone}>
                   <Send className="w-4 h-4" />
                 </Button>
               </div>

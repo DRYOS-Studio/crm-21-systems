@@ -42,7 +42,8 @@ type Stage = { id: string; name: string; position: number; color: string | null 
 type Conversation = {
   id: string;
   contact_name: string | null;
-  contact_phone: string;
+  contact_phone: string | null;
+  contact_email: string | null;
   stage_id: string | null;
   ai_enabled: boolean;
   last_message_at: string;
@@ -63,12 +64,12 @@ function Card({ c }: { c: Conversation }) {
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <div className="font-medium text-sm truncate">{c.contact_name || c.contact_phone}</div>
+        <div className="font-medium text-sm truncate">{c.contact_name || c.contact_phone || c.contact_email}</div>
         <Badge variant={c.ai_enabled ? "default" : "secondary"} className="text-[10px] shrink-0">
           {c.ai_enabled ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
         </Badge>
       </div>
-      <div className="text-xs text-muted-foreground truncate">{c.contact_phone}</div>
+      <div className="text-xs text-muted-foreground truncate">{c.contact_phone || c.contact_email}</div>
       {c.inactivity_followup_at && (
         <div className="mt-2 flex items-center gap-1 text-[11px] text-primary">
           <Clock className="w-3 h-3" /> Follow-up agendado
@@ -177,7 +178,7 @@ export default function Kanban() {
   const loadConvs = async () => {
     const { data } = await supabase
       .from("conversations")
-      .select("id, contact_name, contact_phone, stage_id, ai_enabled, last_message_at, inactivity_followup_at")
+      .select("id, contact_name, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at")
       .order("last_message_at", { ascending: false });
     setConversations((data as Conversation[]) || []);
   };
