@@ -37,6 +37,13 @@ interface Props {
   initialSection?: "whatsapp" | "agente";
 }
 
+function toQrSrc(raw: string | null | undefined): string | null {
+  if (!raw || !String(raw).trim()) return null;
+  const v = String(raw).trim();
+  if (v.startsWith("data:") || v.startsWith("http")) return v;
+  return `data:image/png;base64,${v}`;
+}
+
 function CheckRow({ ok, warn, label }: { ok?: boolean; warn?: boolean; label: string }) {
   const Icon = warn ? AlertTriangle : ok ? CheckCircle2 : XCircle;
   const color = warn ? "text-amber-500" : ok ? "text-emerald-500" : "text-destructive";
@@ -75,6 +82,9 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
   const [connecting, setConnecting] = useState(false);
   const [connectStep, setConnectStep] = useState("");
   const [webhookOk, setWebhookOk] = useState<boolean | null>(null);
+  const [qrSrc, setQrSrc] = useState<string | null>(null);
+  const [paircode, setPaircode] = useState<string | null>(null);
+  const [fetchingQr, setFetchingQr] = useState(false);
   // Follow-up automático
   const [followupOn, setFollowupOn] = useState(false);
   const [followupMinutes, setFollowupMinutes] = useState<number>(60);
@@ -123,6 +133,48 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
     loadUazapi();
   }, [open, user]);
 
+  useEffect(() => {
+    if (!open) {
+      setQrSrc(null);
+      setPaircode(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || instanceConnected !== false || (!qrSrc && !paircode)) return;
+    let cancelled = false;
+    const tick = async () => {
+      const token = await resolveToken();
+      if (!token || cancelled) return;
+      const { data } = await supabase.functions.invoke("manage-instance", {
+        body: { action: "status", instance_token: token },
+      });
+      if (cancelled || !data?.ok || !data.connected) return;
+      setInstanceConnected(true);
+      setQrSrc(null);
+      setPaircode(null);
+      if (data.phone) setInstancePhone(data.phone);
+      if (data.name) setInstanceName(data.name);
+      if (instanceId) {
+        await supabase
+          .from("whatsapp_instances")
+          .update({
+            status: "connected",
+            phone: data.phone || undefined,
+            name: data.name || undefined,
+            profile_name: data.profile_name || undefined,
+          })
+          .eq("id", instanceId);
+      }
+      toast({ title: "WhatsApp conectado" });
+    };
+    const id = window.setInterval(tick, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [open, instanceConnected, qrSrc, paircode, instanceId]);
+
   /** Token da instância: o que foi digitado agora ou o que já está salvo. */
   const resolveToken = async (): Promise<string> => {
     const typed = instanceToken.trim();
@@ -136,6 +188,43 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
       .limit(1)
       .maybeSingle();
     return data?.instance_token || "";
+  };
+
+  const fetchQr = async (tokenOverride?: string) => {
+    const token = tokenOverride || (await resolveToken());
+    if (!token) {
+      toast({ variant: "destructive", title: "Informe o Instance Token" });
+      return;
+    }
+    setFetchingQr(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-instance", {
+        body: { action: "connect", instance_token: token },
+      });
+      if (error || !data?.ok) {
+        throw new Error(data?.error || error?.message || "Não consegui gerar o QR.");
+      }
+      if (data.already_connected) {
+        setInstanceConnected(true);
+        setQrSrc(null);
+        setPaircode(null);
+        toast({ title: "WhatsApp já está conectado" });
+        return;
+      }
+      setQrSrc(toQrSrc(data.qrcode));
+      setPaircode(data.paircode || null);
+      if (!data.qrcode && !data.paircode) {
+        toast({
+          variant: "destructive",
+          title: "QR não veio",
+          description: "A Uazapi não devolveu o código. Tente de novo em alguns segundos.",
+        });
+      }
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Falha ao gerar QR", description: e.message });
+    } finally {
+      setFetchingQr(false);
+    }
   };
 
   /**
@@ -233,11 +322,15 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
           description: wh?.error || whErr?.message || "Use 'Reconfigurar webhook' abaixo.",
         });
       } else if (!st.connected) {
+        setConnectStep("Gerando QR Code...");
+        await fetchQr(token);
         toast({
           title: "Configurado!",
-          description: "Webhook registrado. Falta ler o QR Code no painel da Uazapi.",
+          description: "Leia o QR abaixo com o WhatsApp do número de atendimento.",
         });
       } else {
+        setQrSrc(null);
+        setPaircode(null);
         toast({
           title: "Tudo pronto!",
           description: `${st.name || "Instância"} conectada${st.phone ? ` — ${st.phone}` : ""}.`,
@@ -435,7 +528,7 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
                   label={
                     instanceConnected
                       ? `WhatsApp conectado${instancePhone ? ` — ${instancePhone}` : ""}`
-                      : "WhatsApp desconectado — leia o QR Code no painel da Uazapi"
+                      : "WhatsApp desconectado — leia o QR abaixo"
                   }
                 />
                 {webhookOk !== null && (
@@ -444,6 +537,36 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
                     label={webhookOk ? "Webhook registrado automaticamente" : "Webhook não registrado"}
                   />
                 )}
+              </div>
+            )}
+
+            {!instanceConnected && (hasInstanceToken || instanceToken.trim()) && (
+              <div className="rounded-md border border-border bg-background p-3 space-y-3">
+                {qrSrc ? (
+                  <img
+                    src={qrSrc}
+                    alt="QR Code do WhatsApp"
+                    className="mx-auto w-52 h-52 rounded-md bg-white p-2"
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Gere o QR e escaneie no WhatsApp → Aparelhos conectados.
+                  </p>
+                )}
+                {paircode && (
+                  <p className="text-xs text-center font-mono">
+                    Código: <span className="font-semibold">{paircode}</span>
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => fetchQr()}
+                  disabled={fetchingQr || connecting}
+                >
+                  {fetchingQr ? "Gerando QR..." : qrSrc ? "Gerar outro QR" : "Gerar QR Code"}
+                </Button>
               </div>
             )}
           </section>

@@ -126,10 +126,18 @@ serve(async (req) => {
       }
 
       const data = JSON.parse(responseText);
-      const paircode = data.instance?.paircode || data.paircode || null;
+      const inst = data.instance ?? {};
+      const paircode = inst.paircode || data.paircode || null;
+      const qrcode = inst.qrcode || data.qrcode || null;
       const alreadyConnected = data.connected === true || data.status?.connected === true || data.loggedIn === true;
 
-      return json({ ok: true, success: true, paircode: paircode || null, already_connected: alreadyConnected });
+      return json({
+        ok: true,
+        success: true,
+        paircode: paircode || null,
+        qrcode: qrcode || null,
+        already_connected: alreadyConnected,
+      });
     }
 
     // === DISCONNECT ===
