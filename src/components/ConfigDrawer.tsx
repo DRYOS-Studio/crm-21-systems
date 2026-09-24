@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import {
   Bot,
+  Building2,
   ExternalLink,
   TestTube2,
   Clock,
@@ -89,6 +90,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
   const [followupOn, setFollowupOn] = useState(false);
   const [followupMinutes, setFollowupMinutes] = useState<number>(60);
   const [followupMax, setFollowupMax] = useState<number>(1);
+  const [companyName, setCompanyName] = useState("");
+  const [businessContext, setBusinessContext] = useState("");
+  const [ownerNotifyPhone, setOwnerNotifyPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const loadAgent = async () => {
     if (!user) return;
@@ -105,6 +110,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
       setFollowupOn(!!m && m > 0);
       setFollowupMinutes(m && m > 0 ? m : 60);
       setFollowupMax((data as any).followup_max_per_conversation ?? 1);
+      setCompanyName(data.company_name ?? "");
+      setBusinessContext(data.business_context ?? "");
+      setOwnerNotifyPhone(data.owner_notify_phone ?? "");
+      setPhoneError("");
     }
   };
 
@@ -347,30 +356,68 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
   const saveAgent = async () => {
     if (!user) return;
     setSaving(true);
-    const payload: any = {
-      user_id: user.id,
-      system_prompt: prompt,
-      enabled,
-      followup_inactivity_minutes: followupOn ? followupMinutes : null,
-      followup_max_per_conversation: followupMax,
-    };
-    if (apiKey.trim()) payload.groq_api_key = apiKey.trim();
-    const { error } = await supabase
-      .from("agent_configs")
-      .upsert(payload, { onConflict: "user_id" });
-    setSaving(false);
-    if (error) {
-      toast({ variant: "destructive", title: "Erro", description: error.message });
-      return;
+    setPhoneError("");
+    try {
+      const typedPhone = ownerNotifyPhone.trim();
+      let ownerPhone: string | null = null;
+      if (typedPhone) {
+        const { data: canon, error: canonErr } = await supabase.rpc("canon_phone_input", {
+          p_phone: typedPhone,
+        });
+        if (canonErr || !canon) {
+          setPhoneError("Número inválido. Use DDD + número, com ou sem +55.");
+          return;
+        }
+        ownerPhone = canon;
+        setOwnerNotifyPhone(canon);
+      }
+
+      const context = businessContext.trim();
+      const payload: any = {
+        user_id: user.id,
+        system_prompt: prompt,
+        enabled,
+        followup_inactivity_minutes: followupOn ? followupMinutes : null,
+        followup_max_per_conversation: followupMax,
+        company_name: companyName.trim() || null,
+        business_context: context || null,
+        owner_notify_phone: ownerPhone,
+      };
+      if (apiKey.trim()) payload.groq_api_key = apiKey.trim();
+      const { error } = await supabase
+        .from("agent_configs")
+        .upsert(payload, { onConflict: "user_id" });
+      if (error) {
+        toast({ variant: "destructive", title: "Erro", description: error.message });
+        return;
+      }
+
+      if (context && instanceConnected) {
+        const token = await resolveToken();
+        if (token) {
+          const { data: wh, error: whErr } = await supabase.functions.invoke("manage-instance", {
+            body: { action: "set_webhook", instance_token: token },
+          });
+          if (whErr || !wh?.ok) {
+            toast({
+              variant: "destructive",
+              title: "Negócio salvo, webhook não registrou",
+              description: wh?.error || whErr?.message || "Use 'Reconfigurar webhook'.",
+            });
+          }
+        }
+      }
+
+      const hadKey = !!apiKey.trim() || hasKey;
+      if (apiKey.trim()) {
+        setHasKey(true);
+        setApiKey("");
+      }
+      if (hadKey) await testConnection();
+      else toast({ title: "Salvo!" });
+    } finally {
+      setSaving(false);
     }
-    const hadKey = !!apiKey.trim() || hasKey;
-    if (apiKey.trim()) {
-      setHasKey(true);
-      setApiKey("");
-    }
-    // Testa sozinho: salvar sem saber se a chave funciona não ajuda ninguém.
-    if (hadKey) await testConnection();
-    else toast({ title: "Salvo!" });
   };
 
   const testConnection = async () => {
@@ -671,6 +718,66 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
                 />
               </div>
             )}
+          </section>
+
+          <Separator />
+
+          {/* Seu negócio — DS DRYOS (ADR-14). Fora deste wrapper o drawer segue teal. */}
+          <section className="dryos space-y-4 rounded-lg border border-border bg-card p-5">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" /> Seu negócio
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Esses dados ligam o modo novo da IA. Sem o texto do negócio, o atendimento
+              continua no caminho antigo.
+            </p>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="company-name" className="text-xs">
+                Nome da empresa
+              </Label>
+              <Input
+                id="company-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Ex.: Clínica Aurora"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="business-context" className="text-xs">
+                Sobre o seu negócio
+              </Label>
+              <Textarea
+                id="business-context"
+                value={businessContext}
+                onChange={(e) => setBusinessContext(e.target.value)}
+                rows={5}
+                placeholder="O que vocês vendem, para quem, e como a IA deve se apresentar."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="owner-notify-phone" className="text-xs">
+                WhatsApp do responsável
+              </Label>
+              <Input
+                id="owner-notify-phone"
+                value={ownerNotifyPhone}
+                onChange={(e) => {
+                  setOwnerNotifyPhone(e.target.value);
+                  if (phoneError) setPhoneError("");
+                }}
+                placeholder="11 98888-0000"
+                aria-invalid={!!phoneError}
+                aria-describedby={phoneError ? "owner-notify-phone-error" : undefined}
+              />
+              {phoneError && (
+                <p id="owner-notify-phone-error" className="text-xs text-destructive" role="alert">
+                  {phoneError}
+                </p>
+              )}
+            </div>
           </section>
 
           <Separator />

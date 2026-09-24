@@ -1,0 +1,270 @@
+{
+ "quando": "2026-09-24T13:20:17.581Z",
+ "out": [
+  {
+   "model": "qwen/qwen3.8-27b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã é sexta-feira, 25 de setembro de 2026.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "qwen/qwen3.8-27b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã é sexta-feira, 25 de setembro de 2026.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "qwen/qwen3.8-27b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã é sexta-feira, 25 de setembro de 2026.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 400,
+     "code": "tool_use_failed",
+     "tools": [],
+     "conteudo": ""
+    },
+    {
+     "status": 400,
+     "code": "tool_use_failed",
+     "tools": [],
+     "conteudo": ""
+    },
+    {
+     "status": 400,
+     "code": "tool_use_failed",
+     "tools": [],
+     "conteudo": ""
+    }
+   ],
+   "convergiu": false
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 400,
+     "code": "tool_use_failed",
+     "tools": [],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã será dia 2026-09-25, uma sexta-feira.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 400,
+     "code": "tool_use_failed",
+     "tools": [],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã será 2026-09-25, que cai numa sexta-feira.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã é sexta-feira, 25 de setembro de 2026.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\":[\"Amanhã é sexta‑feira, 25 de setembro de 2026.\"],\"etapa\":\"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "forma": "loop 4 rodadas so tools",
+   "rodadas": [
+    {
+     "status": 200,
+     "code": null,
+     "finish": "tool_calls",
+     "tools": [
+      "consultar_calendario"
+     ],
+     "conteudo": ""
+    },
+    {
+     "status": 200,
+     "code": null,
+     "finish": "stop",
+     "tools": [],
+     "conteudo": "{\"mensagens\": [\"Amanhã é sexta-feira, 25 de setembro de 2026.\"], \"etapa\": \"descobrir\"}"
+    }
+   ],
+   "convergiu": true,
+   "mensagens_array": true
+  }
+ ]
+}

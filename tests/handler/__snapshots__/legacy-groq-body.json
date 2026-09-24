@@ -1,0 +1,89 @@
+{
+  "model": "llama-3.1-8b-instant",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Você é um assistente de atendimento simpático e objetivo. Quando receber [áudio], [imagem], [vídeo] ou [documento], diga que ainda não consegue ouvir ou ver o conteúdo e peça para o cliente resumir por texto."
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #1"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #2"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #3"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #4"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #5"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #6"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #7"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #8"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #9"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #10"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #11"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #12"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #13"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #14"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #15"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #16"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #17"
+    },
+    {
+      "role": "assistant",
+      "content": "mensagem de histórico #18"
+    },
+    {
+      "role": "user",
+      "content": "mensagem de histórico #19"
+    },
+    {
+      "role": "user",
+      "content": "Mensagem de teste do cliente"
+    }
+  ]
+}

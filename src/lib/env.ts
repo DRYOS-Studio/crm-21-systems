@@ -43,10 +43,13 @@ function collectProblems(): EnvProblem[] {
       variable: "VITE_SUPABASE_URL",
       message: "Ainda está com o valor de exemplo. Troque pela URL do SEU projeto Supabase.",
     });
-  } else if (!/^https:\/\//.test(rawUrl.trim())) {
+  } else if (
+    !/^https:\/\//.test(rawUrl.trim()) &&
+    !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\b/.test(rawUrl.trim())
+  ) {
     problems.push({
       variable: "VITE_SUPABASE_URL",
-      message: `Valor inválido ("${rawUrl}"). Precisa ser a URL completa começando com https://`,
+      message: `Valor inválido ("${rawUrl}"). Precisa ser a URL completa começando com https:// (ou http://localhost em dev)`,
     });
   } else if (rawUrl.includes("supabase.com/dashboard")) {
     problems.push({

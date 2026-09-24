@@ -4,6 +4,8 @@ export interface AIConfig {
   apiKey: string;
   model: string;
   systemPrompt: string;
+  businessContext: string | null;
+  ownerNotifyPhone: string | null;
   enabled: boolean;
 }
 
@@ -31,6 +33,10 @@ const NON_CHAT = /whisper|orpheus|prompt-guard|safeguard|allam|tts|guard/i;
 /** Status que valem tentar o próximo modelo (o modelo é o problema, não a chave). */
 const FAILOVER_STATUS = new Set([400, 404, 413, 422, 429, 500, 502, 503, 504]);
 
+/** design.md §4.2: Groq 20s, listagem de modelos 10s. */
+const GROQ_TIMEOUT_MS = 20_000;
+const MODELS_TIMEOUT_MS = 10_000;
+
 const modelCache = new Map<string, { ids: string[]; at: number }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -41,7 +47,7 @@ export async function getAgentConfig(userId: string): Promise<AIConfig | null> {
   const admin = createClient(supabaseUrl, serviceKey);
   const { data } = await admin
     .from("agent_configs")
-    .select("groq_api_key, groq_model, system_prompt, enabled")
+    .select("groq_api_key, groq_model, system_prompt, business_context, owner_notify_phone, enabled")
     .eq("user_id", userId)
     .maybeSingle();
   const apiKey = data?.groq_api_key || Deno.env.get("GROQ_API_KEY") || null;
@@ -52,6 +58,8 @@ export async function getAgentConfig(userId: string): Promise<AIConfig | null> {
     systemPrompt:
       data?.system_prompt ||
       "Você é um assistente de atendimento simpático e objetivo. Quando receber [áudio], [imagem], [vídeo] ou [documento], diga que ainda não consegue ouvir ou ver o conteúdo e peça para o cliente resumir por texto.",
+    businessContext: data?.business_context || null,
+    ownerNotifyPhone: data?.owner_notify_phone || null,
     enabled: !!data?.enabled,
   };
 }
@@ -68,6 +76,7 @@ export async function listChatModels(apiKey: string): Promise<string[]> {
   try {
     const res = await fetch(GROQ_MODELS_ENDPOINT, {
       headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(MODELS_TIMEOUT_MS),
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -110,11 +119,43 @@ export async function resolveModelChain(apiKey: string, preferred?: string): Pro
   return chain;
 }
 
+export interface ToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+
+export type ChatMessage =
+  | { role: "system" | "user"; content: string }
+  | { role: "assistant"; content: string | null; tool_calls?: ToolCall[] }
+  | { role: "tool"; tool_call_id: string; content: string };
+
+export interface ToolDef {
+  type: "function";
+  function: { name: string; description: string; parameters: Record<string, unknown> };
+}
+
+export interface GroqCallOptions {
+  tools?: ToolDef[];
+  response_format?: { type: "json_object" };
+  temperature?: number;
+  max_tokens?: number;
+  /** Corta a cadeia de failover em N modelos (ADR-02). */
+  maxModels?: number;
+  /** Tira da cadeia todo modelo cujo id comece por um destes prefixos (ADR-02: `["groq/compound"]`). */
+  exclude?: string[];
+}
+
 export interface GroqResult {
   ok: boolean;
   reply?: string;
+  toolCalls?: ToolCall[];
   model?: string;
   error?: string;
+  /** `error.code` do corpo da Groq (ex.: "tool_use_failed", ADR-02). Ausente se o corpo não for JSON de erro. */
+  code?: string;
+  /** Corpo cru truncado da RESPOSTA (nunca o request — nunca carrega o header de auth). */
+  rawBody?: string;
   status?: number;
   tried?: string[];
 }
@@ -123,23 +164,52 @@ export interface GroqResult {
 export async function callGroqOnce(
   apiKey: string,
   model: string,
-  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  messages: ChatMessage[],
+  options: GroqCallOptions = {},
 ): Promise<GroqResult> {
   try {
+    const body: Record<string, unknown> = { model, messages };
+    if (options.tools) body.tools = options.tools;
+    if (options.response_format) body.response_format = options.response_format;
+    if (options.temperature !== undefined) body.temperature = options.temperature;
+    if (options.max_tokens !== undefined) body.max_tokens = options.max_tokens;
+
     const res = await fetch(GROQ_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ model, messages }),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(GROQ_TIMEOUT_MS),
     });
     const text = await res.text();
     if (!res.ok) {
-      return { ok: false, model, status: res.status, error: translateAIError(text, res.status) };
+      let code: string | undefined;
+      try {
+        const parsed = JSON.parse(text);
+        code = parsed?.error?.code ?? parsed?.code;
+      } catch {
+        // corpo não é JSON — sem code
+      }
+      return {
+        ok: false,
+        model,
+        status: res.status,
+        error: translateAIError(text, res.status),
+        code,
+        rawBody: text.slice(0, 500),
+      };
     }
     const data = JSON.parse(text);
-    const reply = data.choices?.[0]?.message?.content;
+    const msg = data.choices?.[0]?.message;
+    if (!msg) {
+      return { ok: false, model, error: "Resposta vazia da IA" };
+    }
+    if (msg.tool_calls?.length) {
+      return { ok: true, model, toolCalls: msg.tool_calls, reply: msg.content ?? undefined };
+    }
+    const reply = msg.content;
     if (!reply || !String(reply).trim()) {
       const finish = data.choices?.[0]?.finish_reason;
       return { ok: false, model, error: `Resposta vazia da IA (finish_reason=${finish ?? "n/a"})` };
@@ -162,15 +232,22 @@ export async function callGroqOnce(
 export async function callGroq(
   apiKey: string,
   model: string,
-  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  messages: ChatMessage[],
+  options: GroqCallOptions = {},
 ): Promise<GroqResult> {
-  const chain = await resolveModelChain(apiKey, model);
+  let chain = await resolveModelChain(apiKey, model);
+  if (options.exclude?.length) {
+    chain = chain.filter((m) => !options.exclude!.some((prefix) => m.startsWith(prefix)));
+  }
+  if (options.maxModels !== undefined) {
+    chain = chain.slice(0, options.maxModels);
+  }
   const tried: string[] = [];
   let last: GroqResult = { ok: false, error: "Nenhum modelo Groq disponível para esta chave." };
 
   for (const candidate of chain) {
     tried.push(candidate);
-    const result = await callGroqOnce(apiKey, candidate, messages);
+    const result = await callGroqOnce(apiKey, candidate, messages, options);
     if (result.ok) return { ...result, tried };
     last = result;
 

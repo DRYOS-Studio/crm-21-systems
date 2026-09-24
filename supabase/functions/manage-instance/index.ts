@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
+import { montarWebhookUrl, redigirJson, redigirSecret } from "../_shared/webhook-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +16,134 @@ function json(body: any, status = 200) {
   });
 }
 
-serve(async (req) => {
+function bearer(req: Request): string {
+  const h = req.headers.get("Authorization") || "";
+  return h.replace(/^Bearer\s+/i, "").trim();
+}
+
+async function userFromJwt(admin: ReturnType<typeof createClient>, req: Request) {
+  const token = bearer(req);
+  if (!token) return null;
+  const { data, error } = await admin.auth.getUser(token);
+  if (error || !data.user) return null;
+  return data.user;
+}
+
+/** set_webhook / get_webhooks: JWT + dono; nunca cai no token global (ADR-11). */
+async function handleWebhookAction(req: Request, body: any) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) {
+    return json({ ok: false, error: "Servidor sem configuração" }, 500);
+  }
+  const admin = createClient(supabaseUrl, serviceKey);
+  const user = await userFromJwt(admin, req);
+  if (!user) return json({ ok: false, error: "Não autenticado" }, 401);
+
+  const instance_token = body.instance_token;
+  if (!instance_token) return json({ ok: false, error: "Token da instância não informado" });
+
+  const { data: inst } = await admin
+    .from("whatsapp_instances")
+    .select("id, user_id, instance_token, server_url")
+    .eq("instance_token", instance_token)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!inst?.instance_token) return json({ ok: false, error: "Instância não encontrada" });
+  if (!inst.server_url) return json({ ok: false, error: "Instância sem servidor Uazapi" });
+
+  const baseUrl = String(inst.server_url).replace(/\/$/, "");
+  const action = body.action;
+
+  if (action === "get_webhooks") {
+    const uazRes = await fetch(`${baseUrl}/webhook`, {
+      method: "GET",
+      headers: { Accept: "application/json", token: inst.instance_token },
+    });
+    const responseText = await uazRes.text();
+    console.log(`[get_webhooks] status=${uazRes.status}, body=${redigirSecret(responseText)}`);
+    if (!uazRes.ok) {
+      return json({ ok: false, error: "Falha ao buscar webhooks", details: redigirSecret(responseText) });
+    }
+    let data: unknown = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = responseText;
+    }
+    return json({ ok: true, success: true, webhooks: redigirJson(data) });
+  }
+
+  // set_webhook: URL no servidor; webhook_url do body ignorado (design §6).
+  const { data: atual, error: secretErr } = await admin.rpc("webhook_secret_for", {
+    p_user: user.id,
+    p_instance: inst.id,
+  });
+  if (secretErr || !atual) {
+    return json({ ok: false, error: "Falha ao obter secret do webhook" });
+  }
+
+  const rotacionar = body.rotate === true;
+  let secret = atual as string;
+  if (rotacionar) {
+    const { data: candidato, error: beginErr } = await admin.rpc("webhook_rotate_begin", {
+      p_user: user.id,
+      p_instance: inst.id,
+    });
+    if (beginErr || !candidato) {
+      return json({ ok: false, error: "Falha ao iniciar rotação do webhook" });
+    }
+    secret = candidato as string;
+  }
+
+  const url = montarWebhookUrl(supabaseUrl, secret);
+  const webhookBody = {
+    enabled: true,
+    url,
+    events: ["messages"],
+    excludeMessages: ["wasSentByApi"],
+    addUrlEvents: false,
+  };
+
+  const uazRes = await fetch(`${baseUrl}/webhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", token: inst.instance_token },
+    body: JSON.stringify(webhookBody),
+  });
+  const responseText = await uazRes.text();
+  console.log(`[set_webhook] status=${uazRes.status}, body=${redigirSecret(responseText, secret)}`);
+
+  if (!uazRes.ok) {
+    return json({ ok: false, error: "Falha ao configurar webhook", details: redigirSecret(responseText, secret) });
+  }
+
+  if (rotacionar) {
+    const { error: commitErr } = await admin.rpc("webhook_rotate_commit", {
+      p_user: user.id,
+      p_instance: inst.id,
+      p_novo: secret,
+    });
+    if (commitErr) {
+      console.error("[set_webhook] rotate_commit falhou após Uazapi aceitar", commitErr.message);
+      return json({ ok: false, error: "Webhook registrado, mas a rotação não gravou" });
+    }
+  }
+
+  let data: unknown = {};
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    data = responseText;
+  }
+  return json({
+    ok: true,
+    success: true,
+    data: redigirJson(data, secret),
+    webhook_url: redigirSecret(url, secret),
+  });
+}
+
+export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,6 +151,10 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const { action, name, phone, instance_token: bodyInstanceToken } = body;
+
+    if (action === "set_webhook" || action === "get_webhooks") {
+      return await handleWebhookAction(req, body);
+    }
 
     // Resolve configuração preferencialmente pela instância do usuário
     let baseUrl: string | null = null;
@@ -253,66 +385,6 @@ serve(async (req) => {
       return json({ ok: true, success: true, data });
     }
 
-    // === SET WEBHOOK ===
-    if (action === "set_webhook") {
-      if (!instance_token) {
-        return json({ ok: false, error: "Token da instância não informado" });
-      }
-
-      const { webhook_url } = body;
-      if (!webhook_url) {
-        return json({ ok: false, error: "URL do webhook não informada" });
-      }
-
-      // addUrlEvents PRECISA ser false: com true a Uazapi posta em
-      // {url}/messages em vez de {url}, e o webhook nunca recebe nada.
-      const webhookBody = {
-        enabled: true,
-        url: webhook_url,
-        events: ["messages"],
-        excludeMessages: ["wasSentByApi"],
-        addUrlEvents: false,
-      };
-
-      const uazRes = await fetch(`${baseUrl}/webhook`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", token: instance_token },
-        body: JSON.stringify(webhookBody),
-      });
-
-      const responseText = await uazRes.text();
-      console.log(`[set_webhook] status=${uazRes.status}, body=${responseText}`);
-
-      if (!uazRes.ok) {
-        return json({ ok: false, error: "Falha ao configurar webhook", details: responseText });
-      }
-
-      const data = JSON.parse(responseText);
-      return json({ ok: true, success: true, data });
-    }
-
-    // === GET WEBHOOKS ===
-    if (action === "get_webhooks") {
-      if (!instance_token) {
-        return json({ ok: false, error: "Token da instância não informado" });
-      }
-
-      const uazRes = await fetch(`${baseUrl}/webhook`, {
-        method: "GET",
-        headers: { Accept: "application/json", token: instance_token },
-      });
-
-      const responseText = await uazRes.text();
-      console.log(`[get_webhooks] status=${uazRes.status}, body=${responseText}`);
-
-      if (!uazRes.ok) {
-        return json({ ok: false, error: "Falha ao buscar webhooks", details: responseText });
-      }
-
-      const data = JSON.parse(responseText);
-      return json({ ok: true, success: true, webhooks: data });
-    }
-
     return json({ ok: false, error: "Ação inválida" });
   } catch (error) {
     console.error("manage-instance error:", error);
@@ -321,4 +393,6 @@ serve(async (req) => {
       error: error instanceof Error ? error.message : "Erro desconhecido",
     });
   }
-});
+}
+
+serve(handle);

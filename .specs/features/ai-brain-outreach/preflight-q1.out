@@ -1,0 +1,5 @@
+# preflight-q1.sql contra prod (luqvbkjhmltwdqsrqaxq), 2026-09-24, via Management API
+1) formatos: [{"formato":"55+13","conversas":1,"com_mensagem":0}]
+2) colisoes: []
+3) sem_identificador: [{"sem_identificador":0}]
+extra: schema_migrations = [20260101000000 q7_init]; contact_email existe; ai_stage/processed_at/business_context nao existem; PG 17.6; 1 tenant (agente on); cron run-followups ativo

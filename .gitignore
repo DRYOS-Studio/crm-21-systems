@@ -39,3 +39,4 @@ lerna-debug.log*
 
 # Cache local da CLI do Supabase
 supabase/.temp/
+supabase/.branches/

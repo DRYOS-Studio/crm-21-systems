@@ -1,0 +1,59 @@
+{
+ "quando": "2026-09-24T13:17:33.809Z",
+ "res": [
+  {
+   "model": "qwen/qwen3.8-27b",
+   "forma": "tools+json_object",
+   "r1_status": 400,
+   "r1_err": "{\"error\":{\"message\":\"json mode cannot be combined with tool/function calling\",\"type\":\"invalid_request_error\",\"param\":\"response_format\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "qwen/qwen3.8-27b",
+   "forma": "tools sem response_format",
+   "r1_status": 200,
+   "r1_err": null,
+   "r1_tool_call": true,
+   "r2_status": 200,
+   "r2_err": null,
+   "r2_tool_call_de_novo": true,
+   "final_json_valido": false,
+   "final_mensagens_array": false,
+   "final_trecho": ""
+  },
+  {
+   "model": "qwen/qwen3.8-27b",
+   "forma": "formatacao json_object sem tools",
+   "status": 200,
+   "err": null,
+   "mensagens_array": true
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "forma": "tools+json_object",
+   "r1_status": 400,
+   "r1_err": "{\"error\":{\"message\":\"json mode cannot be combined with tool/function calling\",\"type\":\"invalid_request_error\",\"param\":\"response_format\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "forma": "tools sem response_format",
+   "r1_status": 200,
+   "r1_err": null,
+   "r1_tool_call": true,
+   "r2_status": 400,
+   "r2_err": "{\"error\":{\"message\":\"Tool call validation failed: tool call validation failed: attempted to call tool 'JSON' which was not in request.tools\",\"type\":\"invalid_request_error\",\"code\":\"tool_use_failed\",\"failed_generation\":\"{\\\"name\\\": \\\"JSON\\\", \\\"arguments\\\": {\\\"mensagens\\\":[\\\"Amanhã será 2026-09-25, que ",
+   "r2_tool_call_de_novo": false,
+   "final_json_valido": false,
+   "final_mensagens_array": false,
+   "final_trecho": ""
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "forma": "formatacao json_object sem tools",
+   "status": 200,
+   "err": null,
+   "mensagens_array": true
+  }
+ ]
+}

@@ -12,6 +12,13 @@ const badgeVariants = cva(
         secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Pills do DS DRYOS (delivery_os). Herdam oak/cream só dentro de .dryos.
+        neutral: "border-transparent bg-secondary text-muted-foreground font-mono text-[10px] font-medium px-2 hover:bg-secondary",
+        oak: "border-transparent bg-primary/10 text-primary font-mono text-[10px] font-medium px-2 hover:bg-primary/10",
+        sage: "border-transparent bg-accent text-accent-foreground font-mono text-[10px] font-medium px-2 hover:bg-accent",
+        ok: "border-transparent bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] font-mono text-[10px] font-medium px-2 hover:bg-[hsl(var(--success)/0.1)]",
+        warning: "border-transparent bg-[hsl(var(--warning)/0.1)] text-[hsl(var(--warning))] font-mono text-[10px] font-medium px-2 hover:bg-[hsl(var(--warning)/0.1)]",
+        critical: "border-transparent bg-destructive/10 text-destructive font-mono text-[10px] font-medium px-2 hover:bg-destructive/10",
       },
     },
     defaultVariants: {

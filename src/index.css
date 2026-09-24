@@ -99,3 +99,92 @@
     @apply bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity;
   }
 }
+
+/* ADR-14: DS DRYOS só dentro do wrapper. Conversas/Kanban continuam teal. */
+.dryos {
+  --background: 60 17% 98%;
+  --foreground: 0 0% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --primary: 144 30% 17%;
+  --primary-foreground: 60 17% 98%;
+  --primary-glow: 135 18% 35%;
+  --secondary: 60 13% 94%;
+  --secondary-foreground: 0 0% 4%;
+  --muted: 60 14% 91%;
+  --muted-foreground: 60 1% 41%;
+  --accent: 120 13% 92%;
+  --accent-foreground: 144 30% 17%;
+  --accent-glow: 135 18% 35%;
+  --success: 146 44% 33%;
+  --success-foreground: 60 17% 98%;
+  --warning: 39 81% 38%;
+  --warning-foreground: 60 17% 98%;
+  --destructive: 16 46% 37%;
+  --destructive-foreground: 60 17% 98%;
+  --border: 60 2% 91%;
+  --input: 60 2% 91%;
+  --ring: 125 19% 64%;
+  --radius: 0.625rem;
+  --shadow-sm: 0 1px 2px hsl(0 0% 4% / 0.04);
+  --shadow-md: 0 2px 8px hsl(0 0% 4% / 0.06);
+  --shadow-lg: 0 8px 20px hsl(0 0% 4% / 0.08);
+  --shadow-glow: 0 1px 2px hsl(0 0% 4% / 0.05);
+  --shadow-accent: 0 1px 2px hsl(0 0% 4% / 0.05);
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 4%;
+  --sidebar-primary: 144 30% 17%;
+  --sidebar-primary-foreground: 60 17% 98%;
+  --sidebar-accent: 60 13% 94%;
+  --sidebar-accent-foreground: 0 0% 4%;
+  --sidebar-border: 60 2% 91%;
+  --sidebar-ring: 125 19% 64%;
+  font-family: "Onest", system-ui, sans-serif;
+  letter-spacing: -0.005em;
+}
+
+.dryos h1,
+.dryos h2,
+.dryos h3,
+.dryos h4 {
+  font-family: "Funnel Display", system-ui, sans-serif;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.dark .dryos {
+  --background: 0 0% 4%;
+  --foreground: 60 17% 98%;
+  --card: 0 0% 10%;
+  --card-foreground: 60 17% 98%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 60 17% 98%;
+  --primary: 135 18% 35%;
+  --primary-foreground: 60 17% 98%;
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 60 17% 98%;
+  --muted: 0 0% 14%;
+  --muted-foreground: 60 2% 59%;
+  --accent: 0 0% 16%;
+  --accent-foreground: 60 17% 98%;
+  --success: 146 44% 40%;
+  --success-foreground: 0 0% 4%;
+  --warning: 39 81% 45%;
+  --warning-foreground: 0 0% 4%;
+  --destructive: 16 46% 45%;
+  --destructive-foreground: 60 17% 98%;
+  --border: 0 0% 18%;
+  --input: 0 0% 18%;
+  --ring: 135 18% 35%;
+  --sidebar-background: 0 0% 10%;
+  --sidebar-foreground: 60 17% 98%;
+  --sidebar-primary: 135 18% 35%;
+  --sidebar-primary-foreground: 60 17% 98%;
+  --sidebar-accent: 0 0% 14%;
+  --sidebar-accent-foreground: 60 17% 98%;
+  --sidebar-border: 0 0% 18%;
+  --sidebar-ring: 135 19% 35%;
+}

@@ -1,0 +1,84 @@
+T3 — captura real da Uazapi (prod, 2026-09-24T15:13:34.329Z)
+
+Método: log temporário em handle.ts (`console.log("[webhook] T3-diagnostico", {query: new URL(req.url).search,
+message_raw: body?.message, data_raw: body?.data})`), deployado em prod, revertido logo após esta captura.
+Instância: uma já conectada e em uso real no Q7 (não free.uazapi.com — decisão do Rafael, "já estava funcionando").
+Dados pessoais (telefones, nome do remetente, nome do grupo) REDIGIDOS abaixo; a forma/nomes de campo são reais.
+
+## Request capturada
+
+- `query` (search string da URL do webhook): `""` — **vazia**. Esta instância não tem `?s=...` na URL
+  configurada hoje. A pergunta "o `s` sobrevive ao round-trip da Uazapi" continua SEM RESPOSTA —
+  precisa de um teste à parte, acrescentando `?s=teste` na URL de uma instância existente.
+- `data_raw`: `null` — confirma que o payload atual da Uazapi vem no formato "atual" (`body.message`),
+  não no formato Baileys legado (`body.data.message`) que `extractText()` também tenta ler.
+
+## `message_raw` (evento era uma REAÇÃO 👍 num grupo, não um texto direto)
+
+```
+{
+  buttonOrListid: "",
+  chatid: "<GROUP_JID>@g.us",
+  chatlid: "",
+  content: {
+    key: {
+      remoteJID: "<GROUP_JID>@g.us",
+      fromMe: false,
+      ID: "<TARGET_MSG_ID>",           // id da mensagem QUE FOI REAGIDA, não desta reação
+      participant: "<PARTICIPANT_LID>@lid"
+    },
+    text: "👍",
+    senderTimestampMS: 1790262798000
+  },
+  convertOptions: "",
+  edited: "",
+  fromMe: false,
+  groupName: "<REDIGIDO>",
+  id: "<OWNER_PHONE>:<REACTION_MSG_ID>",   // id DESTE evento (reação), prefixado pelo telefone da instância
+  isGroup: true,
+  mediaType: "",
+  messageTimestamp: 1790262813000,
+  messageType: "ReactionMessage",
+  messageid: "<REACTION_MSG_ID>",          // id DESTE evento, sem o prefixo — igual ao sufixo de `id`
+  owner: "<OWNER_PHONE>",
+  pinned: false,
+  quoted: "",
+  reaction: "<TARGET_MSG_ID>",             // == content.key.ID: id da mensagem alvo da reação
+  sender: "<SENDER_LID>:65@lid",
+  senderName: "<REDIGIDO>",
+  sender_lid: "<SENDER_LID>@lid",
+  sender_pn: "<SENDER_PHONE>@s.whatsapp.net",
+  source: "web",
+  status: "",
+  text: "👍",
+  track_id: "",
+  track_source: "",
+  type: "reaction",
+  vote: "",
+  wasSentByApi: false
+}
+```
+
+## Achados
+
+1. **Campo do id da mensagem — DUAS candidatos, não confundir:**
+   - `message.id` (formato `"<telefone_da_instância>:<id_bruto>"`) e `message.messageid` (só o `<id_bruto>`)
+     são o id **do evento em si** (o que a Uazapi está entregando agora).
+   - `message.content.key.ID` (dentro de `content`) é o id da mensagem **referenciada** por esse evento —
+     em uma reação, é o alvo da reação, não a reação. `message.reaction` repete o mesmo valor.
+   - Pra dedupe de evento (ADR-05, `external_id`), o campo certo é `message.messageid` (ou `message.id`,
+     que é o mesmo valor com prefixo) — **nunca** `content.key.ID`: usar esse último faria duas reações
+     diferentes à MESMA mensagem colidirem no dedupe (mesmo `content.key.ID`, eventos diferentes).
+   - Ainda não capturamos uma mensagem de TEXTO comum (não-reação) pra confirmar se `content.key.ID`
+     também aparece igual a `messageid` nesse caso (esperado que sim, já que não há "alvo" separado).
+     Recomendo capturar 1 amostra de texto simples antes de fechar o design do dedupe em T9-T17.
+
+2. **`?s=teste` não testado** — a instância usada não tinha o parâmetro configurado. Pendente.
+
+3. **Achado novo, fora do escopo original de T3**: `messageType: "ReactionMessage"` chega com `.text`
+   preenchido (o emoji) e NENHUM marcador de mídia (`mediaLabel()` não reconhece "reactionmessage").
+   Em uma conversa 1:1 (fora de grupo, que já é filtrado), uma reação de emoji hoje passaria por
+   `extractText()` como se fosse uma mensagem de texto normal e acionaria uma resposta da IA ao "👍"
+   — não é o comportamento desejado. Não estava coberto pelo design.md nem pelo spec.md atuais.
+   Decisão do Rafael necessária: tratar em T9-T17 (rewrite do `extractText`/`handle.ts`) ou abrir
+   como item à parte.

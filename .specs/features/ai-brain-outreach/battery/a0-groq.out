@@ -1,0 +1,95 @@
+{
+ "quando": "2026-09-24T12:56:21.379Z",
+ "res": [
+  {
+   "model": "llama-3.3-70b-versatile",
+   "forma": "tools+json_object",
+   "r1_status": 404,
+   "r1_err": "{\"error\":{\"message\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "llama-3.3-70b-versatile",
+   "forma": "tools sem response_format",
+   "r1_status": 404,
+   "r1_err": "{\"error\":{\"message\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "llama-3.3-70b-versatile",
+   "forma": "formatacao json_object sem tools",
+   "status": 404,
+   "err": "{\"error\":{\"message\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "mensagens_array": false
+  },
+  {
+   "model": "llama-3.1-8b-instant",
+   "forma": "tools+json_object",
+   "r1_status": 404,
+   "r1_err": "{\"error\":{\"message\":\"The model `llama-3.1-8b-instant` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "llama-3.1-8b-instant",
+   "forma": "tools sem response_format",
+   "r1_status": 404,
+   "r1_err": "{\"error\":{\"message\":\"The model `llama-3.1-8b-instant` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "llama-3.1-8b-instant",
+   "forma": "formatacao json_object sem tools",
+   "status": 404,
+   "err": "{\"error\":{\"message\":\"The model `llama-3.1-8b-instant` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "mensagens_array": false
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "forma": "tools+json_object",
+   "r1_status": 400,
+   "r1_err": "{\"error\":{\"message\":\"json mode cannot be combined with tool/function calling\",\"type\":\"invalid_request_error\",\"param\":\"response_format\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "forma": "tools sem response_format",
+   "r1_status": 200,
+   "r1_err": null,
+   "r1_tool_call": true,
+   "r2_status": 200,
+   "r2_err": null,
+   "r2_tool_call_de_novo": false,
+   "final_json_valido": true,
+   "final_mensagens_array": true,
+   "final_trecho": "{\"mensagens\":[\"Amanhã é sexta-feira, 25 de setembro de 2026.\"],\"etapa\":\"descobrir\"}"
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "forma": "formatacao json_object sem tools",
+   "status": 200,
+   "err": null,
+   "mensagens_array": true
+  },
+  {
+   "model": "groq/compound-mini",
+   "forma": "tools+json_object",
+   "r1_status": 404,
+   "r1_err": "{\"error\":{\"message\":\"The model `groq/compound-mini` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "groq/compound-mini",
+   "forma": "tools sem response_format",
+   "r1_status": 404,
+   "r1_err": "{\"error\":{\"message\":\"The model `groq/compound-mini` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "r1_tool_call": false
+  },
+  {
+   "model": "groq/compound-mini",
+   "forma": "formatacao json_object sem tools",
+   "status": 404,
+   "err": "{\"error\":{\"message\":\"The model `groq/compound-mini` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
+   "mensagens_array": false
+  }
+ ]
+}
