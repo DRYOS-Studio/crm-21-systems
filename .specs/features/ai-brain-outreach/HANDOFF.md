@@ -3,22 +3,25 @@
 **Prompt pra nova sessão (cwd = repo Q7):**
 
 > `/dryos-pipeline` Fase 4 da feature `.specs/features/ai-brain-outreach/`.
-> T1–T24 e T28 feitos (T3 ainda parcial: `?s=` real não capturado). Próxima: **T26**
-> (migration outreach) → T27 → T29. T25 é PR separado.
+> T1–T24, T26 e T28 feitos (T3 ainda parcial). Próxima: **T27**
+> (RPCs `outreach_reserve` / mark / release / day_stats) → T29 → T30.
 
 ## Estado
 
-- Fases 1–3 fechadas (`spec.md` r4, `design.md` r5, `tasks.md`).
-- **Fase D**: T18–T24 FEITOS.
-- **Fase E**: T28 FEITO (`outreach.ts` 9/9). T26/T27/T29/T30 pendentes.
-- T3 PARCIAL. T25 = PR separado (decisão do Rafael).
+- **Fase D** T18–T24 FEITOS.
+- **Fase E** T26 + T28 FEITOS. T27/T29/T30 pendentes.
+- T25 = PR separado. T3 parcial (`?s=` Uazapi).
 
 ## Commits desta sessão
 
-- Q7 `dbc78e7` — T20–T23 (KB, webhook `?s=`, `wa_phone`)
-- Extrator `53bd790` — T24 (23505 por índice)
-- Q7 T28 neste commit (`outreach.ts`)
+| Repo | Hash | O quê |
+|---|---|---|
+| Q7 | `dbc78e7` | T20–T23 |
+| Extrator | `53bd790` | T24 |
+| Q7 | `7a5f738` | T28 |
+| Q7 | T26 neste commit | schema outreach |
 
 ## Próximo
 
-**T26** `20260925030000_outreach.sql` + `tests/db/outreach_schema.test.mjs`.
+**T27** — RPCs na mesma `20260925030000_outreach.sql` + `tests/db/outreach_rpcs.test.mjs`.
+Não publicado (sem `git push`).

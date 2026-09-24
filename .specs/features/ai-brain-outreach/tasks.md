@@ -422,14 +422,14 @@ sem abrir client (T1 smoke).
 **Done when**: [ ] H: chamada só com anon key ⇒ recusada em toda ação · [ ] cron com secret continua disparando
 **Verify**: `node --test tests/handler/manage-instance.test.mjs tests/handler/followups.test.mjs`
 
-### T26: Migration de outreach
+### T26: Migration de outreach — FEITO (2026-09-24)
 **What**: §3.3 — `prospects`, `outreach_sends`, `outreach_openers` + `save_openers`, colunas de `agent_configs`, `outreach_cron_secret`, triggers de propagação, RLS/grants.
 **Where**: `supabase/migrations/20260925030000_outreach.sql`, `tests/db/outreach_schema.test.mjs`
 **Depends on**: T7
 **Done when**:
-- [ ] AC-C1 2×; AC-B6 (check); AC-B22 (checks + `save_openers`); AC-U3 (CRUD cruzado e colunas protegidas)
-- [ ] triggers: AC-B13, AC-B14 (sem sobrescrever `optout`)
-**Verify**: `node --test tests/db/outreach_schema.test.mjs`
+- [x] AC-C1 2×; AC-B6 (check); AC-B22 (checks + `save_openers`); AC-U3 (CRUD cruzado e colunas protegidas)
+- [x] triggers: AC-B13, AC-B14 (sem sobrescrever `optout`)
+**Verify**: `node --import ./tests/_harness/register.mjs --test tests/db/outreach_schema.test.mjs` → 6/6
 
 ### T27: RPCs do disparo
 **What**: `outreach_reserve`, `outreach_mark_sent`, `outreach_mark_uncertain`, `outreach_release`, `outreach_day_stats` (§3.3).
