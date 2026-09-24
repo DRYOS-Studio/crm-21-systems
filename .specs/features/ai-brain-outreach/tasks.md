@@ -440,12 +440,12 @@ sem abrir client (T1 smoke).
 - [ ] reserva velha ⇒ `incerto` devolvido; prospect excluído até a cadência ser aplicada
 **Verify**: `node --test tests/db/outreach_rpcs.test.mjs`
 
-### T28: `outreach.ts` — regras puras [P]
+### T28: `outreach.ts` — regras puras [P] — FEITO (2026-09-24)
 **What**: `podeDispararAgora`, `tetoEfetivo`, `proximoToque`, `montarToque1`, `sortearVariacao`, `freio` — relógio e RNG injetados.
 **Where**: `supabase/functions/_shared/outreach.ts`, `tests/unit/outreach.test.mjs`
 **Depends on**: T1
-**Done when**: [ ] U: AC-B5 (fronteiras), B6, B7, B9, B10, B17, B21, B23, cada um com a mutação da spec
-**Verify**: `node --test tests/unit/outreach.test.mjs`
+**Done when**: [x] U: AC-B5 (fronteiras), B6, B7, B9, B10, B17, B21, B23, cada um com a mutação da spec
+**Verify**: `node --import ./tests/_harness/register.mjs --test tests/unit/outreach.test.mjs` → 9/9
 
 ### T29: `run-outreach`
 **What**: §4.4 — secret fail-close, rodízio de usuários, orçamento do tick, reserva, toque 1 por variação / toques 2-3 pela IA, releitura antes do envio, timeout ⇒ `incerto`, freio + aviso.
