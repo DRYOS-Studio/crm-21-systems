@@ -17,6 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { KnowledgeBaseSection } from "@/components/knowledge/KnowledgeBaseSection";
+import { Badge } from "@/components/ui/badge";
+import { SUPABASE_URL } from "@/lib/env";
+import { resolveWebhookUrl } from "@/lib/webhookUrl";
 import {
   Bot,
   Building2,
@@ -83,6 +87,8 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
   const [connecting, setConnecting] = useState(false);
   const [connectStep, setConnectStep] = useState("");
   const [webhookOk, setWebhookOk] = useState<boolean | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookConfirmed, setWebhookConfirmed] = useState(false);
   const [qrSrc, setQrSrc] = useState<string | null>(null);
   const [paircode, setPaircode] = useState<string | null>(null);
   const [fetchingQr, setFetchingQr] = useState(false);
@@ -133,7 +139,22 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
       setInstanceConnected(data.status === "connected");
       setServerUrl(data.server_url || "");
       setHasInstanceToken(!!data.instance_token);
+      await refreshWebhook(data.id);
+    } else {
+      setWebhookUrl("");
+      setWebhookConfirmed(false);
     }
+  };
+
+  const refreshWebhook = async (id: string | null) => {
+    const url = await resolveWebhookUrl(supabase, SUPABASE_URL, id);
+    setWebhookUrl(url || "");
+    if (!id) {
+      setWebhookConfirmed(false);
+      return;
+    }
+    const { data, error } = await supabase.rpc("webhook_is_confirmed", { p_instance: id });
+    setWebhookConfirmed(!error && data === true);
   };
 
   useEffect(() => {
@@ -312,10 +333,11 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
       // 3. Registra o webhook sozinho, direto na Uazapi.
       setConnectStep("Registrando o webhook...");
       const { data: wh, error: whErr } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "set_webhook", instance_token: token, webhook_url: webhookUrl },
+        body: { action: "set_webhook", instance_token: token },
       });
       const hookRegistered = !whErr && !!wh?.ok;
       setWebhookOk(hookRegistered);
+      await refreshWebhook(id);
 
       // 4. Diagnóstico ponta a ponta, sem clicar em mais nada.
       setConnectStep("Testando ponta a ponta...");
@@ -437,11 +459,15 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
     }
   };
 
-  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
-
   const copyWebhook = async () => {
+    const url = webhookUrl || (await resolveWebhookUrl(supabase, SUPABASE_URL, instanceId));
+    if (!url) {
+      toast({ variant: "destructive", title: "Conecte a instância para gerar a URL" });
+      return;
+    }
+    setWebhookUrl(url);
     try {
-      await navigator.clipboard.writeText(webhookUrl);
+      await navigator.clipboard.writeText(url);
       toast({ title: "URL copiada!" });
     } catch {
       toast({ variant: "destructive", title: "Não foi possível copiar" });
@@ -450,7 +476,12 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
 
   /** Dispara o dry_run no webhook e publica os 4 checks na tela. */
   const runWebhookDiagnostic = async (token: string, name: string) => {
-    const res = await fetch(webhookUrl, {
+    const url = webhookUrl || (await resolveWebhookUrl(supabase, SUPABASE_URL, instanceId));
+    if (!url) {
+      toast({ variant: "destructive", title: "Webhook sem secret — conecte a instância" });
+      return;
+    }
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ event: "dry_run", instance: { name, token } }),
@@ -485,12 +516,13 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
         return;
       }
       const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "set_webhook", instance_token: token, webhook_url: webhookUrl },
+        body: { action: "set_webhook", instance_token: token, rotate: true },
       });
       const ok = !error && !!data?.ok;
       setWebhookOk(ok);
       if (ok) {
         toast({ title: "Webhook registrado na Uazapi" });
+        await refreshWebhook(instanceId);
         await runWebhookDiagnostic(token, instanceName);
       } else {
         toast({
@@ -647,21 +679,35 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
             </>
           )}
 
-          {/* Webhook Uazapi */}
-          <section className="space-y-3">
+          {/* Webhook Uazapi — DS DRYOS (ADR-14) */}
+          <section className="dryos space-y-3 rounded-lg border border-border bg-card p-5">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Webhook className="w-4 h-4 text-primary" /> Webhook do WhatsApp (Uazapi)
             </h3>
             <p className="text-xs text-muted-foreground">
-              Registrado automaticamente ao conectar. A URL fica aqui só para
-              conferência e para os casos em que precise reconfigurar.
+              A URL inclui o secret da instância. Sem ele o modo novo não autentica.
             </p>
+            <div>
+              {webhookConfirmed ? (
+                <Badge variant="ok">confirmado</Badge>
+              ) : (
+                <Badge variant="warning">aguardando 1ª mensagem</Badge>
+              )}
+            </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">URL do webhook</Label>
+              <Label htmlFor="webhook-url" className="text-xs">
+                URL do webhook
+              </Label>
               <div className="flex gap-2">
-                <Input readOnly value={webhookUrl} className="text-xs font-mono" />
-                <Button variant="outline" size="sm" onClick={copyWebhook}>
+                <Input
+                  id="webhook-url"
+                  readOnly
+                  value={webhookUrl}
+                  placeholder="Conecte a instância para gerar"
+                  className="text-xs font-mono"
+                />
+                <Button id="webhook-copy" variant="outline" size="sm" onClick={copyWebhook}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
@@ -779,6 +825,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
               )}
             </div>
           </section>
+
+          <Separator />
+
+          <KnowledgeBaseSection open={open} />
 
           <Separator />
 

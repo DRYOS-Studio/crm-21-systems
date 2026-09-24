@@ -46,6 +46,7 @@ import { ChevronDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 type Conversation = {
   id: string;
   contact_phone: string | null;
+  wa_phone: string | null;
   contact_email: string | null;
   contact_name: string | null;
   ai_enabled: boolean;
@@ -54,6 +55,10 @@ type Conversation = {
   human_takeover_at: string | null;
   stage_id: string | null;
 };
+
+function destPhone(c: Conversation): string | null {
+  return c.wa_phone || c.contact_phone || null;
+}
 
 type Message = {
   id: string;
@@ -385,7 +390,8 @@ export default function Conversas() {
 
   const send = async () => {
     if (!input.trim() || !active) return;
-    if (!active.contact_phone) {
+    const number = destPhone(active);
+    if (!number) {
       toast({ variant: "destructive", title: "Sem WhatsApp", description: "Esse contato só tem email — não dá pra mandar mensagem." });
       return;
     }
@@ -405,7 +411,7 @@ export default function Conversas() {
         body: {
           action: "send_text",
           instance_token: inst.instance_token,
-          number: active.contact_phone,
+          number,
           text: input.trim(),
         },
       });
@@ -757,17 +763,18 @@ export default function Conversas() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  id="chat-input"
                   placeholder={
-                    !active.contact_phone
+                    !destPhone(active)
                       ? "Contato sem WhatsApp — só tem email"
                       : active.ai_enabled
                         ? "IA responderá automaticamente. Envie mensagem manual mesmo assim..."
                         : "Digite sua resposta..."
                   }
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-                  disabled={sending || !active.contact_phone}
+                  disabled={sending || !destPhone(active)}
                 />
-                <Button onClick={send} disabled={sending || !input.trim() || !active.contact_phone}>
+                <Button id="chat-send" onClick={send} disabled={sending || !input.trim() || !destPhone(active)}>
                   <Send className="w-4 h-4" />
                 </Button>
               </div>

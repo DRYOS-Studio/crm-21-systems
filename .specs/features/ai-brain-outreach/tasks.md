@@ -377,19 +377,19 @@ sem abrir client (T1 smoke).
 **Done when**: [x] E: AC-U1 · [x] número inválido não salva
 **Verify**: playwright contra `npm run dev` + Supabase local → `business_context`/`company_name`/`owner_notify_phone` gravados (`5511987654321`); "abc" e "12" não escrevem. `npx tsc --noEmit -p tsconfig.app.json` limpo.
 
-### T20: ConfigDrawer — base de conhecimento [P]
+### T20: ConfigDrawer — base de conhecimento [P] — FEITO (2026-09-24)
 **What**: lista, adicionar, editar, remover, estado vazio, 23505 ⇒ "tópico já existe".
 **Where**: `src/components/knowledge/KnowledgeBaseSection.tsx`, usado no ConfigDrawer
 **Depends on**: T4, T18, T22
-**Done when**: [ ] E: AC-U2
-**Verify**: playwright
+**Done when**: [x] E: AC-U2
+**Verify**: playwright + select `knowledge_base` → "Preços" grava `preços`; " Preços " ⇒ "tópico já existe" sem 2ª linha; edit/remove refletem no banco.
 
-### T21: ConfigDrawer — webhook com secret [P]
+### T21: ConfigDrawer — webhook com secret [P] — FEITO (2026-09-24)
 **What**: remover a constante `webhookUrl` (`ConfigDrawer.tsx:393`); todos os usos (`copyWebhook`, `runWebhookDiagnostic`, `Input` de `:616`, bodies `:306`/`:441`) pelo helper com `rpc my_webhook_secret`; status confirmado/aguardando; botão reconfigurar.
 **Where**: `src/components/ConfigDrawer.tsx`, `src/lib/webhookUrl.ts`
 **Depends on**: T6, T17, T18
-**Done when**: [ ] `grep -n "functions/v1/whatsapp-webhook" src/` = só o helper · [ ] E: copiar ⇒ URL com `s`
-**Verify**: `grep`; playwright
+**Done when**: [x] `grep -n "functions/v1/whatsapp-webhook" src/` = só o helper · [x] E: copiar ⇒ URL com `s`
+**Verify**: `rg "functions/v1/whatsapp-webhook" src` → só `src/lib/webhookUrl.ts`. Playwright: input + clipboard = `…/whatsapp-webhook?s=<secret>`; status "aguardando 1ª mensagem". Reconfigurar manda `rotate: true`.
 
 ### T22: Regenerar `types.ts` [P] — FEITO (2026-09-24)
 **What**: `supabase gen types typescript --local > src/integrations/supabase/types.ts`.
@@ -401,14 +401,14 @@ sem abrir client (T1 smoke).
 **What**: `Conversas.tsx:408` envia `coalesce(wa_phone, contact_phone)`.
 **Where**: `src/pages/Conversas.tsx`
 **Depends on**: T7, T22
-**Done when**: [ ] E: conversa com `wa_phone` de 12 dígitos envia para ele
+**Done when**: [x] E: conversa com `wa_phone` de 12 dígitos envia para ele
 **Verify**: playwright com Uazapi stub
 
 ### T24: Extrator — 23505 por índice [P] (repo `03.dryos_os_extractor`)
 **What**: `LeadCard.tsx`: 23505 de `conversations_user_phone_uidx` ⇒ estado `exists`; do índice de email ⇒ mensagem própria; sem RPC nova (§3.2). **Sobe em prod antes de T7.**
 **Where**: `03.dryos_os_extractor/src/components/leadhunter/LeadCard.tsx`
 **Depends on**: —
-**Done when**: [ ] E (repo do Extrator): lead de 12 dígitos já no CRM ⇒ "já está no CRM"; email repetido ⇒ mensagem de email
+**Done when**: [x] E (repo do Extrator): lead de 12 dígitos já no CRM ⇒ "já está no CRM"; email repetido ⇒ mensagem de email
 **Verify**: playwright no Extrator contra o Postgres local com T7 aplicado
 
 ---
