@@ -431,14 +431,14 @@ sem abrir client (T1 smoke).
 - [x] triggers: AC-B13, AC-B14 (sem sobrescrever `optout`)
 **Verify**: `node --import ./tests/_harness/register.mjs --test tests/db/outreach_schema.test.mjs` → 6/6
 
-### T27: RPCs do disparo
+### T27: RPCs do disparo — FEITO (2026-09-24)
 **What**: `outreach_reserve`, `outreach_mark_sent`, `outreach_mark_uncertain`, `outreach_release`, `outreach_day_stats` (§3.3).
 **Where**: mesma migration, `tests/db/outreach_rpcs.test.mjs`
 **Depends on**: T26
 **Done when**:
-- [ ] AC-B3 (2 conexões simultâneas ⇒ 1 reserva), AC-B4 (medido em `sent_at`), AC-B2/B16/B18, instância de outro tenant recusada
-- [ ] reserva velha ⇒ `incerto` devolvido; prospect excluído até a cadência ser aplicada
-**Verify**: `node --test tests/db/outreach_rpcs.test.mjs`
+- [x] AC-B3 (2 conexões simultâneas ⇒ 1 reserva), AC-B4 (medido em `sent_at`), AC-B2/B16/B18, instância de outro tenant recusada
+- [x] reserva velha ⇒ `incerto` devolvido; prospect excluído até a cadência ser aplicada
+**Verify**: `node --import ./tests/_harness/register.mjs --test tests/db/outreach_rpcs.test.mjs` → 9/9
 
 ### T28: `outreach.ts` — regras puras [P] — FEITO (2026-09-24)
 **What**: `podeDispararAgora`, `tetoEfetivo`, `proximoToque`, `montarToque1`, `sortearVariacao`, `freio` — relógio e RNG injetados.
@@ -447,67 +447,67 @@ sem abrir client (T1 smoke).
 **Done when**: [x] U: AC-B5 (fronteiras), B6, B7, B9, B10, B17, B21, B23, cada um com a mutação da spec
 **Verify**: `node --import ./tests/_harness/register.mjs --test tests/unit/outreach.test.mjs` → 9/9
 
-### T29: `run-outreach`
+### T29: `run-outreach` — FEITO (2026-09-24)
 **What**: §4.4 — secret fail-close, rodízio de usuários, orçamento do tick, reserva, toque 1 por variação / toques 2-3 pela IA, releitura antes do envio, timeout ⇒ `incerto`, freio + aviso.
 **Where**: `supabase/functions/run-outreach/{index.ts,handle.ts}`, `tests/handler/outreach.test.mjs`
 **Depends on**: T12, T27, T28
-**Done when**: [ ] H: AC-B1, B8, B11 (incl. secret guardado vazio ⇒ 500), B12, B15, B19, B20, B22 (sem 2 válidas), AC-C2 (2 tenants)
-**Verify**: `node --test tests/handler/outreach.test.mjs`
+**Done when**: [x] H: AC-B1, B8, B11 (incl. secret guardado vazio ⇒ 500), B12, B15, B19, B20, B22 (sem 2 válidas), AC-C2 (2 tenants)
+**Verify**: `node --import ./tests/_harness/register.mjs --test tests/handler/outreach.test.mjs` → 9/9
 
-### T30: Deploy config do disparo
+### T30: Deploy config do disparo — FEITO (2026-09-24)
 **What**: `config.toml` com `run-outreach` `verify_jwt=false`; job em `supabase/setup/cron.sql` com header por subselect.
 **Where**: `supabase/config.toml`, `supabase/setup/cron.sql`
 **Depends on**: T29
-**Done when**: [ ] `cron.sql` aplicado 2× no local sem duplicar job · [ ] job chama `run-outreach` com secret e recebe 200
-**Verify**: `select jobname from cron.job` no local
+**Done when**: [x] `cron.sql` aplicado 2× no local sem duplicar job · [x] job chama `run-outreach` com secret e recebe 200
+**Verify**: `select jobname from cron.job` → `run-followups-every-minute`, `run-outreach-every-minute`. pg_net 200 `{"ok":true,"enviados":0}`.
 
 ---
 
 ## Fase F — P4 página Prospecção (visual: artboards "Prospecção" e "Estados" do mockup)
 
-### T31: Página, rota e nav
+### T31: Página, rota e nav — FEITO (2026-09-24)
 **What**: `Prospeccao.tsx` com wrapper `.dryos`, rota em `App.tsx`, link no header de `Conversas.tsx:445-455` e `Kanban.tsx:305-310`.
 **Depends on**: T18, T26
-**Done when**: [ ] `/prospeccao` protegida; nav nas 3 telas · [ ] `validate-gate` PASS
-**Verify**: playwright
+**Done when**: [x] `/prospeccao` protegida; nav nas 3 telas · [x] `validate-gate` PASS
+**Verify**: playwright → `/prospeccao` sem auth redireciona `/login`; nav Conversas/Kanban/Prospecção nas 3 telas; `.dryos` oak `144 30% 17%` / cream `60 17% 98%` / Onest; Conversas permanece teal `184 50% 50%`.
 
-### T32: Import de CSV [P]
+### T32: Import de CSV [P] — FEITO (2026-09-24)
 **What**: parse com `xlsx`, `canon_phone_input_batch`, `upsert ignoreDuplicates`, contagem de rejeitados, falha de rede com "tentar de novo" (design-gate r3 W3).
 **Where**: `src/components/prospeccao/CsvImport.tsx`
 **Depends on**: T31
-**Done when**: [ ] E: AC-P1
-**Verify**: playwright
+**Done when**: [x] E: AC-P1
+**Verify**: playwright → `11 99999-9999` + `5511999999999` = 1 prospect canônico com extras; 2 inválidos rejeitados; reimport não duplica; abort de rede mostra "Tentar de novo".
 
-### T33: Editor de variações [P]
+### T33: Editor de variações [P] — FEITO (2026-09-24)
 **What**: lista de variações, contador, prévia sem nome, `save_openers`, erro inline.
 **Where**: `src/components/prospeccao/OpenersEditor.tsx`
 **Depends on**: T31
-**Done when**: [ ] E: AC-B22 (recusa com link / >120 / <2)
-**Verify**: playwright
+**Done when**: [x] E: AC-B22 (recusa com link / >120 / <2)
+**Verify**: playwright → `<2` / link / `>120` recusam com erro da RPC e variação destacada; 2 válidas gravam; prévia tira `{nome}`.
 
-### T34: Toggle, regras e freio [P]
+### T34: Toggle, regras e freio [P] — FEITO (2026-09-25)
 **What**: toggle, instância, teto, dias; banner de pausa com motivo.
 **Where**: `src/components/prospeccao/OutreachSettings.tsx`
 **Depends on**: T31
-**Done when**: [ ] E: AC-P2
-**Verify**: playwright
+**Done when**: [x] E: AC-P2
+**Verify**: playwright → freio mostra o motivo e toggle `unchecked`; religar limpa `outreach_paused_reason` e grava teto/sábado.
 
-### T35: Tabela e números [P]
+### T35: Tabela e números [P] — FEITO (2026-09-25)
 **What**: KPIs do dia, tabela de contatos com Pills de estado e toque n/3, estado vazio, responsivo.
 **Where**: `src/components/prospeccao/ProspectsTable.tsx`
 **Depends on**: T31
-**Done when**: [ ] E: tabela lê `prospects` do próprio tenant · [ ] `validate-gate` PASS
-**Verify**: playwright
+**Done when**: [x] E: tabela lê `prospects` do próprio tenant · [x] `validate-gate` PASS
+**Verify**: playwright → vazio + CTA import; Ana do tenant A visível, Bruno do B não; enviados 1 / taxa 100%; oak/cream; `overflow-x-auto`.
 
 ---
 
 ## Fase G — fechamento
 
-### T36: Doc-sync (AC-D1)
+### T36: Doc-sync (AC-D1) — FEITO (2026-09-25)
 **What**: atualizar toda afirmação da lista do AC-D1; `scripts/check-setup.mjs` conhece functions e colunas novas.
 **Depends on**: todas as de código
-**Done when**: [ ] `grep` das afirmações antigas no diff final = 0 · [ ] `grep 'functions/v1/whatsapp-webhook'` fora do helper só em instrução "copie pelo app" · [ ] `tsc` limpo
-**Verify**: os `grep` + `npx tsc --noEmit -p tsconfig.app.json`
+**Done when**: [x] `grep` das afirmações antigas no diff final = 0 · [x] `grep 'functions/v1/whatsapp-webhook'` fora do helper só em instrução "copie pelo app" · [x] `tsc` limpo
+**Verify**: `functions/v1/whatsapp-webhook` só em `webhookUrl.ts` / `_shared/webhook-url.ts` (com `?s=`). `tsc` limpo. Types com `prospects`, `save_openers`.
 
 ### T37: Revisão humana do pós-cumprimento (AC-B24, M)
 **What**: ≥10 conversas de teste respondendo ao toque 1, transcritas.

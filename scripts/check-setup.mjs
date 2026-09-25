@@ -5,8 +5,8 @@
  *   npm run check                      # usa o .env local
  *   npm run check -- <URL> <ANON_KEY>  # verifica um projeto específico
  *
- * Confere, em ordem: variáveis de ambiente → conexão com a API → as 9 tabelas
- * → as 5 edge functions. Sai com código 1 se algo estiver faltando, então
+ * Confere, em ordem: variáveis de ambiente → conexão com a API → tabelas e
+ * colunas novas → as 6 edge functions. Sai com código 1 se algo estiver faltando, então
  * serve tanto para humano quanto para automação.
  *
  * Não precisa de dependências: só Node 18+ (fetch nativo).
@@ -51,11 +51,19 @@ function get(url, init = {}) {
 const TABLES = [
   "profiles", "user_roles", "whatsapp_instances", "pipeline_stages",
   "conversations", "messages", "agent_configs", "followups", "app_settings",
+  "knowledge_base", "prospects", "outreach_sends", "outreach_openers",
+];
+
+const COLUMNS = [
+  { table: "agent_configs", select: "company_name,business_context,owner_notify_phone,outreach_enabled" },
+  { table: "conversations", select: "wa_phone,ai_stage" },
+  { table: "prospects", select: "phone,estado" },
 ];
 
 const FUNCTIONS = [
   { name: "whatsapp-webhook", public: true },
   { name: "run-followups", public: true },
+  { name: "run-outreach", public: true, secretOk: true },
   { name: "manage-instance", public: false },
   { name: "test-ai-connection", public: false },
   { name: "test-uazapi", public: false },
@@ -119,7 +127,7 @@ async function main() {
   }
 
   // --- 3. Tabelas ---------------------------------------------------------
-  head("3. Schema do banco (9 tabelas)");
+  head("3. Schema do banco");
   let missing = 0;
   for (const t of TABLES) {
     try {
@@ -130,12 +138,27 @@ async function main() {
       fail(`tabela "${t}" — erro de rede: ${e.message}`);
     }
   }
+  for (const col of COLUMNS) {
+    try {
+      const r = await get(`${url}/rest/v1/${col.table}?select=${col.select}&limit=0`, { headers: { apikey: key } });
+      const body = await r.text();
+      if (r.status === 400 && /column|does not exist|schema cache/i.test(body)) {
+        fail(`coluna faltando em "${col.table}": ${col.select}`);
+        missing++;
+      } else if (r.status === 404) {
+        fail(`tabela "${col.table}" não existe (colunas ${col.select})`);
+        missing++;
+      } else ok(`colunas ${col.table} (${col.select})`);
+    } catch (e) {
+      fail(`colunas ${col.table} — erro de rede: ${e.message}`);
+    }
+  }
   if (missing) {
-    console.log(`\n  ${C.yellow}→ Aplique a migration: supabase/migrations/20260101000000_q7_init.sql${C.reset}`);
+    console.log(`\n  ${C.yellow}→ Aplique as migrations em supabase/migrations/ (\`supabase db push\`)${C.reset}`);
   }
 
   // --- 4. Edge Functions --------------------------------------------------
-  head("4. Edge Functions (5)");
+  head("4. Edge Functions (6)");
   for (const fn of FUNCTIONS) {
     try {
       const r = await get(`${url}/functions/v1/${fn.name}`, {
@@ -144,7 +167,9 @@ async function main() {
         body: JSON.stringify({ event: "ping" }),
       });
       if (r.status === 404) fail(`função "${fn.name}" não foi deployada`);
-      else if (r.status === 401 && fn.public) {
+      else if (r.status === 401 && fn.public && fn.secretOk) {
+        ok(`função "${fn.name}" (HTTP 401 sem secret de cron — esperado)`);
+      } else if (r.status === 401 && fn.public) {
         fail(`função "${fn.name}" exige JWT — refaça o deploy com --no-verify-jwt`);
       } else ok(`função "${fn.name}" (HTTP ${r.status})`);
     } catch (e) {
@@ -160,7 +185,7 @@ function report() {
   if (failures.length === 0) {
     console.log(`${C.green}${C.bold}✓ Tudo certo.${C.reset} Backend pronto.`);
     if (warnings.length) console.log(`${C.yellow}  ${warnings.length} aviso(s) acima.${C.reset}`);
-    console.log(`${C.dim}  Falta o cron dos follow-ups? Confira em: SELECT * FROM cron.job;${C.reset}`);
+    console.log(`${C.dim}  Falta o cron? Confira 2 jobs em: SELECT jobname FROM cron.job;${C.reset}`);
     process.exit(0);
   }
   console.log(`${C.red}${C.bold}✗ ${failures.length} problema(s):${C.reset}`);

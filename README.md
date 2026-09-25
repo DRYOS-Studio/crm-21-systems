@@ -41,13 +41,13 @@ Prefere fazer na mão? O passo a passo completo está em **[INSTALL.md](INSTALL.
 |--------|-----------|-----------|
 | Frontend | Vite + React 18 + TypeScript + shadcn/ui + Tailwind | **Vercel** (grátis) |
 | Banco + Auth + Realtime | Postgres + Supabase Auth | **Supabase** (grátis) |
-| Backend (webhook, cron, testes) | 5 Edge Functions (Deno) | **Supabase** |
+| Backend (webhook, cron, testes) | 6 Edge Functions (Deno) | **Supabase** |
 | WhatsApp | Uazapi (gateway) | conta própria |
 | IA | Groq API (`llama-3.3-70b-versatile`) | conta própria |
 
 > **Importante:** o webhook do WhatsApp roda no **Supabase**, não na Vercel. A Vercel
-> serve apenas o site. A Uazapi aponta para
-> `https://<seu-ref>.supabase.co/functions/v1/whatsapp-webhook`.
+> serve apenas o site. A URL da Uazapi **já inclui o secret** (`?s=`) — copie pelo
+> app, em Configurações.
 
 ## Contas necessárias (todas com plano grátis)
 

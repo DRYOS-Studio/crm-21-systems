@@ -3,25 +3,24 @@
 **Prompt pra nova sessão (cwd = repo Q7):**
 
 > `/dryos-pipeline` Fase 4 da feature `.specs/features/ai-brain-outreach/`.
-> T1–T24, T26 e T28 feitos (T3 ainda parcial). Próxima: **T27**
-> (RPCs `outreach_reserve` / mark / release / day_stats) → T29 → T30.
+> T1–T24, T26–T36 feitos (T3 ainda parcial). Próxima: **T37**
+> (AC-B24, revisão humana) ou T38 (rollout, depois do release gate).
+> T25 é PR separado.
 
 ## Estado
 
-- **Fase D** T18–T24 FEITOS.
-- **Fase E** T26 + T28 FEITOS. T27/T29/T30 pendentes.
+- **Fase D–F** T18–T35 FEITOS.
+- **Fase G** T36 FEITO. T37 (M) e T38 (rollout) pendentes.
 - T25 = PR separado. T3 parcial (`?s=` Uazapi).
 
-## Commits desta sessão
+## Acabou de fechar
 
-| Repo | Hash | O quê |
-|---|---|---|
-| Q7 | `dbc78e7` | T20–T23 |
-| Extrator | `53bd790` | T24 |
-| Q7 | `7a5f738` | T28 |
-| Q7 | T26 neste commit | schema outreach |
+T36: README/CLAUDE/INSTALL/TESTING + `check-setup.mjs` alinhados
+(6 functions, migrations várias, webhook só pelo app com `?s=`).
+`types.ts` regenerado.
 
 ## Próximo
 
-**T27** — RPCs na mesma `20260925030000_outreach.sql` + `tests/db/outreach_rpcs.test.mjs`.
-Não publicado (sem `git push`).
+**T37** (M) — revisão humana AC-B24: ≥10 transcrições de toque 1.
+**T38** — rollout depois do release gate Fase 4.5.
+T25 é PR separado. T3 parcial (`?s=` Uazapi).

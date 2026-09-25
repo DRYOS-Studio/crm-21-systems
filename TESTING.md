@@ -10,16 +10,13 @@ Guia completo para validar a aplicação **depois** do deploy no Vercel (fronten
 ## 1. Pré-requisitos
 
 - [ ] Frontend publicado no Vercel — `https://<VERCEL_URL>` responde 200.
-- [ ] Projeto Supabase próprio criado, com a migration
-      `supabase/migrations/20260101000000_q7_init.sql` aplicada.
-- [ ] Edge Functions deployadas: `whatsapp-webhook`, `run-followups`, `manage-instance`, `test-ai-connection`, `test-uazapi`.
-- [ ] `verify_jwt = false` para `whatsapp-webhook` **e** `run-followups` (em `supabase/config.toml`).
-- [ ] Cron configurado via `supabase/setup/cron.sql` (executa `run-followups` a cada minuto).
+- [ ] Projeto Supabase próprio criado, com **todas** as migrations em `supabase/migrations/` aplicadas.
+- [ ] Edge Functions deployadas: `whatsapp-webhook`, `run-followups`, `run-outreach`, `manage-instance`, `test-ai-connection`, `test-uazapi`.
+- [ ] `verify_jwt = false` para `whatsapp-webhook`, `run-followups` e `run-outreach` (em `supabase/config.toml`).
+- [ ] Cron configurado via `supabase/setup/cron.sql` (follow-ups e disparo a cada minuto).
 - [ ] `npm run check` passando sem erros.
-- [ ] Conta na **Uazapi** com: Server URL, Admin Token, Instância criada, Instance Token e Webhook apontando para:
-  ```
-  https://<REF>.supabase.co/functions/v1/whatsapp-webhook
-  ```
+- [ ] Conta na **Uazapi** com: Server URL, Admin Token, Instância criada, Instance Token e webhook
+      **copiado pelo app** (a URL já inclui `?s=`).
 - [ ] Chave da **Groq** válida (`gsk_...`).
 - [ ] Dois números de WhatsApp: um **Cliente** (envia mensagens de teste) e um **Atendente** (número conectado à Uazapi).
 
@@ -43,18 +40,14 @@ No Vercel → Settings → Environment Variables, confirmar:
 - [ ] `VITE_SUPABASE_PROJECT_ID` = `<REF>`
 
 ### 2.3 Edge Function pública (webhook)
-```bash
-curl -X POST https://<REF>.supabase.co/functions/v1/whatsapp-webhook \
-  -H "Content-Type: application/json" \
-  -d '{"event":"ping"}'
-# esperado: HTTP 200 com corpo {"ok":true,...}
-```
+Copie a URL pelo app (já vem com `?s=`) e faça POST com `{"event":"ping"}`.
+Esperado: HTTP 200. 401 = JWT ligado **ou** `s` ausente/errado.
 
 ### 2.4 Cron ativo
 No SQL Editor do Supabase:
 ```sql
-select jobid, schedule, command, active from cron.job;
--- esperado: 1 linha com schedule '* * * * *' apontando para run-followups
+select jobid, jobname, schedule, command, active from cron.job;
+-- esperado: 2 linhas '* * * * *' (run-followups-every-minute e run-outreach-every-minute)
 ```
 
 ### 2.5 Proteção HIBP

@@ -44,6 +44,14 @@ export type Database = {
           followup_max_per_conversation: number
           groq_api_key: string | null
           groq_model: string
+          outreach_daily_cap: number
+          outreach_enabled: boolean
+          outreach_instance_id: string | null
+          outreach_last_tick_at: string | null
+          outreach_paused_reason: string | null
+          outreach_ramp_start: string | null
+          outreach_saturday_morning: boolean
+          outreach_weekdays_only: boolean
           owner_notify_phone: string | null
           system_prompt: string
           updated_at: string
@@ -58,6 +66,14 @@ export type Database = {
           followup_max_per_conversation?: number
           groq_api_key?: string | null
           groq_model?: string
+          outreach_daily_cap?: number
+          outreach_enabled?: boolean
+          outreach_instance_id?: string | null
+          outreach_last_tick_at?: string | null
+          outreach_paused_reason?: string | null
+          outreach_ramp_start?: string | null
+          outreach_saturday_morning?: boolean
+          outreach_weekdays_only?: boolean
           owner_notify_phone?: string | null
           system_prompt?: string
           updated_at?: string
@@ -72,12 +88,28 @@ export type Database = {
           followup_max_per_conversation?: number
           groq_api_key?: string | null
           groq_model?: string
+          outreach_daily_cap?: number
+          outreach_enabled?: boolean
+          outreach_instance_id?: string | null
+          outreach_last_tick_at?: string | null
+          outreach_paused_reason?: string | null
+          outreach_ramp_start?: string | null
+          outreach_saturday_morning?: boolean
+          outreach_weekdays_only?: boolean
           owner_notify_phone?: string | null
           system_prompt?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agent_configs_outreach_instance_id_fkey"
+            columns: ["outreach_instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_settings: {
         Row: {
@@ -270,6 +302,83 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          address: string | null
+          category: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          google_url: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string | null
+          phone: string | null
+          phone_normalized: string | null
+          rating: number | null
+          raw: Json | null
+          reviews_count: number | null
+          search_id: string
+          state: string | null
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          google_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
+          phone?: string | null
+          phone_normalized?: string | null
+          rating?: number | null
+          raw?: Json | null
+          reviews_count?: number | null
+          search_id: string
+          state?: string | null
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          google_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
+          phone?: string | null
+          phone_normalized?: string | null
+          rating?: number | null
+          raw?: Json | null
+          reviews_count?: number | null
+          search_id?: string
+          state?: string | null
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -310,6 +419,68 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_openers: {
+        Row: {
+          active: boolean
+          id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      outreach_sends: {
+        Row: {
+          cadencia_aplicada: boolean
+          id: string
+          prospect_id: string
+          reserved_at: string
+          sent_at: string | null
+          status: string
+          toque: number
+          user_id: string
+        }
+        Insert: {
+          cadencia_aplicada?: boolean
+          id?: string
+          prospect_id: string
+          reserved_at?: string
+          sent_at?: string | null
+          status: string
+          toque: number
+          user_id: string
+        }
+        Update: {
+          cadencia_aplicada?: boolean
+          id?: string
+          prospect_id?: string
+          reserved_at?: string
+          sent_at?: string | null
+          status?: string
+          toque?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_sends_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
             referencedColumns: ["id"]
           },
         ]
@@ -377,6 +548,139 @@ export type Database = {
         }
         Relationships: []
       }
+      prospects: {
+        Row: {
+          city: string | null
+          company: string | null
+          conversation_id: string | null
+          created_at: string
+          estado: string
+          extra: Json
+          id: string
+          name: string | null
+          optout: boolean
+          origem: string | null
+          phone: string
+          proximo_toque: string | null
+          tentativas: number
+          ultima_falha_em: string | null
+          ultima_falha_motivo: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          company?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          estado?: string
+          extra?: Json
+          id?: string
+          name?: string | null
+          optout?: boolean
+          origem?: string | null
+          phone: string
+          proximo_toque?: string | null
+          tentativas?: number
+          ultima_falha_em?: string | null
+          ultima_falha_motivo?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          company?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          estado?: string
+          extra?: Json
+          id?: string
+          name?: string | null
+          optout?: boolean
+          origem?: string | null
+          phone?: string
+          proximo_toque?: string | null
+          tentativas?: number
+          ultima_falha_em?: string | null
+          ultima_falha_motivo?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      searches: {
+        Row: {
+          apify_run_id: string | null
+          cost_credits: number | null
+          created_at: string
+          duplicates_skipped: number
+          error_message: string | null
+          filters: Json
+          id: string
+          location: string | null
+          max_results: number
+          niche: string | null
+          parent_search_id: string | null
+          results_count: number
+          search_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apify_run_id?: string | null
+          cost_credits?: number | null
+          created_at?: string
+          duplicates_skipped?: number
+          error_message?: string | null
+          filters?: Json
+          id?: string
+          location?: string | null
+          max_results?: number
+          niche?: string | null
+          parent_search_id?: string | null
+          results_count?: number
+          search_type?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apify_run_id?: string | null
+          cost_credits?: number | null
+          created_at?: string
+          duplicates_skipped?: number
+          error_message?: string | null
+          filters?: Json
+          id?: string
+          location?: string | null
+          max_results?: number
+          niche?: string | null
+          parent_search_id?: string | null
+          results_count?: number
+          search_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "searches_parent_search_id_fkey"
+            columns: ["parent_search_id"]
+            isOneToOne: false
+            referencedRelation: "searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -391,6 +695,30 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          apify_token: string | null
+          apify_validated_at: string | null
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apify_token?: string | null
+          apify_validated_at?: string | null
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apify_token?: string | null
+          apify_validated_at?: string | null
+          created_at?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -498,6 +826,44 @@ export type Database = {
         Returns: boolean
       }
       my_webhook_secret: { Args: { p_instance: string }; Returns: string }
+      outreach_day_stats: {
+        Args: { p_user: string }
+        Returns: {
+          enviados: number
+          responderam: number
+        }[]
+      }
+      outreach_mark_sent: {
+        Args: {
+          p_proximo_toque: string
+          p_send: string
+          p_tentativas: number
+          p_user: string
+        }
+        Returns: undefined
+      }
+      outreach_mark_uncertain: {
+        Args: {
+          p_proximo_toque: string
+          p_send: string
+          p_tentativas: number
+          p_user: string
+        }
+        Returns: undefined
+      }
+      outreach_release: {
+        Args: { p_motivo: string; p_send: string; p_user: string }
+        Returns: undefined
+      }
+      outreach_reserve: {
+        Args: { p_intervalo: string; p_teto: number; p_user: string }
+        Returns: {
+          conversation: Json
+          prospect: Json
+          send_id: string
+        }[]
+      }
+      save_openers: { Args: { p_texts: string[] }; Returns: undefined }
       seed_pipeline_stages: { Args: { _user_id: string }; Returns: undefined }
       webhook_confirm: { Args: { p_instance: string }; Returns: undefined }
       webhook_is_confirmed: { Args: { p_instance: string }; Returns: boolean }

@@ -41,9 +41,9 @@ confirme em que ponto da instalação ele está, com `npm run check`.
    (`DROP`, `DELETE`, `TRUNCATE`, apagar usuário, resetar projeto). Diga exatamente
    o que será perdido.
 
-5. **Só existe um arquivo de schema:** `supabase/migrations/20260101000000_q7_init.sql`.
-   Não crie schema em outro lugar, não invente SQL paralelo. Se precisar alterar o
-   banco, crie uma **nova** migration com timestamp posterior.
+5. **O schema mora só em `supabase/migrations/`.** Vários arquivos, um timestamp
+   cada. Não invente SQL paralelo. Se precisar alterar o banco, crie uma **nova**
+   migration com timestamp posterior.
 
 6. **A migration é idempotente.** Se der erro no meio, corrija a causa e rode de novo.
    Nunca recomende "apague o projeto e comece de novo" como primeira solução.
@@ -60,12 +60,12 @@ próprio usuário, sem plataforma proprietária no meio.
 |--------|-----------|-----------|
 | Frontend | Vite + React 18 + TypeScript + shadcn/ui + Tailwind | Vercel |
 | Banco + Auth + Realtime | Postgres + Supabase Auth (RLS) | Supabase |
-| Backend | 5 Edge Functions (Deno) | Supabase |
+| Backend | 6 Edge Functions (Deno) | Supabase |
 | WhatsApp | Uazapi (gateway) | conta do usuário |
 | IA | Groq (`llama-3.3-70b-versatile`) | conta do usuário |
 
 **O webhook do WhatsApp roda no Supabase, não na Vercel.** A Vercel só serve o site
-estático. A Uazapi aponta para `https://<REF>.supabase.co/functions/v1/whatsapp-webhook`.
+estático. A URL da Uazapi inclui o secret (`?s=`) — **copie pelo app** (Configurações).
 
 Funcionalidades: atendimento automático por IA, *human takeover* (se o humano responde,
 a IA pausa naquela conversa), funil Kanban arrastável, follow-ups manuais e automáticos
@@ -159,57 +159,56 @@ seguir (`list_tables` no MCP, ou `supabase projects list` na CLI).
 
 ### Etapa 3 — Banco de dados
 
-Aplique `supabase/migrations/20260101000000_q7_init.sql`.
+Aplique **todas** as migrations em `supabase/migrations/` (init + brain + telefone + outreach).
 
-- **MCP:** leia o arquivo e chame `apply_migration({ name: "q7_init", query: <conteúdo> })`
-- **CLI:** `supabase db push`
-- **Manual:** colar o arquivo inteiro no SQL Editor → Run
+- **CLI:** `supabase db push` (aplica a pasta inteira)
+- **MCP:** `apply_migration` para cada arquivo, em ordem de timestamp
+- **Manual:** colar cada arquivo no SQL Editor → Run, do mais antigo ao mais novo
 
 Depois, **habilite as extensões** em Database → Extensions do painel: `pg_cron` e `pg_net`.
 A migration tenta habilitar sozinha, mas se o Postgres recusar por permissão ela emite
-um `NOTICE` e segue — o CRM funciona, só os follow-ups automáticos ficam parados.
+um `NOTICE` e segue — o CRM funciona, só os crons ficam parados.
 
-**Verifique** que as 9 tabelas existem: `profiles`, `user_roles`, `whatsapp_instances`,
-`pipeline_stages`, `conversations`, `messages`, `agent_configs`, `followups`, `app_settings`.
+**Verifique** as tabelas: as 9 do init (`profiles`, `user_roles`, `whatsapp_instances`,
+`pipeline_stages`, `conversations`, `messages`, `agent_configs`, `followups`, `app_settings`)
+mais `knowledge_base`, `prospects`, `outreach_sends`, `outreach_openers`.
 
 Rode `get_advisors` (MCP) se disponível e reporte qualquer alerta de segurança.
 
 ### Etapa 4 — Edge Functions
 
-São 5. Duas recebem chamadas externas **sem login** e precisam de `verify_jwt = false`:
+São 6. Três recebem chamadas externas **sem login** e precisam de `verify_jwt = false`:
 
 ```bash
 supabase functions deploy whatsapp-webhook  --no-verify-jwt --project-ref <REF>
 supabase functions deploy run-followups     --no-verify-jwt --project-ref <REF>
+supabase functions deploy run-outreach      --no-verify-jwt --project-ref <REF>
 supabase functions deploy manage-instance    --project-ref <REF>
 supabase functions deploy test-ai-connection --project-ref <REF>
 supabase functions deploy test-uazapi        --project-ref <REF>
 ```
 
-Via MCP, o equivalente é `deploy_edge_function` com `verify_jwt: false` para as duas
-primeiras e `true` para as outras três — incluindo os arquivos de `supabase/functions/_shared/`
+Via MCP, o equivalente é `deploy_edge_function` com `verify_jwt: false` para as três
+primeiras e `true` para as outras — incluindo os arquivos de `supabase/functions/_shared/`
 no array `files`.
 
 **Não configure secrets.** As funções recebem `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`
 automaticamente do Supabase, e leem as chaves de Groq e Uazapi direto do banco.
 
-Confirme que o webhook está público:
+Confirme o webhook **copiando a URL pelo app** (já vem com `?s=`). Sem o secret
+o modo novo responde 401 — não leia 401 só como “faltou `--no-verify-jwt`”.
 
-```bash
-curl -X POST https://<REF>.supabase.co/functions/v1/whatsapp-webhook \
-  -H "Content-Type: application/json" -d '{"event":"ping"}'
-# esperado: HTTP 200. Se vier 401, o deploy foi sem --no-verify-jwt.
-```
-
-### Etapa 5 — Cron dos follow-ups
+### Etapa 5 — Cron (follow-ups + disparo)
 
 1. Abra `supabase/setup/cron.sql`
 2. Substitua `<PROJECT_REF>` e `<ANON_KEY>` pelos valores reais
 3. Execute (SQL Editor, `execute_sql` do MCP, ou CLI)
 
+O job de `run-outreach` lê `outreach_cron_secret` por subselect — não cole o secret no SQL.
+
 ```sql
 SELECT jobid, jobname, schedule, active FROM cron.job;
--- esperado: 1 linha, '* * * * *', active = true
+-- esperado: 2 linhas (* * * * *): run-followups-every-minute e run-outreach-every-minute
 ```
 
 Esse cron roda a cada minuto e, de quebra, mantém o projeto Free ativo (projetos Free
@@ -226,7 +225,7 @@ cp .env.example .env      # Windows: copy .env.example .env
 Preencha as 3 variáveis, depois:
 
 ```bash
-npm run check   # valida .env, conexão, 9 tabelas e 5 functions
+npm run check   # valida .env, conexão, tabelas/colunas e 6 functions
 npm run dev     # http://localhost:8080
 ```
 
@@ -300,9 +299,8 @@ curl -I https://<seu-app>.vercel.app   # esperado: HTTP/2 200
    - **Ative o agente** (toggle ON) — sem isso a IA não responde
 3. Ainda nas configurações, **crie/conecte a instância** da Uazapi e escaneie o QR Code
    com o WhatsApp do número de atendimento.
-4. Aponte o webhook da instância para:
-   `https://<REF>.supabase.co/functions/v1/whatsapp-webhook`
-   (pelo botão dentro do app ou pelo painel da Uazapi). Eventos: `messages` e `connection`.
+4. Aponte o webhook da instância **copiando a URL pelo app** (Configurações;
+   já inclui `?s=`). Eventos: `messages` e `connection`.
 
 ### Etapa 10 — Fechar os cadastros
 
@@ -337,8 +335,8 @@ Para a bateria completa (takeover, follow-ups, Kanban, RLS, resiliência), use
 | Login dá erro | anon key de outro projeto | Confira URL e key do **mesmo** projeto |
 | Cadastrou mas não é admin, sem Kanban | Cadastro feito antes da migration | Authentication → Users → apagar o usuário → cadastrar de novo |
 | `404` ao dar refresh em `/kanban` | Fallback de SPA | O `vercel.json` já resolve; confirme que subiu para o repositório |
-| Webhook retorna 401 | Deploy sem `--no-verify-jwt` | Refaça o deploy de `whatsapp-webhook` com a flag |
-| WhatsApp não aparece no painel | Webhook apontando errado | Deve ser `https://<REF>.supabase.co/functions/v1/whatsapp-webhook`, não a Vercel |
+| Webhook retorna 401 | JWT ligado **ou** URL sem `?s=` | Copie a URL pelo app; se ainda 401, redeploy com `--no-verify-jwt` |
+| WhatsApp não aparece no painel | Webhook apontando errado | Tem que ser a URL do app (Supabase + `?s=`), não a Vercel |
 | IA não responde | Groq não configurada ou agente OFF | Configurações → cole a key e ative o toggle |
 | Follow-ups não disparam | Cron ou extensões | Habilite `pg_cron` + `pg_net` e rode `supabase/setup/cron.sql` |
 | `cron.job` não existe | `pg_cron` não habilitado | Database → Extensions → ativar `pg_cron` |
@@ -355,7 +353,7 @@ Para logs das Edge Functions: `get_logs` (MCP) ou Supabase → Edge Functions �
 npm install       # dependências
 npm run dev       # dev server em http://localhost:8080
 npm run build     # build de produção em dist/
-npm run check     # verifica .env, conexão, 9 tabelas e 5 edge functions
+npm run check     # verifica .env, conexão, tabelas/colunas e 6 edge functions
 npm run lint      # eslint
 ```
 
@@ -379,15 +377,15 @@ npm run check -- https://<REF>.supabase.co <ANON_KEY>
 ├── src/
 │   ├── lib/env.ts             # valida as variáveis antes de criar o client
 │   ├── pages/SetupRequired.tsx# tela de diagnóstico quando falta configuração
-│   ├── pages/                 # Login, Conversas, Kanban, admin/UazapiConfig
-│   ├── components/            # ConfigDrawer, rotas protegidas, ui/ (shadcn)
+│   ├── pages/                 # Login, Conversas, Kanban, Prospeccao, admin/UazapiConfig
+│   ├── components/            # ConfigDrawer, prospeccao/, rotas protegidas, ui/
 │   ├── contexts/AuthContext   # sessão do Supabase Auth
 │   └── integrations/supabase/ # client + tipos gerados
 └── supabase/
-    ├── migrations/            # ÚNICA fonte de verdade do banco (1 arquivo)
-    ├── setup/cron.sql         # agendamento dos follow-ups (tem placeholders)
+    ├── migrations/            # fonte de verdade do banco (vários timestamps)
+    ├── setup/cron.sql         # jobs de follow-ups e run-outreach (placeholders)
     ├── config.toml            # verify_jwt das funções
-    └── functions/             # 5 edge functions + _shared/
+    └── functions/             # 6 edge functions + _shared/
 ```
 
 ### Notas sobre o código
