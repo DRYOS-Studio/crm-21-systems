@@ -458,6 +458,12 @@ export default function Conversas() {
             >
               Kanban
             </Link>
+            <Link
+              to="/prospeccao"
+              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
+            >
+              Prospecção
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-1">

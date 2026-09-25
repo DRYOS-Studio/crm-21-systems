@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import SsoBridge from "./pages/SsoBridge";
 import Conversas from "./pages/Conversas";
 import Kanban from "./pages/Kanban";
+import Prospeccao from "./pages/Prospeccao";
 import UazapiConfig from "./pages/admin/UazapiConfig";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/sso" element={<SsoBridge />} />
             <Route path="/" element={<ProtectedRoute><Conversas /></ProtectedRoute>} />
             <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+            <Route path="/prospeccao" element={<ProtectedRoute><Prospeccao /></ProtectedRoute>} />
             <Route path="/admin/uazapi" element={<ProtectedRoute><AdminRoute><UazapiConfig /></AdminRoute></ProtectedRoute>} />
             <Route path="/conversas" element={<Navigate to="/" replace />} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
