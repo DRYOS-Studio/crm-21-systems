@@ -19,7 +19,8 @@ import {
   useDroppable,
   useDraggable,
 } from "@dnd-kit/core";
-import { Bot, Clock, LogOut, Plus, Settings, Trash2, User, Pencil, Building2, Columns3 } from "lucide-react";
+import { Bot, Clock, LogOut, Plus, Settings, Trash2, User, Pencil, Building2, Columns3, ArrowRightLeft } from "lucide-react";
+import { TransferConversationDialog } from "@/components/org/TransferConversationDialog";
 import { FunnelStagesDialog } from "@/components/crm/FunnelStagesDialog";
 import { nextFunnelColor } from "@/lib/funnel-colors";
 import { leadPerson, leadTitle } from "@/components/lead/LeadContextPanel";
@@ -68,7 +69,17 @@ type Conversation = {
   loss_reason_note: string | null;
 };
 
-function Card({ c, tags, ownerLabel }: { c: Conversation; tags?: LeadTag[]; ownerLabel?: string | null }) {
+function Card({
+  c,
+  tags,
+  ownerLabel,
+  onTransfer,
+}: {
+  c: Conversation;
+  tags?: LeadTag[];
+  ownerLabel?: string | null;
+  onTransfer?: (c: Conversation) => void;
+}) {
   const navigate = useNavigate();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.id });
   return (
@@ -86,9 +97,25 @@ function Card({ c, tags, ownerLabel }: { c: Conversation; tags?: LeadTag[]; owne
           {c.contact_company && <Building2 className="w-3 h-3 shrink-0 text-muted-foreground" />}
           <span className="truncate">{leadTitle(c)}</span>
         </div>
-        <Badge variant={c.ai_enabled ? "default" : "secondary"} className="text-[10px] shrink-0">
-          {c.ai_enabled ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          {onTransfer && (
+            <button
+              type="button"
+              title="Transferir conversa"
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTransfer(c);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <Badge variant={c.ai_enabled ? "default" : "secondary"} className="text-[10px] shrink-0">
+            {c.ai_enabled ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+          </Badge>
+        </div>
       </div>
       {leadPerson(c) && <div className="text-xs text-foreground truncate">{leadPerson(c)}</div>}
       {c.contact_city && <div className="text-xs text-muted-foreground truncate">{c.contact_city}</div>}
@@ -113,6 +140,7 @@ function Column({
   cards,
   tagsByConv,
   ownerOf,
+  onTransfer,
   onRename,
   onDelete,
 }: {
@@ -120,6 +148,7 @@ function Column({
   cards: Conversation[];
   tagsByConv: Record<string, LeadTag[]>;
   ownerOf?: (c: Conversation) => string | null;
+  onTransfer?: (c: Conversation) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -183,7 +212,7 @@ function Column({
         }`}
       >
         {cards.map((c) => (
-          <Card key={c.id} c={c} tags={tagsByConv[c.id]} ownerLabel={ownerOf?.(c)} />
+          <Card key={c.id} c={c} tags={tagsByConv[c.id]} ownerLabel={ownerOf?.(c)} onTransfer={onTransfer} />
         ))}
       </div>
     </div>
@@ -208,6 +237,7 @@ export default function Kanban() {
   const { activeReasons } = useLossReasons();
   const [pendingLoss, setPendingLoss] = useState<{ convId: string; stageId: string } | null>(null);
   const [savingLoss, setSavingLoss] = useState(false);
+  const [transferConv, setTransferConv] = useState<Conversation | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const visibleConversations = conversations.filter((c) => {
     if (tagFilter !== "all" && !(tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter)) return false;
@@ -231,6 +261,25 @@ export default function Kanban() {
     const m = kanbanMembers.find((x) => x.user_id === c.user_id);
     if (m?.user_id === user?.id) return "Você";
     return m?.name ?? "Conta";
+  };
+
+  const canTransfer = kanbanMembers.length > 1;
+  const onTransferCard = canTransfer ? (c: Conversation) => setTransferConv(c) : undefined;
+
+  const onConversationTransferred = (payload: {
+    conversationId: string;
+    userId: string;
+    stageId?: string | null;
+  }) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === payload.conversationId
+          ? { ...c, user_id: payload.userId, stage_id: payload.stageId ?? c.stage_id }
+          : c,
+      ),
+    );
+    setTransferConv(null);
+    toast({ title: "Conversa transferida" });
   };
 
   const loadStages = async () => {
@@ -577,6 +626,7 @@ export default function Kanban() {
                 cards={visibleConversations.filter((c) => c.stage_id === s.id)}
                 tagsByConv={tagsByConv}
                 ownerOf={ownerOf}
+                onTransfer={onTransferCard}
                 onRename={renameStage}
                 onDelete={requestDeleteStage}
               />
@@ -591,10 +641,27 @@ export default function Kanban() {
             )}
           </div>
           <DragOverlay>
-            {activeCard && <Card c={activeCard} tags={tagsByConv[activeCard.id]} ownerLabel={ownerOf(activeCard)} />}
+            {activeCard && (
+              <Card
+                c={activeCard}
+                tags={tagsByConv[activeCard.id]}
+                ownerLabel={ownerOf(activeCard)}
+                onTransfer={onTransferCard}
+              />
+            )}
           </DragOverlay>
         </DndContext>
       </div>
+      <TransferConversationDialog
+        open={!!transferConv}
+        onOpenChange={(o) => !o && setTransferConv(null)}
+        conversationId={transferConv?.id ?? null}
+        ownerUserId={transferConv?.user_id ?? null}
+        leadLabel={transferConv ? leadTitle(transferConv) : undefined}
+        members={kanbanMembers}
+        currentUserId={user?.id}
+        onTransferred={onConversationTransferred}
+      />
       <AlertDialog open={!!stageToDelete} onOpenChange={(o) => !o && setStageToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

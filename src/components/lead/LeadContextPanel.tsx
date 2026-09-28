@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { LeadTagEditor } from "@/components/lead/LeadTagEditor";
 import type { LeadTag } from "@/lib/lead-tags";
+import { ConversationOwnerActions } from "@/components/org/ConversationOwnerActions";
+import type { OrgMember } from "@/hooks/useOrgMembers";
 
 export type LeadConversation = {
   id: string;
@@ -67,10 +69,18 @@ export function LeadContextBody({
   conversation,
   tags,
   lossLabel,
+  ownerUserId,
+  orgMembers,
+  currentUserId,
+  onTransfer,
 }: {
   conversation: LeadConversation;
   tags?: TagTools;
   lossLabel?: string | null;
+  ownerUserId?: string;
+  orgMembers?: OrgMember[];
+  currentUserId?: string | null;
+  onTransfer?: () => void;
 }) {
   const { user } = useAuth();
   const [prospect, setProspect] = useState<ProspectRow | null>(null);
@@ -135,6 +145,18 @@ export function LeadContextBody({
         <>
           <Separator />
           <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />
+        </>
+      )}
+
+      {ownerUserId && orgMembers && orgMembers.length > 1 && onTransfer && (
+        <>
+          <Separator />
+          <ConversationOwnerActions
+            ownerUserId={ownerUserId}
+            members={orgMembers}
+            currentUserId={currentUserId}
+            onTransfer={onTransfer}
+          />
         </>
       )}
 

@@ -1030,6 +1030,10 @@ export type Database = {
       }
       save_openers: { Args: { p_texts: string[] }; Returns: undefined }
       seed_pipeline_stages: { Args: { _user_id: string }; Returns: undefined }
+      transfer_conversation: {
+        Args: { p_conversation_id: string; p_to_user: string }
+        Returns: Json
+      }
       webhook_confirm: { Args: { p_instance: string }; Returns: undefined }
       webhook_is_confirmed: { Args: { p_instance: string }; Returns: boolean }
       webhook_resolve: {

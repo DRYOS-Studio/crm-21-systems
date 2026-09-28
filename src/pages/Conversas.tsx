@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Bot, User, MessageSquare, Settings, LogOut, Sparkles, Clock, Trello, X, PanelRight, Search } from "lucide-react";
+import { Bot, User, MessageSquare, Settings, LogOut, Sparkles, Clock, Trello, X, PanelRight, Search, ArrowRightLeft } from "lucide-react";
 import {
   type LastSnap,
   ehEmContato,
@@ -67,6 +67,7 @@ import { useLossReasons } from "@/hooks/useLossReasons";
 import { lossReasonLabel } from "@/lib/loss-reasons";
 import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
+import { TransferConversationDialog } from "@/components/org/TransferConversationDialog";
 import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
 import { MessageMedia } from "@/components/inbox/MessageMedia";
 import { InboxContactAvatar } from "@/components/inbox/InboxContactAvatar";
@@ -192,6 +193,7 @@ export default function Conversas() {
   const { activeReasons, reasonById } = useLossReasons();
   const [pendingLossStage, setPendingLossStage] = useState<string | null>(null);
   const [savingLoss, setSavingLoss] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const emContatoStageIds = useMemo(
     () => new Set(stages.filter((s) => ehEmContato(s.name)).map((s) => s.id)),
@@ -577,6 +579,31 @@ export default function Conversas() {
       toast({ title: "Atendimento encerrado", description: "Lead marcado como perdido." });
     }
   };
+
+  const onConversationTransferred = (payload: {
+    conversationId: string;
+    userId: string;
+    stageId?: string | null;
+  }) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === payload.conversationId
+          ? { ...c, user_id: payload.userId, stage_id: payload.stageId ?? c.stage_id }
+          : c,
+      ),
+    );
+    toast({ title: "Conversa transferida" });
+  };
+
+  const leadContextOwnerProps =
+    active && orgMembers.length > 1
+      ? {
+          ownerUserId: active.user_id,
+          orgMembers,
+          currentUserId: user?.id,
+          onTransfer: () => setTransferOpen(true),
+        }
+      : {};
 
   const changeStage = (stageId: string) => {
     if (!active || active.stage_id === stageId) return;
@@ -1058,6 +1085,17 @@ export default function Conversas() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
+                  {orgMembers.length > 1 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5 hidden sm:inline-flex"
+                      onClick={() => setTransferOpen(true)}
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5" />
+                      Transferir
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1341,6 +1379,7 @@ export default function Conversas() {
             <LeadContextBody
               conversation={active}
               lossLabel={activeLossLabel}
+              {...leadContextOwnerProps}
               tags={{
                 catalog: tagCatalog,
                 assigned: tagsByConv[active.id] ?? [],
@@ -1363,6 +1402,7 @@ export default function Conversas() {
               <LeadContextBody
                 conversation={active}
                 lossLabel={activeLossLabel}
+                {...leadContextOwnerProps}
                 tags={{
                   catalog: tagCatalog,
                   assigned: tagsByConv[active.id] ?? [],
@@ -1375,6 +1415,16 @@ export default function Conversas() {
           )}
         </SheetContent>
       </Sheet>
+      <TransferConversationDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        conversationId={active?.id ?? null}
+        ownerUserId={active?.user_id ?? null}
+        leadLabel={active ? leadTitle(active) : undefined}
+        members={orgMembers}
+        currentUserId={user?.id}
+        onTransferred={onConversationTransferred}
+      />
       <LossReasonDialog
         open={!!pendingLossStage}
         onOpenChange={(o) => !o && !savingLoss && setPendingLossStage(null)}
