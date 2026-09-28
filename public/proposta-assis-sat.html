@@ -834,16 +834,40 @@
       letter-spacing: 0.08em;
     }
 
-    /* Investment / Pricing Card */
-    .pricing-card {
+    /* Investment / Pricing Grid (2 Plans: Cloud Managed vs On-Premise) */
+    .pricing-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-top: 36px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 960px) {
+      .pricing-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pricing-card-col {
       background: var(--card);
-      border: 2px solid var(--primary);
       border-radius: var(--radius-lg);
-      padding: 40px;
+      padding: 38px 28px;
       box-shadow: var(--shadow-card);
       position: relative;
-      max-width: 780px;
-      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .pricing-card-col.cloud-plan {
+      border: 2px solid var(--primary);
+    }
+
+    .pricing-card-col.onpremise-plan {
+      border: 2px solid #D97706;
+      background: #FFFDF9;
     }
 
     .pricing-badge {
@@ -851,25 +875,26 @@
       top: -14px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--primary);
-      color: var(--primary-fg);
-      padding: 6px 16px;
+      color: #FFF;
+      padding: 6px 18px;
       border-radius: 9999px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
 
     .pricing-header {
       text-align: center;
-      margin-bottom: 32px;
-      padding-bottom: 24px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
       border-bottom: 1px solid var(--card-border);
     }
 
     .pricing-name {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--primary);
       margin-bottom: 6px;
@@ -884,44 +909,40 @@
     }
 
     .pricing-currency {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
       color: var(--muted);
     }
 
     .pricing-val {
       font-family: 'Funnel Display', sans-serif;
-      font-size: 56px;
+      font-size: 46px;
       font-weight: 800;
       color: var(--fg);
       line-height: 1;
     }
 
     .pricing-period {
-      font-size: 16px;
+      font-size: 15px;
       color: var(--muted);
       font-weight: 500;
     }
 
-    .pricing-features-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-
-    @media (max-width: 640px) {
-      .pricing-features-grid {
-        grid-template-columns: 1fr;
-      }
+    .pricing-features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      margin-bottom: 28px;
+      flex: 1;
     }
 
     .feature-item {
       display: flex;
       align-items: flex-start;
       gap: 10px;
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--fg);
+      line-height: 1.45;
     }
 
     .feature-icon {
@@ -1636,12 +1657,12 @@
             <tr>
               <td><strong>Setup de Implantação & Onboarding</strong></td>
               <td><span class="status-cross"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Sem setup assistido</span> (você precisa configurar sozinho do zero)</td>
-              <td class="highlight-col"><span class="status-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> R$ 1.000 (Chave na Mão)</span> Setup completo, IA treinada nos seus planos e treinamento da equipe</td>
+              <td class="highlight-col"><span class="status-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> R$ 1.000 (Cloud) ou R$ 6.000 (Infra Própria)</span> Setup assistido, cérebro calibrado e treinamento de equipe</td>
             </tr>
             <tr>
-              <td><strong>Mensalidade Base</strong></td>
+              <td><strong>Mensalidade de Plataforma</strong></td>
               <td>R$ 297/mês (cobra extras quando o volume sobe)</td>
-              <td class="highlight-col"><span class="status-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> R$ 397/mês</span> (Tudo incluso: 5 usuários, sem travas de disparos)</td>
+              <td class="highlight-col"><span class="status-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> R$ 397/mês (Cloud) ou R$ 0,00/mês (Infra Própria)</span> (5 usuários inclusos, sem travas)</td>
             </tr>
             <tr>
               <td><strong>Limite de Automações & Gatilhos</strong></td>
@@ -1738,118 +1759,213 @@
       <div class="section-header" style="text-align: center;">
         <div class="section-eyebrow" style="justify-content: center;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          Condições Especiais
+          Formatos de Contratação
         </div>
-        <h2 class="section-title font-display">Investimento Transparente & Sem Pegadinhas</h2>
+        <h2 class="section-title font-display">Escolha o Modelo Ideal para a Assis Sat</h2>
         <p class="section-desc" style="margin-left: auto; margin-right: auto;">
-          Nenhum custo oculto por disparos. Infraestrutura robusta pronta para escalar a operação da Assis Sat.
+          Flexibilidade total: opte pela comodidade da nuvem gerenciada DRYOS ou pela soberania absoluta de rodar o CRM na sua infraestrutura privada com custo zero de mensalidade de software.
         </p>
       </div>
 
-      <div class="pricing-card">
-        <div class="pricing-badge">Plano Assis Sat Enterprise Pro</div>
+      <div class="pricing-grid-2">
+        
+        <!-- CARD 01: CLOUD GERENCIADO -->
+        <div class="pricing-card-col cloud-plan">
+          <div class="pricing-badge" style="background: var(--primary);">Plano 01 · Cloud Gerenciado</div>
 
-        <div class="pricing-header">
-          <h3 class="pricing-name">DRYOS CRM com IA White-Label</h3>
-          <p style="color: var(--muted); font-size: 14px;">Atendimento automatizado, follow-up infinito, implantação assistida e pipeline comercial</p>
+          <div class="pricing-header">
+            <h3 class="pricing-name">Nuvem Gerenciada DRYOS</h3>
+            <p style="color: var(--muted); font-size: 13px; line-height: 1.4;">Zero preocupação técnica. Servidor, banco de dados, backups e atualizações 100% sob responsabilidade da DRYOS.</p>
 
-          <div style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-top: 20px; align-items: center;">
-            <!-- Setup -->
-            <div style="background: var(--secondary); padding: 14px 22px; border-radius: var(--radius-md); border: 1px solid var(--card-border); text-align: center;">
-              <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Setup & Implantação Chave na Mão</span>
-              <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-top: 4px;">
-                <span class="pricing-currency" style="font-size: 18px;">R$</span>
-                <span class="pricing-val" style="font-size: 40px; color: var(--primary);">1.000</span>
-                <span style="font-size: 13px; color: var(--muted); font-weight: 600;">(taxa única)</span>
+            <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; align-items: stretch;">
+              <!-- Setup -->
+              <div style="background: var(--secondary); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--card-border); text-align: center; flex: 1; min-width: 130px;">
+                <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Setup Assistido</span>
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 3px; margin-top: 2px;">
+                  <span class="pricing-currency" style="font-size: 15px;">R$</span>
+                  <span class="pricing-val" style="font-size: 32px; color: var(--primary);">1.000</span>
+                </div>
+                <span style="font-size: 10px; color: var(--muted); font-weight: 600;">(taxa única)</span>
               </div>
-              <span style="font-size: 11px; color: var(--primary); font-weight: 600;">Setup assistido + Treinamento de IA + Logo</span>
+
+              <!-- Mensalidade -->
+              <div style="background: var(--accent); padding: 12px 16px; border-radius: var(--radius-md); border: 1.5px solid var(--primary); text-align: center; flex: 1.2; min-width: 140px;">
+                <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--primary); letter-spacing: 0.05em;">Mensalidade All-Inclusive</span>
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 3px; margin-top: 2px;">
+                  <span class="pricing-currency" style="font-size: 15px;">R$</span>
+                  <span class="pricing-val" style="font-size: 32px; color: var(--primary);">397</span>
+                  <span class="pricing-period" style="font-size: 12px;">/mês</span>
+                </div>
+                <span style="font-size: 10px; color: var(--success); font-weight: 700;">Hospedagem & Manutenção Inclusas</span>
+              </div>
             </div>
 
-            <!-- Mensalidade -->
-            <div style="background: var(--accent); padding: 14px 22px; border-radius: var(--radius-md); border: 1.5px solid var(--primary); text-align: center;">
-              <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--primary); letter-spacing: 0.05em;">Mensalidade All-Inclusive</span>
-              <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-top: 4px;">
-                <span class="pricing-currency" style="font-size: 18px;">R$</span>
-                <span class="pricing-val" style="font-size: 40px; color: var(--primary);">397</span>
-                <span class="pricing-period" style="font-size: 14px;">/mês</span>
-              </div>
-              <span style="font-size: 11px; color: var(--success); font-weight: 700;">5 Usuários Inclusos · Automações Ilimitadas</span>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 14px; background: rgba(0,0,0,0.02); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--card-border);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Por apenas <strong>R$ 100 a mais</strong> vs DataCrazy, você leva 5 usuários, automações 100% livres e entrega pronta pela equipe DRYOS.
+            </p>
+          </div>
+
+          <div class="pricing-features-list">
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Hospedagem em Nuvem Inclusa</strong><br><span style="font-size: 11.5px; color: var(--muted);">Zero custo com servidores VPS, manutenção de banco ou monitoramento.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>5 Usuários Inclusos no Plano</strong><br><span style="font-size: 11.5px; color: var(--muted);">Vinicius + 4 atendentes comerciais com painéis e relatórios individuais.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Automações 100% Ilimitadas</strong><br><span style="font-size: 11.5px; color: var(--muted);">Sem travas por quantidade de mensagens, regras ou contatos ativos.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>1 Conexão WhatsApp Oficial</strong><br><span style="font-size: 11.5px; color: var(--muted);">Instância via Uazapi conectada via QR Code com alta estabilidade.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Cérebro SDR + Qualificação NAVT</strong><br><span style="font-size: 11.5px; color: var(--muted);">Treinamento da IA nos planos da Assis Sat e respostas em menos de 3 segundos.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Human Takeover Instantâneo</strong><br><span style="font-size: 11.5px; color: var(--muted);">Pausa automática da IA assim que o atendente humano digita na conversa.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>White-Label com Logo Assis Sat</strong><br><span style="font-size: 11.5px; color: var(--muted);">Sistema personalizado com a identidade visual da sua empresa.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Atualizações Contínuas Gratuitas</strong><br><span style="font-size: 11.5px; color: var(--muted);">Todas as melhorias e novos módulos repassados automaticamente.</span></div>
             </div>
           </div>
 
-          <p style="font-size: 13px; color: var(--muted); margin-top: 18px; max-width: 580px; margin-left: auto; margin-right: auto; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="flex-shrink: 0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-            <span>Por apenas <strong>R$ 100 de diferença</strong> em relação à mensalidade da DataCrazy, você leva <strong>5 usuários inclusos</strong> (que na concorrência custariam o triplo), <strong>automações 100% livres</strong> e a máquina entregue pronta pela equipe DRYOS.</span>
-          </p>
-        </div>
-
-        <div class="pricing-features-grid">
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>Implantação Assistida Completa (Setup R$ 1.000)</strong><br><span style="font-size: 12px; color: var(--muted);">Calibração dos planos de rastreamento na IA, funil e treinamento da equipe.</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>Automações 100% Ilimitadas</strong><br><span style="font-size: 12px; color: var(--muted);">Sem limite de mensagens, regras, disparos ou contatos ativos.</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>Evolução Contínua Gratuita</strong><br><span style="font-size: 12px; color: var(--muted);">Todas as melhorias e novos lançamentos saem de graça, para sempre.</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>5 Usuários Inclusos no Plano</strong><br><span style="font-size: 12px; color: var(--muted);">Vinicius + 4 atendentes com acessos e relatórios separados.</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>1 Conexão WhatsApp Oficial</strong><br><span style="font-size: 12px; color: var(--muted);">Instância via Uazapi conectada via QR Code com alta estabilidade.</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>Custo de IA R$ 0,00 no Início</strong><br><span style="font-size: 12px; color: var(--muted);">Groq API Gratuita (Llama 3.3 70B de ultra-velocidade).</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>White-Label com Logo Assis Sat</strong><br><span style="font-size: 12px; color: var(--muted);">Sistema personalizado com a identidade visual da sua empresa.</span></div>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-            <div><strong>Human Takeover Instantâneo</strong><br><span style="font-size: 12px; color: var(--muted);">Pausa automática da IA assim que o atendente humano digita.</span></div>
+          <div style="margin-top: auto; padding-top: 18px; border-top: 1px solid var(--card-border);">
+            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20Vinicius%20aqui%20da%20Assis%20Sat.%20Quero%20iniciar%20pelo%20Plano%20Cloud%20Gerenciado%20(Setup%20R%24%201.000%20%2B%20R%24%20397%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 14.5px; border-radius: var(--radius-md); text-align: center;">
+              Contratar Cloud Gerenciado
+            </a>
+            <p style="font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center;">
+              Implantação em até 7 dias · Sem fidelidade
+            </p>
           </div>
         </div>
 
-        <div class="addons-box">
-          <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; margin-bottom: 8px;">
-            Opcionais de Expansão (Quando você quiser crescer)
-          </h4>
-          <div class="addon-item">
-            <span>Números de WhatsApp Extras (vendas 2, suporte, financeiro):</span>
-            <span class="addon-price">R$ 29,00 /mês cada</span>
+        <!-- CARD 02: ON-PREMISE / INFRAESTRUTURA PRÓPRIA -->
+        <div class="pricing-card-col onpremise-plan">
+          <div class="pricing-badge" style="background: #D97706;">Plano 02 · Infraestrutura Própria</div>
+
+          <div class="pricing-header">
+            <h3 class="pricing-name" style="color: #92400E;">Infraestrutura Assis Sat (On-Premise)</h3>
+            <p style="color: var(--muted); font-size: 13px; line-height: 1.4;">Você é dono da máquina. O sistema e banco de dados rodam na VPS privada da Assis Sat, com soberania total e sem aluguel mensal de software.</p>
+
+            <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; align-items: stretch;">
+              <!-- Licenca & Setup -->
+              <div style="background: #FEF3C7; padding: 12px 16px; border-radius: var(--radius-md); border: 1.5px solid #D97706; text-align: center; flex: 1.3; min-width: 140px;">
+                <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #92400E; letter-spacing: 0.05em;">Implantação & Licença Perpétua</span>
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 3px; margin-top: 2px;">
+                  <span class="pricing-currency" style="font-size: 15px; color: #92400E;">R$</span>
+                  <span class="pricing-val" style="font-size: 32px; color: #92400E;">6.000</span>
+                </div>
+                <span style="font-size: 10px; color: #92400E; font-weight: 700;">(taxa única · em até 12x)</span>
+              </div>
+
+              <!-- Mensalidade Licenca -->
+              <div style="background: #FFF; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid #FDE68A; text-align: center; flex: 1; min-width: 130px;">
+                <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Mensalidade de Software</span>
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 3px; margin-top: 2px;">
+                  <span class="pricing-currency" style="font-size: 15px;">R$</span>
+                  <span class="pricing-val" style="font-size: 32px; color: #166534;">0,00</span>
+                  <span class="pricing-period" style="font-size: 12px;">/mês</span>
+                </div>
+                <span style="font-size: 10px; color: #166534; font-weight: 700;">Zero Custo Fixo de Licença</span>
+              </div>
+            </div>
+
+            <p style="font-size: 12px; color: #92400E; margin-top: 14px; background: #FEF3C7; padding: 8px 12px; border-radius: 6px; border: 1px dashed #F59E0B;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><strong>Soberania total:</strong> seus dados de rastreamento, placas e frotas 100% confidenciais na sua VPS.
+            </p>
           </div>
-          <div class="addon-item">
-            <span>APIs de IA Pagas (Google Gemini, OpenAI GPT-4o, Claude):</span>
-            <span class="addon-price">Opcional (conecta sua própria chave quando quiser)</span>
+
+          <div class="pricing-features-list">
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Instalação na sua VPS Dedicada</strong><br><span style="font-size: 11.5px; color: var(--muted);">Provisionamos tudo na VPS de sua escolha (Hetzner, DigitalOcean, Contabo, AWS).</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Banco de Dados Próprio e Isolado</strong><br><span style="font-size: 11.5px; color: var(--muted);">Conformidade LGPD com sigilo absoluto sobre frotas, motoristas e veículos.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>90 Dias de Suporte e Monitoramento Inclusos</strong><br><span style="font-size: 11.5px; color: var(--muted);">Acompanhamento técnico assistido pela equipe DRYOS nos 3 primeiros meses.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>SLA & Manutenção Preventiva: R$ 197/mês (Opcional)</strong><br><span style="font-size: 11.5px; color: var(--muted);">Após 90 dias, você escolhe se quer suporte contínuo da DRYOS ou mantém por conta própria.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>5 Usuários + Automações Ilimitadas</strong><br><span style="font-size: 11.5px; color: var(--muted);">Liberdade de escalabilidade sem taxas por contatos ou disparos adicionais.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Cérebro SDR + Qualificação NAVT</strong><br><span style="font-size: 11.5px; color: var(--muted);">Treinamento completo da IA calibrado para os planos de rastreamento da Assis Sat.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>White-Label no seu Domínio Privado</strong><br><span style="font-size: 11.5px; color: var(--muted);">crm.assissat.com.br rodando 24/7 com sua marca e certificados SSL dedicados.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Custo Zero Inicial de IA</strong><br><span style="font-size: 11.5px; color: var(--muted);">Conectado nativamente com a API gratuita da Groq (Llama 3.3 70B de resposta instantânea).</span></div>
+            </div>
           </div>
-          <div class="addon-item">
-            <span>Desenvolvimento de Personalizações e Integrações Exclusivas:</span>
-            <span class="addon-price">Sob demanda (orçado à parte)</span>
+
+          <div style="margin-top: auto; padding-top: 18px; border-top: 1px solid #FDE68A;">
+            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20Vinicius%20aqui%20da%20Assis%20Sat.%20Quero%20contratar%20a%20Implanta%C3%A7%C3%A3o%20na%20minha%20Infraestrutura%20Pr%C3%B3pria%20(R%24%206.000)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 14.5px; border-radius: var(--radius-md); text-align: center; background: #D97706; border-color: #B45309;">
+              Contratar Infra Própria (R$ 6.000)
+            </a>
+            <p style="font-size: 11px; color: #92400E; margin-top: 8px; text-align: center;">
+              Implantação em até 7 dias · 90 dias de suporte inclusos
+            </p>
           </div>
         </div>
 
-        <div style="text-align: center;">
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20Vinicius%20aqui%20da%20Assis%20Sat.%20Achei%20a%20proposta%20excelente%20e%20quero%20iniciar%20a%20implanta%C3%A7%C3%A3o!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px; border-radius: var(--radius-md);">
-            Confirmar e Iniciar Configuração da Assis Sat
-          </a>
-          <p style="font-size: 12px; color: var(--muted); margin-top: 12px;">
-            Sem fidelidade abusiva · Configuração assistida pela equipe DRYOS
-          </p>
+      </div>
+
+      <div class="addons-box">
+        <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; margin-bottom: 8px;">
+          Opcionais de Expansão (Para ambos os modelos)
+        </h4>
+        <div class="addon-item">
+          <span>Números de WhatsApp Extras (vendas 2, suporte, financeiro):</span>
+          <span class="addon-price">R$ 29,00 /mês cada</span>
+        </div>
+        <div class="addon-item">
+          <span>APIs de IA Pagas (Google Gemini, OpenAI GPT-4o, Claude):</span>
+          <span class="addon-price">Opcional (conecta sua própria chave quando quiser)</span>
+        </div>
+        <div class="addon-item">
+          <span>Desenvolvimento de Personalizações e Integrações Exclusivas:</span>
+          <span class="addon-price">Sob demanda (orçado à parte)</span>
+        </div>
+        <div class="addon-item">
+          <span>Plano de Sustentação & Manutenção Técnica para Infra Própria (após 90 dias):</span>
+          <span class="addon-price">R$ 197,00 /mês (opcional)</span>
         </div>
       </div>
     </section>
