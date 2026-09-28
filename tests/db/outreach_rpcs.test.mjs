@@ -7,7 +7,23 @@ import { createUser, createAuthenticatedClient } from "../_harness/sessions.mjs"
 const MIGRATION = fileURLToPath(
   new URL("../../supabase/migrations/20260925030000_outreach.sql", import.meta.url),
 );
+const FIX = fileURLToPath(
+  new URL("../../supabase/migrations/20260925120000_prospectia_fix.sql", import.meta.url),
+);
+const SKIP_HUMAN = fileURLToPath(
+  new URL("../../supabase/migrations/20260925140000_skip_human_outreach.sql", import.meta.url),
+);
+const EM_CONTATO = fileURLToPath(
+  new URL("../../supabase/migrations/20260925150000_em_contato_on_reply.sql", import.meta.url),
+);
+const NOVO_PROSPECT = fileURLToPath(
+  new URL("../../supabase/migrations/20260925160000_import_novo_prospect.sql", import.meta.url),
+);
 psqlFile(MIGRATION);
+psqlFile(FIX);
+psqlFile(SKIP_HUMAN);
+psqlFile(EM_CONTATO);
+psqlFile(NOVO_PROSPECT);
 psql("notify pgrst, 'reload schema'");
 
 const INTERVAL = "60 seconds";
@@ -135,6 +151,71 @@ test("T27 AC-B16: toque 1 cria conversa abordar ligada", async () => {
   assert.equal(r.data[0].prospect.id, p.id);
 });
 
+test("abordagem humana já feita ⇒ descartado e não reserva", async () => {
+  const { admin, user } = await setup("t27-human");
+  const { data: conv } = await admin
+    .from("conversations")
+    .insert({ user_id: user.id, contact_phone: "5511997000030", ai_enabled: true })
+    .select()
+    .single();
+  await admin.from("messages").insert({
+    conversation_id: conv.id,
+    user_id: user.id,
+    direction: "outbound",
+    sender: "human",
+    content: "já falei com eles ontem",
+  });
+  const p = await addProspect(admin, user.id, "5511997000030", { conversation_id: conv.id });
+  const r = await admin.rpc("outreach_reserve", { p_user: user.id, p_teto: 40, p_intervalo: INTERVAL });
+  assert.equal((r.data ?? []).length, 0, r.error?.message);
+  const { data: after } = await admin.from("prospects").select("estado").eq("id", p.id).single();
+  assert.equal(after.estado, "descartado");
+});
+
+test("primeira resposta inbound move o card para Em contato", async () => {
+  const { admin, user } = await setup("t-contato");
+  const { data: stages } = await admin
+    .from("pipeline_stages")
+    .select("id, name")
+    .eq("user_id", user.id);
+  const novo = stages.find((s) => /novo (lead|prospect)/i.test(s.name));
+  const contato = stages.find((s) => s.name === "Em contato");
+  assert.ok(contato, "coluna Em contato precisa existir");
+  const { data: conv } = await admin
+    .from("conversations")
+    .insert({ user_id: user.id, contact_phone: "5511997000040", stage_id: novo.id })
+    .select()
+    .single();
+  await admin.from("messages").insert({
+    conversation_id: conv.id,
+    user_id: user.id,
+    direction: "inbound",
+    sender: "contact",
+    content: "oi",
+  });
+  const { data: moved } = await admin.from("conversations").select("stage_id").eq("id", conv.id).single();
+  assert.equal(moved.stage_id, contato.id);
+});
+
+test("prospect importado cai na coluna Novo Prospect", async () => {
+  const { admin, user } = await setup("t-novo-p");
+  const p = await addProspect(admin, user.id, "5511997000041", { name: "Escritorio X" });
+  const { data: after } = await admin
+    .from("prospects")
+    .select("conversation_id")
+    .eq("id", p.id)
+    .single();
+  assert.ok(after.conversation_id);
+  const { data: conv } = await admin
+    .from("conversations")
+    .select("stage_id, contact_name")
+    .eq("id", after.conversation_id)
+    .single();
+  const { data: stage } = await admin.from("pipeline_stages").select("name").eq("id", conv.stage_id).single();
+  assert.match(stage.name, /novo prospect|novo lead/i);
+  assert.equal(conv.contact_name, "Escritorio X");
+});
+
 test("T27 AC-B18: conversa com IA desligada para a cadência e não reserva", async () => {
   const { admin, user } = await setup("t27-b18");
   const { data: conv } = await admin
@@ -150,7 +231,7 @@ test("T27 AC-B18: conversa com IA desligada para a cadência e não reserva", as
   assert.equal(after.proximo_toque, null);
 });
 
-test("T27: instância de outro tenant recusada", async () => {
+test("T27: instância de outro tenant é ignorada; usa a do Q7", async () => {
   const a = await setup("t27-inst-a");
   const b = await setup("t27-inst-b");
   await addProspect(a.admin, a.user.id, "5511997000020");
@@ -163,7 +244,8 @@ test("T27: instância de outro tenant recusada", async () => {
     p_teto: 40,
     p_intervalo: INTERVAL,
   });
-  assert.equal((r.data ?? []).length, 0, r.error?.message);
+  assert.equal((r.data ?? []).length, 1, r.error?.message);
+  assert.equal(r.data[0].conversation.instance_id, a.inst.id);
 });
 
 test("T27: reserva velha vira incerto e o prospect fica fora até a cadência", async () => {

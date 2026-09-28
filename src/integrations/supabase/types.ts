@@ -46,6 +46,7 @@ export type Database = {
           groq_model: string
           outreach_daily_cap: number
           outreach_enabled: boolean
+          outreach_interval_sec: number
           outreach_instance_id: string | null
           outreach_last_tick_at: string | null
           outreach_paused_reason: string | null
@@ -68,6 +69,7 @@ export type Database = {
           groq_model?: string
           outreach_daily_cap?: number
           outreach_enabled?: boolean
+          outreach_interval_sec?: number
           outreach_instance_id?: string | null
           outreach_last_tick_at?: string | null
           outreach_paused_reason?: string | null
@@ -90,6 +92,7 @@ export type Database = {
           groq_model?: string
           outreach_daily_cap?: number
           outreach_enabled?: boolean
+          outreach_interval_sec?: number
           outreach_instance_id?: string | null
           outreach_last_tick_at?: string | null
           outreach_paused_reason?: string | null
@@ -142,6 +145,8 @@ export type Database = {
           ai_summary: string | null
           auto_followup_count: number
           confirmacoes: number
+          contact_city: string | null
+          contact_company: string | null
           contact_email: string | null
           contact_name: string | null
           contact_phone: string | null
@@ -165,6 +170,8 @@ export type Database = {
           ai_summary?: string | null
           auto_followup_count?: number
           confirmacoes?: number
+          contact_city?: string | null
+          contact_company?: string | null
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
@@ -188,6 +195,8 @@ export type Database = {
           ai_summary?: string | null
           auto_followup_count?: number
           confirmacoes?: number
+          contact_city?: string | null
+          contact_company?: string | null
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
@@ -218,6 +227,39 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_tags: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          tag_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          tag_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_tags_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "lead_tags"
             referencedColumns: ["id"]
           },
         ]
@@ -379,6 +421,30 @@ export type Database = {
           },
         ]
       }
+      lead_tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -387,6 +453,9 @@ export type Database = {
           direction: string
           external_id: string | null
           id: string
+          media_name: string | null
+          media_type: string | null
+          media_url: string | null
           processed_at: string | null
           sender: string
           user_id: string
@@ -398,6 +467,9 @@ export type Database = {
           direction: string
           external_id?: string | null
           id?: string
+          media_name?: string | null
+          media_type?: string | null
+          media_url?: string | null
           processed_at?: string | null
           sender: string
           user_id: string
@@ -409,6 +481,9 @@ export type Database = {
           direction?: string
           external_id?: string | null
           id?: string
+          media_name?: string | null
+          media_type?: string | null
+          media_url?: string | null
           processed_at?: string | null
           sender?: string
           user_id?: string
@@ -422,6 +497,50 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       outreach_openers: {
         Row: {
@@ -825,6 +944,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
+      org_user_ids: { Args: { _uid: string }; Returns: string[] }
+      same_org: { Args: { _uid: string }; Returns: boolean }
       my_webhook_secret: { Args: { p_instance: string }; Returns: string }
       outreach_day_stats: {
         Args: { p_user: string }

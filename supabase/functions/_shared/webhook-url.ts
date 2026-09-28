@@ -1,14 +1,16 @@
-/** Único formato da URL do webhook (design §3.1 / ADR-11). UI e servidor passam o origin. */
+/** Path `/s/` sobrevive quando a Uazapi descarta query string. extractSecret aceita os dois. */
 export function montarWebhookUrl(supabaseUrl: string, secret: string): string {
   const origin = String(supabaseUrl || "").replace(/\/$/, "");
-  return `${origin}/functions/v1/whatsapp-webhook?s=${encodeURIComponent(secret)}`;
+  return `${origin}/functions/v1/whatsapp-webhook/s/${encodeURIComponent(secret)}`;
 }
 
 /** Tira o valor de `s` de URL, log e JSON ecoado pela Uazapi. */
 export function redigirSecret(texto: string, secret?: string | null): string {
   let out = String(texto ?? "");
   if (secret) out = out.split(secret).join("[redacted]");
-  return out.replace(/([?&]s=)[^&\s"'\\]+/gi, "$1[redacted]");
+  return out
+    .replace(/([?&]s=)[^&\s"'\\]+/gi, "$1[redacted]")
+    .replace(/(\/whatsapp-webhook\/s\/)[^/?\s"'\\]+/gi, "$1[redacted]");
 }
 
 export function redigirJson(value: unknown, secret?: string | null): unknown {

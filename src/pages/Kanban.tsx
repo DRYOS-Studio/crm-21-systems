@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,17 @@ import {
   useDroppable,
   useDraggable,
 } from "@dnd-kit/core";
-import { Bot, Clock, LogOut, Plus, Settings, Trash2, User, Pencil } from "lucide-react";
+import { Bot, Clock, LogOut, Plus, Settings, Trash2, User, Pencil, Building2, Columns3 } from "lucide-react";
+import { FunnelStagesDialog } from "@/components/crm/FunnelStagesDialog";
+import { nextFunnelColor } from "@/lib/funnel-colors";
+import { leadPerson, leadTitle } from "@/components/lead/LeadContextPanel";
+import { LeadTagChips, TagFilterSelect } from "@/components/lead/LeadTagEditor";
+import { useLeadTags } from "@/hooks/useLeadTags";
+import { useOrgMembers } from "@/hooks/useOrgMembers";
+import { useViewFilters } from "@/hooks/useViewFilters";
+import { UserFilterSelect } from "@/components/org/UserFilterSelect";
+import { ehPerdido } from "@/lib/inbox";
+import type { LeadTag } from "@/lib/lead-tags";
 import { ConfigDrawer } from "@/components/ConfigDrawer";
 import {
   Dialog,
@@ -42,15 +53,18 @@ type Stage = { id: string; name: string; position: number; color: string | null 
 type Conversation = {
   id: string;
   contact_name: string | null;
+  contact_company: string | null;
+  contact_city: string | null;
   contact_phone: string | null;
   contact_email: string | null;
   stage_id: string | null;
   ai_enabled: boolean;
   last_message_at: string;
   inactivity_followup_at: string | null;
+  user_id: string;
 };
 
-function Card({ c }: { c: Conversation }) {
+function Card({ c, tags, ownerLabel }: { c: Conversation; tags?: LeadTag[]; ownerLabel?: string | null }) {
   const navigate = useNavigate();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.id });
   return (
@@ -64,12 +78,23 @@ function Card({ c }: { c: Conversation }) {
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <div className="font-medium text-sm truncate">{c.contact_name || c.contact_phone || c.contact_email}</div>
+        <div className="font-medium text-sm truncate flex items-center gap-1.5 min-w-0">
+          {c.contact_company && <Building2 className="w-3 h-3 shrink-0 text-muted-foreground" />}
+          <span className="truncate">{leadTitle(c)}</span>
+        </div>
         <Badge variant={c.ai_enabled ? "default" : "secondary"} className="text-[10px] shrink-0">
           {c.ai_enabled ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
         </Badge>
       </div>
+      {leadPerson(c) && <div className="text-xs text-foreground truncate">{leadPerson(c)}</div>}
+      {c.contact_city && <div className="text-xs text-muted-foreground truncate">{c.contact_city}</div>}
       <div className="text-xs text-muted-foreground truncate">{c.contact_phone || c.contact_email}</div>
+      {ownerLabel && <div className="text-[10px] text-muted-foreground truncate mt-1">{ownerLabel}</div>}
+      {tags && tags.length > 0 && (
+        <div className="mt-2">
+          <LeadTagChips tags={tags} max={2} />
+        </div>
+      )}
       {c.inactivity_followup_at && (
         <div className="mt-2 flex items-center gap-1 text-[11px] text-primary">
           <Clock className="w-3 h-3" /> Follow-up agendado
@@ -82,11 +107,15 @@ function Card({ c }: { c: Conversation }) {
 function Column({
   stage,
   cards,
+  tagsByConv,
+  ownerOf,
   onRename,
   onDelete,
 }: {
   stage: Stage;
   cards: Conversation[];
+  tagsByConv: Record<string, LeadTag[]>;
+  ownerOf?: (c: Conversation) => string | null;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -94,7 +123,10 @@ function Column({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(stage.name);
   return (
-    <div className="w-72 shrink-0 flex flex-col bg-muted/40 rounded-lg border">
+    <div
+      className="w-72 shrink-0 flex flex-col bg-muted/40 rounded-lg border overflow-hidden"
+      style={{ borderTopWidth: 3, borderTopColor: stage.color || "hsl(var(--border))" }}
+    >
       <div className="p-3 border-b flex items-center justify-between gap-2">
         {editing ? (
           <Input
@@ -147,7 +179,7 @@ function Column({
         }`}
       >
         {cards.map((c) => (
-          <Card key={c.id} c={c} />
+          <Card key={c.id} c={c} tags={tagsByConv[c.id]} ownerLabel={ownerOf?.(c)} />
         ))}
       </div>
     </div>
@@ -162,23 +194,50 @@ export default function Kanban() {
   const [activeCard, setActiveCard] = useState<Conversation | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [addStageOpen, setAddStageOpen] = useState(false);
+  const [funnelOpen, setFunnelOpen] = useState(false);
   const [newStageName, setNewStageName] = useState("");
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
+  const { filters, update: updateFilters } = useViewFilters(user?.id);
+  const { tagFilter, userFilter } = filters;
+  const orgMembers = useOrgMembers();
+  const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const visibleConversations = conversations.filter((c) => {
+    if (tagFilter !== "all" && !(tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter)) return false;
+    if (userFilter !== "all" && c.user_id !== userFilter) return false;
+    return true;
+  });
+  const kanbanMembers = (() => {
+    const known = new Map(orgMembers.map((m) => [m.user_id, m]));
+    for (const c of conversations) {
+      if (!c.user_id || known.has(c.user_id)) continue;
+      known.set(c.user_id, {
+        user_id: c.user_id,
+        name: c.user_id === user?.id ? "Você" : "Conta",
+        email: null,
+      });
+    }
+    return [...known.values()];
+  })();
+  const ownerOf = (c: Conversation) => {
+    if (kanbanMembers.length < 2 || userFilter !== "all") return null;
+    const m = kanbanMembers.find((x) => x.user_id === c.user_id);
+    if (m?.user_id === user?.id) return "Você";
+    return m?.name ?? "Conta";
+  };
 
   const loadStages = async () => {
     if (!user) return;
     const { data } = await supabase
       .from("pipeline_stages")
       .select("*")
-      .eq("user_id", user.id)
       .order("position", { ascending: true });
     setStages((data as Stage[]) || []);
   };
   const loadConvs = async () => {
     const { data } = await supabase
       .from("conversations")
-      .select("id, contact_name, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at")
+      .select("id, contact_name, contact_company, contact_city, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at, user_id")
       .order("last_message_at", { ascending: false });
     setConversations((data as Conversation[]) || []);
   };
@@ -189,8 +248,8 @@ export default function Kanban() {
     loadConvs();
     const ch = supabase
       .channel("kanban-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `user_id=eq.${user.id}` }, loadConvs)
-      .on("postgres_changes", { event: "*", schema: "public", table: "pipeline_stages", filter: `user_id=eq.${user.id}` }, loadStages)
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, loadConvs)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pipeline_stages" }, loadStages)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -213,8 +272,17 @@ export default function Kanban() {
     if (!conv || conv.stage_id === newStageId) return;
 
     // optimistic
+    const lost = ehPerdido(stages.find((s) => s.id === newStageId)?.name);
     setConversations((prev) =>
-      prev.map((c) => (c.id === convId ? { ...c, stage_id: newStageId } : c)),
+      prev.map((c) =>
+        c.id === convId
+          ? {
+              ...c,
+              stage_id: newStageId,
+              ...(lost ? { ai_enabled: false, inactivity_followup_at: null } : {}),
+            }
+          : c,
+      ),
     );
     const { error } = await supabase
       .from("conversations")
@@ -238,7 +306,7 @@ export default function Kanban() {
     const pos = (stages[stages.length - 1]?.position ?? -1) + 1;
     const { data, error } = await supabase
       .from("pipeline_stages")
-      .insert({ user_id: user.id, name, position: pos })
+      .insert({ user_id: user.id, name, position: pos, color: nextFunnelColor(stages.map((s) => s.color)) })
       .select()
       .single();
     if (error) {
@@ -250,6 +318,45 @@ export default function Kanban() {
     }
     setAddStageOpen(false);
     setNewStageName("");
+  };
+
+  const addStageWithColor = async (name: string, color: string) => {
+    if (!user) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const pos = (stages[stages.length - 1]?.position ?? -1) + 1;
+    const { data, error } = await supabase
+      .from("pipeline_stages")
+      .insert({ user_id: user.id, name: trimmed, position: pos, color })
+      .select()
+      .single();
+    if (error) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+      return;
+    }
+    if (data) setStages((prev) => [...prev, data as Stage]);
+  };
+
+  const reorderStages = async (ordered: Stage[]) => {
+    const next = ordered.map((s, i) => ({ ...s, position: i }));
+    setStages(next);
+    const results = await Promise.all(
+      next.map((s) => supabase.from("pipeline_stages").update({ position: s.position }).eq("id", s.id)),
+    );
+    const err = results.find((r) => r.error)?.error;
+    if (err) {
+      toast({ variant: "destructive", title: "Erro", description: err.message });
+      loadStages();
+    }
+  };
+
+  const setStageColor = async (id: string, color: string) => {
+    setStages((prev) => prev.map((s) => (s.id === id ? { ...s, color } : s)));
+    const { error } = await supabase.from("pipeline_stages").update({ color }).eq("id", id);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+      loadStages();
+    }
   };
 
   const seedDefaults = async () => {
@@ -297,23 +404,27 @@ export default function Kanban() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      <header className="border-b px-4 h-14 flex items-center justify-between shrink-0">
+    <div className="dryos h-screen flex flex-col bg-background text-foreground">
+      <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Logo horizontal width={26} height={26} />
           <nav className="hidden sm:flex items-center gap-1 ml-2">
             <Link to="/" className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition">
               Conversas
             </Link>
-            <Link to="/kanban" className="px-3 py-1.5 text-sm rounded-md bg-muted font-medium">
-              Kanban
+            <Link to="/crm" className="px-3 py-1.5 text-sm rounded-md bg-muted font-medium">
+              CRM
             </Link>
             <Link to="/prospeccao" className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition">
               Prospecção
             </Link>
+            <Link to="/whatsapp" className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition">
+              WhatsApp
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-1">
+          <ThemeToggle />
           <Button variant="ghost" size="sm" onClick={() => setConfigOpen(true)}>
             <Settings className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Configuração</span>
@@ -324,7 +435,34 @@ export default function Kanban() {
         </div>
       </header>
 
+      <div className="border-b border-border px-4 py-2 flex flex-wrap items-center gap-2 shrink-0 sticky top-0 z-10 bg-card">
+        <UserFilterSelect
+          members={kanbanMembers}
+          currentUserId={user?.id}
+          value={userFilter}
+          onChange={(next) => updateFilters({ userFilter: next })}
+        />
+        <TagFilterSelect catalog={tagCatalog} value={tagFilter} onChange={(next) => updateFilters({ tagFilter: next })} />
+        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setFunnelOpen(true)}>
+          <Columns3 className="w-3.5 h-3.5 mr-1.5" />
+          Etapas do funil
+        </Button>
+      </div>
+
       <ConfigDrawer open={configOpen} onOpenChange={setConfigOpen} />
+
+      <FunnelStagesDialog
+        open={funnelOpen}
+        onOpenChange={setFunnelOpen}
+        stages={stages}
+        defaultAddColor={nextFunnelColor(stages.map((s) => s.color))}
+        onReorder={reorderStages}
+        onRename={renameStage}
+        onColor={setStageColor}
+        onAdd={addStageWithColor}
+        onDelete={requestDeleteStage}
+        onSeed={seedDefaults}
+      />
 
       <Dialog open={addStageOpen} onOpenChange={setAddStageOpen}>
         <DialogContent>
@@ -360,7 +498,7 @@ export default function Kanban() {
             {stages.length === 0 && (
               <div className="w-full flex items-center justify-center">
                 <div className="text-center max-w-sm border-2 border-dashed rounded-lg p-8">
-                  <div className="font-medium mb-1">Seu Kanban está vazio</div>
+                  <div className="font-medium mb-1">Seu CRM está vazio</div>
                   <div className="text-sm text-muted-foreground mb-4">
                     Comece com um pipeline padrão de vendas: Novo Lead → Em Negociação → Fechado. Você pode renomear, apagar ou adicionar colunas depois.
                   </div>
@@ -379,7 +517,9 @@ export default function Kanban() {
               <Column
                 key={s.id}
                 stage={s}
-                cards={conversations.filter((c) => c.stage_id === s.id)}
+                cards={visibleConversations.filter((c) => c.stage_id === s.id)}
+                tagsByConv={tagsByConv}
+                ownerOf={ownerOf}
                 onRename={renameStage}
                 onDelete={requestDeleteStage}
               />
@@ -394,7 +534,7 @@ export default function Kanban() {
             )}
           </div>
           <DragOverlay>
-            {activeCard && <Card c={activeCard} />}
+            {activeCard && <Card c={activeCard} tags={tagsByConv[activeCard.id]} ownerLabel={ownerOf(activeCard)} />}
           </DragOverlay>
         </DndContext>
       </div>

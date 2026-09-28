@@ -6,6 +6,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { CEREBRO } from "./cerebro.ts";
 import { callGroq, type AIConfig, type ChatMessage, type ToolDef, type GroqResult } from "./get-ai-config.ts";
+import { ajustarFalaFeminina, sdrFalaNoFeminino } from "./voz-sdr.ts";
+import { extraAbordagem, modoDaConversa } from "./modo-conversa.ts";
 
 const FUSO_HORAS = -3; // Brasília. Mesma constante do tempo.js original.
 const NOMES_DIA = [
@@ -304,10 +306,16 @@ export function deveEscalarPorConfirmacoes(n: number): boolean {
   return n >= 2;
 }
 
-function buildSystemPrompt(agent: AIConfig, conversa: ConversaState, extra: string): string {
+function buildSystemPrompt(
+  agent: AIConfig,
+  conversa: ConversaState,
+  extra: string,
+  history: { role: string }[] = [],
+): string {
   const agora = agoraLocal();
   const nomeDia = NOMES_DIA[agora.getUTCDay()];
   const dataHora = `${agora.toISOString().slice(0, 10)} ${agora.toISOString().slice(11, 16)}`;
+  const modo = modoDaConversa(conversa.etapa || "abordar", history);
   return `${CEREBRO}
 
 ## CONTEXTO DA EMPRESA
@@ -316,6 +324,7 @@ ${agent.businessContext || "(não configurado — responda de forma genérica e 
 ## ESTADO DESTA CONVERSA
 Agora: ${dataHora} (${nomeDia})
 Etapa: ${conversa.etapa || "abordar"}
+Modo: ${modo}
 Já descobri: ${JSON.stringify(conversa.dados || {})}
 ${extra}`;
 }
@@ -323,7 +332,7 @@ ${extra}`;
 function extraDaConversa(dados: Record<string, unknown>): string {
   const falta = faltaNavt(dados);
   const trava = falta.length
-    ? `Ainda NÃO dá pra convidar: falta descobrir ${falta.join(", ")}. Não proponha reunião, diagnóstico, dia nem horário antes disso.`
+    ? `Ainda NÃO dá pra marcar reunião, diagnóstico, dia nem horário: falta ${falta.join(", ")}. Se o CONTEXTO pede conversão por link, pode mandar o link da página sem esses campos.`
     : "necessidade, autoridade e volume já estão preenchidos: pode convidar quando fizer sentido.";
   return `Número de bolhas: uma ou duas, no máximo. Na abordagem, sempre uma só.\n${trava}`;
 }
@@ -370,10 +379,10 @@ export async function runBrainTurn(params: {
   // Pedido de humano não pula a IA (a resposta sai e a conversa escala junto).
   const pediuAjuda = janela.some((t) => pediuHumano(t));
 
-  const extra = `${extraDaConversa(conversa.dados)}${params.extraSistema ? `\n\n${params.extraSistema}` : ""}`;
+  const extra = `${extraDaConversa(conversa.dados)}${extraAbordagem(historyMessages)}${params.extraSistema ? `\n\n${params.extraSistema}` : ""}`;
 
   const mensagens: ChatMessage[] = [
-    { role: "system", content: buildSystemPrompt(agent, conversa, extra) },
+    { role: "system", content: buildSystemPrompt(agent, conversa, extra, historyMessages) },
     ...historyMessages,
   ];
 
@@ -396,7 +405,7 @@ Não proponha reunião, diagnóstico, dia nem horário nesta mensagem.
 Faça UMA pergunta de descoberta sobre o que falta, e devolva "etapa": "descobrir".`;
     try {
       const corrigida = await pensar(admin, userId, agent.apiKey, agent.model, [
-        { role: "system", content: buildSystemPrompt(agent, conversa, extraCorrecao) },
+        { role: "system", content: buildSystemPrompt(agent, conversa, extraCorrecao, historyMessages) },
         ...historyMessages,
       ]);
       r = corrigida;
@@ -411,7 +420,10 @@ Faça UMA pergunta de descoberta sobre o que falta, e devolva "etapa": "descobri
   }
 
   // AC-A3o: a promessa só conta se sobreviver ao corte de 2 bolhas — é isso que sai de verdade.
-  const mensagensEnviadas = (r.mensagens || []).slice(0, 2).filter((t) => typeof t === "string" && t.trim());
+  const brutas = (r.mensagens || []).slice(0, 2).filter((t) => typeof t === "string" && t.trim());
+  const mensagensEnviadas = sdrFalaNoFeminino(agent.businessContext)
+    ? brutas.map(ajustarFalaFeminina).filter((t) => t.trim())
+    : brutas;
   const prometeu = mensagensEnviadas.some((t) => /vou (confirmar|ver|checar|verificar)/i.test(t || ""));
   const n = (conversa.confirmacoes || 0) + (prometeu ? 1 : 0);
 

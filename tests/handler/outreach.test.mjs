@@ -10,7 +10,27 @@ import { handle, CRON_HEADER } from "../../supabase/functions/run-outreach/handl
 const MIGRATION = fileURLToPath(
   new URL("../../supabase/migrations/20260925030000_outreach.sql", import.meta.url),
 );
+const FIX = fileURLToPath(
+  new URL("../../supabase/migrations/20260925120000_prospectia_fix.sql", import.meta.url),
+);
+const SKIP_HUMAN = fileURLToPath(
+  new URL("../../supabase/migrations/20260925140000_skip_human_outreach.sql", import.meta.url),
+);
+const EM_CONTATO = fileURLToPath(
+  new URL("../../supabase/migrations/20260925150000_em_contato_on_reply.sql", import.meta.url),
+);
+const NOVO_PROSPECT = fileURLToPath(
+  new URL("../../supabase/migrations/20260925160000_import_novo_prospect.sql", import.meta.url),
+);
+const INTERVALO = fileURLToPath(
+  new URL("../../supabase/migrations/20260926100000_outreach_interval.sql", import.meta.url),
+);
 psqlFile(MIGRATION);
+psqlFile(FIX);
+psqlFile(SKIP_HUMAN);
+psqlFile(EM_CONTATO);
+psqlFile(NOVO_PROSPECT);
+psqlFile(INTERVALO);
 psql("notify pgrst, 'reload schema'");
 
 const s = status();
@@ -55,24 +75,28 @@ async function seedReady(prefix, extra = {}) {
   const user = await createUser(prefix);
   await admin.rpc("seed_pipeline_stages", { _user_id: user.id });
   const serverUrl = `https://uazapi-${prefix}-${Date.now()}-${seq}.example.test`;
-  const { data: inst, error: instErr } = await admin
-    .from("whatsapp_instances")
-    .insert({
-      user_id: user.id,
-      name: `${prefix}-inst`,
-      instance_token: `tok-${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      server_url: serverUrl,
-      status: extra.status ?? "connected",
-    })
-    .select()
-    .single();
-  if (instErr) throw new Error(instErr.message);
-  await admin.rpc("webhook_secret_for", { p_user: user.id, p_instance: inst.id });
-  if (extra.confirm !== false) await admin.rpc("webhook_confirm", { p_instance: inst.id });
+  let inst = null;
+  if (!extra.noInstance) {
+    const { data, error: instErr } = await admin
+      .from("whatsapp_instances")
+      .insert({
+        user_id: user.id,
+        name: `${prefix}-inst`,
+        instance_token: `tok-${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        server_url: serverUrl,
+        status: extra.status ?? "connected",
+      })
+      .select()
+      .single();
+    if (instErr) throw new Error(instErr.message);
+    inst = data;
+    await admin.rpc("webhook_secret_for", { p_user: user.id, p_instance: inst.id });
+    if (extra.confirm !== false) await admin.rpc("webhook_confirm", { p_instance: inst.id });
+  }
 
   const { error: cfgErr } = await admin.from("agent_configs").upsert({
     user_id: user.id,
-    groq_api_key: "test-groq-key",
+    groq_api_key: extra.groq === false ? null : "test-groq-key",
     enabled: true,
     business_context: extra.businessContext ?? "Clínica de teste",
     company_name: extra.companyName ?? "Clínica X",
@@ -251,27 +275,53 @@ describe("T29 run-outreach", { concurrency: 1 }, () => {
     }
   });
 
-  test("T29 AC-B19: IA falha no toque 2 ⇒ release sem consumir", async () => {
+  test("T29 AC-B19: Groq falha no toque 2 ⇒ envia texto pronto", async () => {
     const t = await seedReady("t29-b19", { estado: "abordado", tentativas: 1, proximo: "2026-09-24" });
-    let groq = 0;
+    const sent = [];
     const stop = installFetchStub([
       passthroughApi(),
       {
         match: (url) => url.includes("api.groq.com"),
-        respond: () => {
-          groq++;
-          return new Response("fail", { status: 500 });
+        respond: () => new Response("fail", { status: 500 }),
+      },
+      {
+        match: (url) => url.startsWith(t.serverUrl),
+        respond: (_u, init) => {
+          sent.push(JSON.parse(init.body));
+          return new Response("{}", { status: 200 });
         },
       },
-      { match: (url) => url.startsWith(t.serverUrl), respond: () => new Response("{}", { status: 200 }) },
     ]);
     try {
       const res = await tick();
-      assert.equal((await res.json()).enviados, 0);
-      const { data: p } = await t.admin.from("prospects").select("tentativas, ultima_falha_motivo").eq("id", t.prospect.id).single();
-      assert.equal(p.tentativas, 1);
-      assert.ok(p.ultima_falha_motivo);
-      assert.ok(groq >= 1);
+      assert.equal((await res.json()).enviados, 1);
+      assert.equal(sent.length, 1);
+      assert.ok(sent[0].text);
+      const { data: p } = await t.admin.from("prospects").select("tentativas").eq("id", t.prospect.id).single();
+      assert.equal(p.tentativas, 2);
+    } finally {
+      stop();
+    }
+  });
+
+  test("T29 toque 1 dispara sem chave Groq", async () => {
+    const t = await seedReady("t29-nogroq", { groq: false, businessContext: "" });
+    const sent = [];
+    const stop = installFetchStub([
+      passthroughApi(),
+      {
+        match: (url) => url.startsWith(t.serverUrl),
+        respond: (_u, init) => {
+          sent.push(JSON.parse(init.body));
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        },
+      },
+    ]);
+    try {
+      const body = await res.json();
+      assert.equal(body.enviados, 1, JSON.stringify(body));
+      assert.equal(sent.length, 1);
+      assert.ok(sent[0].text);
     } finally {
       stop();
     }

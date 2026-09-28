@@ -5,13 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Bot, User, Send, MessageSquare, Settings, LogOut, Sparkles, Clock, Trello, X } from "lucide-react";
+import { Bot, User, MessageSquare, Settings, LogOut, Sparkles, Clock, Trello, X, PanelRight, Search } from "lucide-react";
+import {
+  type LastSnap,
+  ehEmContato,
+  ehPerdido,
+  formatInboxTime,
+  inboxInitials,
+  matchesInboxQuery,
+  precisaResponder,
+  previewText,
+  threadDateLabel,
+  waMeUrl,
+} from "@/lib/inbox";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ConfigDrawer } from "@/components/ConfigDrawer";
-import { useAdminRole } from "@/hooks/useAdminRole";
 import {
   Popover,
   PopoverContent,
@@ -42,6 +53,21 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { LeadContextBody, leadPerson, leadTitle } from "@/components/lead/LeadContextPanel";
+import { LeadTagChips, TagFilterSelect } from "@/components/lead/LeadTagEditor";
+import { useLeadTags } from "@/hooks/useLeadTags";
+import { useViewFilters } from "@/hooks/useViewFilters";
+import { useOrgMembers } from "@/hooks/useOrgMembers";
+import { UserFilterSelect } from "@/components/org/UserFilterSelect";
+import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
+import { MessageMedia } from "@/components/inbox/MessageMedia";
+import { assertMediaSize, mediaLabel, uploadChatFile } from "@/lib/chat-media";
 
 type Conversation = {
   id: string;
@@ -49,15 +75,40 @@ type Conversation = {
   wa_phone: string | null;
   contact_email: string | null;
   contact_name: string | null;
+  contact_company: string | null;
+  contact_city: string | null;
   ai_enabled: boolean;
   last_message_at: string;
   instance_id: string | null;
   human_takeover_at: string | null;
   stage_id: string | null;
+  user_id: string;
 };
 
 function destPhone(c: Conversation): string | null {
   return c.wa_phone || c.contact_phone || null;
+}
+
+function stripMediaPrefix(content: string) {
+  return content.replace(/^\[(imagem|vídeo|áudio|figurinha|documento)\]\s*/i, "").trim();
+}
+
+function priorizarConversas(
+  conversas: Conversation[],
+  lastInboundAt: Record<string, string>,
+  emContatoStageIds: Set<string>,
+) {
+  const peso = (c: Conversation) => {
+    const respondeu = !!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id));
+    const quando = lastInboundAt[c.id] || c.last_message_at;
+    return { respondeu, quando };
+  };
+  return [...conversas].sort((a, b) => {
+    const pa = peso(a);
+    const pb = peso(b);
+    if (pa.respondeu !== pb.respondeu) return pa.respondeu ? -1 : 1;
+    return new Date(pb.quando).getTime() - new Date(pa.quando).getTime();
+  });
 }
 
 type Message = {
@@ -67,6 +118,9 @@ type Message = {
   sender: "contact" | "ai" | "human";
   content: string;
   created_at: string;
+  media_type?: string | null;
+  media_url?: string | null;
+  media_name?: string | null;
 };
 
 type Stage = { id: string; name: string; position: number; color: string | null };
@@ -99,12 +153,12 @@ function formatCountdown(ms: number): string {
 export default function Conversas() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { isAdmin } = useAdminRole();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialOpen = useRef(searchParams.get("open"));
+  const pendingOpen = useRef(searchParams.get("open"));
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(searchParams.get("open"));
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -118,37 +172,210 @@ export default function Conversas() {
   const [fuPreset, setFuPreset] = useState("1h");
   const [fuCustom, setFuCustom] = useState("");
   const [fuOpen, setFuOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
+  const [lastInboundAt, setLastInboundAt] = useState<Record<string, string>>({});
+  const [lastByConv, setLastByConv] = useState<Record<string, LastSnap>>({});
+  const [inboxQuery, setInboxQuery] = useState("");
+  const { filters, update: updateFilters } = useViewFilters(user?.id);
+  const { inboxFilter, tagFilter, userFilter } = filters;
+  const orgMembers = useOrgMembers();
+  const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
+    useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const active = useMemo(
-    () => conversations.find((c) => c.id === activeId) || null,
-    [conversations, activeId],
+  const emContatoStageIds = useMemo(
+    () => new Set(stages.filter((s) => ehEmContato(s.name)).map((s) => s.id)),
+    [stages],
   );
+  const perdidoStageIds = useMemo(
+    () => new Set(stages.filter((s) => ehPerdido(s.name)).map((s) => s.id)),
+    [stages],
+  );
+  const encerrado = (c: Conversation) => !!c.stage_id && perdidoStageIds.has(c.stage_id);
+
+  const orderedConversations = useMemo(
+    () => priorizarConversas(conversations, lastInboundAt, emContatoStageIds),
+    [conversations, lastInboundAt, emContatoStageIds],
+  );
+
+  const scopedConversations = useMemo(
+    () =>
+      userFilter === "all"
+        ? orderedConversations
+        : orderedConversations.filter((c) => c.user_id === userFilter),
+    [orderedConversations, userFilter],
+  );
+
+  const priorityConversations = useMemo(
+    () =>
+      scopedConversations.filter(
+        (c) =>
+          !encerrado(c) &&
+          (!!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id))),
+      ),
+    [scopedConversations, lastInboundAt, emContatoStageIds, perdidoStageIds],
+  );
+
+  const visibleConversations = useMemo(() => {
+    const q = inboxQuery.trim();
+    const passaBusca = (c: Conversation) =>
+      matchesInboxQuery(q, [
+        c.contact_name,
+        c.contact_company,
+        c.contact_city,
+        destPhone(c),
+        c.contact_email,
+        ...(tagsByConv[c.id] ?? []).map((t) => t.name),
+      ]);
+    const passaFiltro = (c: Conversation) => {
+      const closed = encerrado(c);
+      if (inboxFilter === "encerrados") return closed;
+      if (closed) return false;
+      if (inboxFilter === "humano") return !c.ai_enabled;
+      if (inboxFilter === "responder") return precisaResponder(lastByConv[c.id]);
+      if (inboxFilter === "aguardando") return !precisaResponder(lastByConv[c.id]);
+      return true;
+    };
+    const passaTag = (c: Conversation) =>
+      tagFilter === "all" || (tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter);
+    return scopedConversations.filter((c) => passaBusca(c) && passaFiltro(c) && passaTag(c));
+  }, [scopedConversations, inboxQuery, inboxFilter, lastByConv, tagFilter, tagsByConv, perdidoStageIds]);
+
+  const filteredPriority = useMemo(
+    () => visibleConversations.filter((c) => priorityConversations.some((p) => p.id === c.id)),
+    [visibleConversations, priorityConversations],
+  );
+  const filteredWaiting = useMemo(
+    () => visibleConversations.filter((c) => !priorityConversations.some((p) => p.id === c.id)),
+    [visibleConversations, priorityConversations],
+  );
+  const flattenList =
+    inboxFilter !== "todas" ||
+    !!inboxQuery.trim() ||
+    tagFilter !== "all" ||
+    userFilter !== "all";
+
+  const abertos = useMemo(
+    () => scopedConversations.filter((c) => !encerrado(c)),
+    [scopedConversations, perdidoStageIds],
+  );
+  const encerradosCount = useMemo(
+    () => scopedConversations.filter((c) => encerrado(c)).length,
+    [scopedConversations, perdidoStageIds],
+  );
+
+  const needsReplyCount = useMemo(
+    () => abertos.filter((c) => precisaResponder(lastByConv[c.id])).length,
+    [abertos, lastByConv],
+  );
+
+  const active = useMemo(
+    () => orderedConversations.find((c) => c.id === activeId) || null,
+    [orderedConversations, activeId],
+  );
+
+  const autoEncerradosOpen = useRef<string | null>(null);
+
+  const stripOpenParam = () => {
+    setSearchParams(
+      (prev) => {
+        if (!prev.get("open")) return prev;
+        const next = new URLSearchParams(prev);
+        next.delete("open");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const selectConversation = (id: string) => {
+    pendingOpen.current = null;
+    setActiveId(id);
+    stripOpenParam();
+  };
+
+  useEffect(() => {
+    if (!initialOpen.current || activeId !== initialOpen.current) return;
+    if (typeof window !== "undefined" && window.innerWidth < 1280) setLeadOpen(true);
+  }, [activeId]);
+
+  useEffect(() => {
+    const openParam = initialOpen.current;
+    if (!openParam || perdidoStageIds.size === 0) return;
+    if (autoEncerradosOpen.current === openParam) return;
+    const c = conversations.find((x) => x.id === openParam);
+    if (c && encerrado(c)) {
+      autoEncerradosOpen.current = openParam;
+      updateFilters({ inboxFilter: "encerrados" });
+    }
+  }, [conversations, perdidoStageIds]);
+
+  useEffect(() => {
+    if (!searchParams.get("open")) return;
+    if (pendingOpen.current) return;
+    stripOpenParam();
+  }, [searchParams, activeId]);
 
   // Load conversations + realtime
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("conversations")
-        .select("*")
-        .order("last_message_at", { ascending: false });
-      setConversations((data as Conversation[]) || []);
-      const openParam = searchParams.get("open");
-      if (openParam && data?.some((c: any) => c.id === openParam)) {
-        setActiveId(openParam);
-      } else if (data?.length && !activeId) {
-        setActiveId(data[0].id);
+      const [{ data }, inbound, recent] = await Promise.all([
+        supabase.from("conversations").select("*").order("last_message_at", { ascending: false }),
+        supabase
+          .from("messages")
+          .select("conversation_id, created_at")
+          .eq("direction", "inbound"),
+        supabase
+          .from("messages")
+          .select("conversation_id, content, direction, sender, created_at")
+          .order("created_at", { ascending: false })
+          .limit(800),
+      ]);
+      const inboundMap: Record<string, string> = {};
+      for (const row of (inbound.data ?? []) as { conversation_id: string; created_at: string }[]) {
+        const prev = inboundMap[row.conversation_id];
+        if (!prev || row.created_at > prev) inboundMap[row.conversation_id] = row.created_at;
       }
+      const lastMap: Record<string, LastSnap> = {};
+      for (const row of (recent.data ?? []) as (LastSnap & { conversation_id: string })[]) {
+        if (!lastMap[row.conversation_id]) {
+          lastMap[row.conversation_id] = {
+            content: row.content,
+            direction: row.direction,
+            sender: row.sender,
+            created_at: row.created_at,
+          };
+        }
+      }
+      setLastInboundAt(inboundMap);
+      setLastByConv(lastMap);
+      const list = (data as Conversation[]) || [];
+      setConversations(list);
+      const ranked = priorizarConversas(list, inboundMap, emContatoStageIds);
+      setActiveId((current) => {
+        const want = pendingOpen.current;
+        if (want && list.some((c) => c.id === want)) {
+          pendingOpen.current = null;
+          return want;
+        }
+        if (current && list.some((c) => c.id === current)) return current;
+        return ranked[0]?.id ?? current;
+      });
     };
-    load();
+    void load();
 
     const ch = supabase
       .channel("conversations-list")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "conversations", filter: `user_id=eq.${user.id}` },
-        () => load(),
+        { event: "*", schema: "public", table: "conversations" },
+        () => void load(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => void load(),
       )
       .subscribe();
     return () => {
@@ -162,7 +389,6 @@ export default function Conversas() {
     supabase
       .from("pipeline_stages")
       .select("*")
-      .eq("user_id", user.id)
       .order("position", { ascending: true })
       .then(({ data }) => setStages((data as Stage[]) || []));
   }, [user]);
@@ -268,6 +494,7 @@ export default function Conversas() {
 
   const toggleAI = async (enabled: boolean) => {
     if (!active) return;
+    if (encerrado(active)) return;
     if (enabled) {
       const { error } = await supabase
         .from("conversations")
@@ -299,11 +526,32 @@ export default function Conversas() {
 
   const changeStage = async (stageId: string) => {
     if (!active) return;
-    await supabase.from("conversations").update({ stage_id: stageId }).eq("id", active.id);
+    const lost = perdidoStageIds.has(stageId);
+    const { error } = await supabase.from("conversations").update({ stage_id: stageId }).eq("id", active.id);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+      return;
+    }
+    if (lost) {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === active.id
+            ? { ...c, stage_id: stageId, ai_enabled: false, human_takeover_at: c.human_takeover_at || new Date().toISOString() }
+            : c,
+        ),
+      );
+      setFollowups([]);
+      updateFilters({ inboxFilter: "encerrados" });
+      toast({ title: "Atendimento encerrado", description: "Lead marcado como perdido." });
+    }
   };
 
   const scheduleFollowup = async () => {
     if (!active || !user) return;
+    if (encerrado(active)) {
+      toast({ variant: "destructive", title: "Atendimento encerrado" });
+      return;
+    }
     let sendAt: Date;
     const now = Date.now();
     if (fuPreset === "1min") sendAt = new Date(now + 60_000);
@@ -388,8 +636,12 @@ export default function Conversas() {
     }
   };
 
-  const send = async () => {
-    if (!input.trim() || !active) return;
+  const sendPayload = async (payload: ComposerPayload) => {
+    if (!active) return;
+    if (encerrado(active)) {
+      toast({ variant: "destructive", title: "Atendimento encerrado", description: "Mude o estágio para reabrir." });
+      return;
+    }
     const number = destPhone(active);
     if (!number) {
       toast({ variant: "destructive", title: "Sem WhatsApp", description: "Esse contato só tem email — não dá pra mandar mensagem." });
@@ -397,35 +649,66 @@ export default function Conversas() {
     }
     setSending(true);
     try {
-      // Fetch instance token
-      const { data: inst } = await supabase
-        .from("whatsapp_instances")
-        .select("instance_token")
-        .eq("user_id", user!.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data: inst } = active.instance_id
+        ? await supabase
+            .from("whatsapp_instances")
+            .select("instance_token")
+            .eq("id", active.instance_id)
+            .maybeSingle()
+        : await supabase
+            .from("whatsapp_instances")
+            .select("instance_token")
+            .eq("user_id", user!.id)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
       if (!inst?.instance_token) throw new Error("Nenhuma instância WhatsApp conectada");
 
-      const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: {
-          action: "send_text",
-          instance_token: inst.instance_token,
-          number,
-          text: input.trim(),
-        },
-      });
-      if (error || !data?.ok) throw new Error(data?.error || error?.message || "Falha ao enviar");
+      let content = payload.kind === "text" ? payload.text : mediaLabel(payload.type, payload.caption, payload.name);
+      let mediaUrl: string | null = null;
+      let mediaType: string | null = null;
+      let mediaName: string | null = null;
+
+      if (payload.kind === "text") {
+        const { data, error } = await supabase.functions.invoke("manage-instance", {
+          body: {
+            action: "send_text",
+            instance_token: inst.instance_token,
+            number,
+            text: payload.text,
+          },
+        });
+        if (error || !data?.ok) throw new Error(data?.error || error?.message || "Falha ao enviar");
+      } else {
+        assertMediaSize(payload.file, payload.type);
+        const uploaded = await uploadChatFile(user!.id, payload.file);
+        mediaUrl = uploaded.url;
+        mediaType = payload.type;
+        mediaName = payload.name || payload.file.name;
+        const { data, error } = await supabase.functions.invoke("manage-instance", {
+          body: {
+            action: "send_media",
+            instance_token: inst.instance_token,
+            number,
+            type: payload.type,
+            file: uploaded.url,
+            text: payload.caption || undefined,
+            docName: payload.type === "document" ? mediaName : undefined,
+          },
+        });
+        if (error || !data?.ok) throw new Error(data?.error || error?.message || "Falha ao enviar mídia");
+      }
 
       await supabase.from("messages").insert({
         conversation_id: active.id,
         user_id: user!.id,
         direction: "outbound",
         sender: "human",
-        content: input.trim(),
+        content,
+        media_type: mediaType,
+        media_url: mediaUrl,
+        media_name: mediaName,
       });
-      // Humano assumiu → pausa a IA e registra o timestamp. NÃO há retomada
-      // automática: a IA só volta quando o usuário clica "Reativar IA".
       await supabase
         .from("conversations")
         .update({
@@ -434,18 +717,92 @@ export default function Conversas() {
           human_takeover_at: new Date().toISOString(),
         })
         .eq("id", active.id);
-      setInput("");
     } catch (e: any) {
       toast({ variant: "destructive", title: "Erro", description: e.message });
+      throw e;
     } finally {
       setSending(false);
     }
   };
 
+  const conversationRow = (c: Conversation, respondeu: boolean) => {
+    const last = lastByConv[c.id];
+    const closed = encerrado(c);
+    const waiting = !closed && precisaResponder(last);
+    const title = leadTitle(c);
+    const stage = stages.find((s) => s.id === c.stage_id);
+    const prefix = last?.direction === "outbound" ? (last.sender === "ai" ? "Edith: " : "Você: ") : "";
+    return (
+      <button
+        key={c.id}
+        onClick={() => selectConversation(c.id)}
+        className={`w-full text-left px-3 py-2.5 border-b border-border/80 hover:bg-muted/70 transition ${
+          c.id === activeId ? "bg-muted" : ""
+        } ${waiting ? "border-l-2 border-l-primary" : "border-l-2 border-l-transparent"}`}
+      >
+        <div className="flex gap-2.5">
+          <div
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+              waiting ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {inboxInitials(title)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-medium text-sm truncate">{title}</span>
+              <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                {formatInboxTime(last?.created_at || c.last_message_at)}
+              </span>
+            </div>
+            <div className={`text-xs truncate ${waiting ? "text-foreground" : "text-muted-foreground"}`}>
+              {prefix}
+              {previewText(last?.content)}
+            </div>
+            <div className="mt-1 flex items-center gap-1 flex-wrap">
+              {closed && (
+                <Badge variant="secondary" className="text-[10px]">
+                  Encerrado
+                </Badge>
+              )}
+              {waiting && (
+                <Badge variant="ok" className="text-[10px]">
+                  Sua vez
+                </Badge>
+              )}
+              {respondeu && !waiting && !closed && (
+                <Badge variant="secondary" className="text-[10px]">
+                  Respondeu
+                </Badge>
+              )}
+              {stage && (
+                <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{stage.name}</span>
+              )}
+              {!closed && (
+                <span className="text-[10px] text-muted-foreground">{c.ai_enabled ? "IA" : "Você"}</span>
+              )}
+              {orgMembers.length > 1 && userFilter === "all" && (
+                <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
+                  {orgMembers.find((m) => m.user_id === c.user_id)?.name ||
+                    (c.user_id === user?.id ? "Você" : "Conta")}
+                </span>
+              )}
+            </div>
+            {(tagsByConv[c.id] ?? []).length > 0 && (
+              <div className="mt-1">
+                <LeadTagChips tags={tagsByConv[c.id] ?? []} max={2} />
+              </div>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="dryos h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
-      <header className="border-b px-4 h-14 flex items-center justify-between shrink-0">
+      <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Logo horizontal width={26} height={26} />
           <nav className="hidden sm:flex items-center gap-1 ml-2">
@@ -453,10 +810,10 @@ export default function Conversas() {
               Conversas
             </Link>
             <Link
-              to="/kanban"
+              to="/crm"
               className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
             >
-              Kanban
+              CRM
             </Link>
             <Link
               to="/prospeccao"
@@ -464,18 +821,19 @@ export default function Conversas() {
             >
               Prospecção
             </Link>
+            <Link
+              to="/whatsapp"
+              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
+            >
+              WhatsApp
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => navigate("/kanban")} title="Kanban">
+          <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => navigate("/crm")} title="CRM">
             <Trello className="w-4 h-4" />
           </Button>
           <ThemeToggle />
-          {isAdmin && (
-            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/uazapi")}>
-              Admin
-            </Button>
-          )}
           <Button
             variant={needsSetup ? "default" : "ghost"}
             size="sm"
@@ -493,11 +851,60 @@ export default function Conversas() {
       <ConfigDrawer open={configOpen} onOpenChange={setConfigOpen} />
 
       {/* Main */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-[340px_1fr] gap-0 overflow-hidden">
         {/* Sidebar list */}
         <div className="border-r overflow-hidden flex flex-col bg-card">
-          <div className="p-3 border-b font-semibold text-sm flex items-center gap-2 shrink-0">
-            <MessageSquare className="w-4 h-4" /> Conversas
+          <div className="p-3 border-b space-y-2.5 shrink-0 sticky top-0 z-10 bg-card">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-sm flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" /> Inbox
+              </div>
+              {needsReplyCount > 0 && (
+                <span className="text-[11px] tabular-nums text-primary font-medium">{needsReplyCount} na sua vez</span>
+              )}
+            </div>
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={inboxQuery}
+                onChange={(e) => setInboxQuery(e.target.value)}
+                placeholder="Buscar nome, escritório, telefone"
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {(
+                [
+                  ["todas", "Todas", abertos.length],
+                  ["responder", "Sua vez", needsReplyCount],
+                  ["aguardando", "Aguardando", Math.max(0, abertos.length - needsReplyCount)],
+                  ["humano", "Com você", abertos.filter((c) => !c.ai_enabled).length],
+                  ["encerrados", "Encerrados", encerradosCount],
+                ] as const
+              ).map(([id, label, count]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => updateFilters({ inboxFilter: id })}
+                  className={`px-2 py-1 rounded-md text-[11px] transition ${
+                    inboxFilter === id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                  <span className="tabular-nums opacity-80"> {count}</span>
+                </button>
+              ))}
+            </div>
+            <UserFilterSelect
+              members={orgMembers}
+              currentUserId={user?.id}
+              value={userFilter}
+              onChange={(next) => updateFilters({ userFilter: next })}
+              className="h-8 w-full text-xs"
+            />
+            <TagFilterSelect catalog={tagCatalog} value={tagFilter} onChange={(next) => updateFilters({ tagFilter: next })} className="h-8 w-full text-xs" />
           </div>
           <div className="flex-1 overflow-y-auto">
             {needsSetup && (
@@ -514,56 +921,103 @@ export default function Conversas() {
                 </p>
               </button>
             )}
-            {conversations.length === 0 && (
+            {orderedConversations.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground text-center">
                 Nenhuma conversa ainda. Quando o WhatsApp receber mensagens, elas aparecem aqui.
               </div>
             )}
-            {conversations.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setActiveId(c.id)}
-                className={`w-full text-left px-3 py-3 border-b hover:bg-muted transition ${
-                  c.id === activeId ? "bg-muted" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-sm truncate">
-                    {c.contact_name || c.contact_phone || c.contact_email}
-                  </span>
-                  <Badge variant={c.ai_enabled ? "default" : "secondary"} className="text-[10px]">
-                    {c.ai_enabled ? "IA" : "Humano"}
-                  </Badge>
-                </div>
-                <div className="text-xs text-muted-foreground truncate">{c.contact_phone || c.contact_email}</div>
-              </button>
-            ))}
+            {orderedConversations.length > 0 && visibleConversations.length === 0 && (
+              <div className="p-6 text-sm text-muted-foreground text-center">Nada neste filtro.</div>
+            )}
+            {flattenList
+              ? visibleConversations.map((c) =>
+                  conversationRow(
+                    c,
+                    !!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id)),
+                  ),
+                )
+              : (
+                <>
+                  {filteredPriority.length > 0 && (
+                    <div className="px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+                      Responderam · {filteredPriority.length}
+                    </div>
+                  )}
+                  {filteredPriority.map((c) => conversationRow(c, true))}
+                  {filteredWaiting.length > 0 && (
+                    <div className="px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+                      Aguardando · {filteredWaiting.length}
+                    </div>
+                  )}
+                  {filteredWaiting.map((c) => conversationRow(c, false))}
+                </>
+              )}
           </div>
         </div>
 
-        {/* Chat panel */}
-        <div className="flex flex-col bg-background overflow-hidden">
+        {/* Chat + contexto do lead */}
+        <div className="flex min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col bg-background overflow-hidden min-w-0">
           {!active ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
               Selecione uma conversa
             </div>
           ) : (
             <>
-              <div className="p-3 border-b flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-sm">
-                    {active.contact_name || active.contact_phone || active.contact_email}
+              <div className="p-3 border-b flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                      precisaResponder(lastByConv[active.id])
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {inboxInitials(leadTitle(active))}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {active.contact_phone || active.contact_email}
-                    {!active.ai_enabled && active.human_takeover_at && (
-                      <span className="ml-2 text-primary">
-                        · Humano assumiu — reative a IA manualmente
-                      </span>
-                    )}
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm truncate">{leadTitle(active)}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {[leadPerson(active), active.contact_city].filter(Boolean).join(" · ")}
+                      {destPhone(active) && (
+                        <>
+                          {" · "}
+                          {waMeUrl(destPhone(active)) ? (
+                            <a
+                              href={waMeUrl(destPhone(active))!}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="hover:underline"
+                            >
+                              {destPhone(active)}
+                            </a>
+                          ) : (
+                            destPhone(active)
+                          )}
+                        </>
+                      )}
+                      {!destPhone(active) && active.contact_email ? ` · ${active.contact_email}` : null}
+                      {encerrado(active) ? (
+                        <span className="ml-2 text-muted-foreground">· Encerrado</span>
+                      ) : (
+                        !active.ai_enabled &&
+                        active.human_takeover_at && (
+                          <span className="ml-2 text-primary">· Você assumiu</span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="xl:hidden h-8 px-2"
+                    onClick={() => setLeadOpen(true)}
+                    title="Dados do lead"
+                  >
+                    <PanelRight className="w-4 h-4" />
+                  </Button>
                   {stages.length > 0 && (
                     <Select value={active.stage_id ?? undefined} onValueChange={changeStage}>
                       <SelectTrigger className="h-8 w-[140px] text-xs">
@@ -571,19 +1025,31 @@ export default function Conversas() {
                       </SelectTrigger>
                       <SelectContent>
                         {stages.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          <SelectItem key={s.id} value={s.id}>
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className="h-2 w-2 rounded-full shrink-0"
+                                style={{ background: s.color || "#94a3b8" }}
+                              />
+                              {s.name}
+                            </span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   )}
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <label className={`flex items-center gap-2 text-xs ${encerrado(active) ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}>
                     {active.ai_enabled ? (
                       <Bot className="w-4 h-4 text-primary" />
                     ) : (
                       <User className="w-4 h-4" />
                     )}
-                    IA
-                    <Switch checked={active.ai_enabled} onCheckedChange={toggleAI} />
+                    {encerrado(active) ? "Encerrado" : active.ai_enabled ? "Edith" : "Você"}
+                    <Switch
+                      checked={active.ai_enabled}
+                      disabled={encerrado(active)}
+                      onCheckedChange={toggleAI}
+                    />
                   </label>
                 </div>
               </div>
@@ -637,6 +1103,9 @@ export default function Conversas() {
                   </div>
                 )}
                 <div className="flex items-center gap-2 flex-wrap text-xs">
+                  {encerrado(active) ? (
+                    <span className="text-muted-foreground">Atendimento encerrado — follow-ups cancelados.</span>
+                  ) : (
                   <Popover open={fuOpen} onOpenChange={setFuOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-7 text-xs">
@@ -681,6 +1150,7 @@ export default function Conversas() {
                     </Button>
                   </PopoverContent>
                   </Popover>
+                  )}
                   {followupHistory.length > 0 && (
                     <Collapsible open={historyOpen} onOpenChange={setHistoryOpen} className="w-full">
                       <CollapsibleTrigger asChild>
@@ -745,49 +1215,115 @@ export default function Conversas() {
                 </div>
               </div>
 
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                      m.direction === "outbound"
-                        ? "ml-auto bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    {m.direction === "outbound" && (
-                      <div className="text-[10px] opacity-70 mb-0.5">
-                        {m.sender === "ai" ? "IA" : "Você"}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/20">
+                {messages.map((m, i) => {
+                  const prev = messages[i - 1];
+                  const showDate =
+                    !prev || threadDateLabel(prev.created_at) !== threadDateLabel(m.created_at);
+                  const outbound = m.direction === "outbound";
+                  const who = outbound ? (m.sender === "ai" ? "Edith" : "Você") : leadPerson(active) || "Lead";
+                  return (
+                    <div key={m.id}>
+                      {showDate && (
+                        <div className="flex justify-center my-3">
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-background border rounded-full px-2.5 py-0.5">
+                            {threadDateLabel(m.created_at)}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`flex ${outbound ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                            outbound
+                              ? "bg-bubble text-bubble-foreground rounded-br-md"
+                              : "bg-bubble-in text-bubble-in-foreground border rounded-bl-md"
+                          }`}
+                        >
+                          <div className={`text-[10px] mb-0.5 ${outbound ? "text-bubble-foreground/55" : "text-muted-foreground"}`}>
+                            {who}
+                          </div>
+                          {m.media_url ? (
+                            <>
+                              <MessageMedia message={m} />
+                              {stripMediaPrefix(m.content) ? (
+                                <div className="whitespace-pre-wrap">{stripMediaPrefix(m.content)}</div>
+                              ) : null}
+                            </>
+                          ) : (
+                            <div className="whitespace-pre-wrap">{m.content}</div>
+                          )}
+                          <div className={`text-[10px] mt-1 text-right tabular-nums ${outbound ? "text-bubble-foreground/55" : "text-muted-foreground"}`}>
+                            {new Date(m.created_at).toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div className="whitespace-pre-wrap">{m.content}</div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="p-3 border-t flex gap-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  id="chat-input"
-                  placeholder={
-                    !destPhone(active)
-                      ? "Contato sem WhatsApp — só tem email"
-                      : active.ai_enabled
-                        ? "IA responderá automaticamente. Envie mensagem manual mesmo assim..."
-                        : "Digite sua resposta..."
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-                  disabled={sending || !destPhone(active)}
-                />
-                <Button id="chat-send" onClick={send} disabled={sending || !input.trim() || !destPhone(active)}>
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+              {encerrado(active) ? (
+                <div className="border-t px-4 py-3 text-sm text-muted-foreground bg-muted/40">
+                  Atendimento encerrado. Este lead está em Perdido — mude o estágio para reabrir.
+                </div>
+              ) : (
+              <ChatComposer
+                disabled={!destPhone(active)}
+                sending={sending}
+                aiEnabled={active.ai_enabled}
+                placeholder={
+                  !destPhone(active)
+                    ? "Contato sem WhatsApp — só tem email"
+                    : active.ai_enabled
+                      ? "Escreva para assumir a conversa…"
+                      : "Escreva sua resposta…"
+                }
+                onSend={sendPayload}
+              />
+              )}
             </>
           )}
         </div>
+        {active && (
+          <aside className="hidden xl:flex w-[300px] shrink-0 flex-col border-l bg-card overflow-y-auto p-4">
+            <LeadContextBody
+              conversation={active}
+              tags={{
+                catalog: tagCatalog,
+                assigned: tagsByConv[active.id] ?? [],
+                createTag,
+                assign: assignTag,
+                unassign: unassignTag,
+              }}
+            />
+          </aside>
+        )}
+        </div>
       </div>
+      <Sheet open={leadOpen} onOpenChange={setLeadOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Dados do lead</SheetTitle>
+          </SheetHeader>
+          {active && (
+            <div className="mt-6">
+              <LeadContextBody
+                conversation={active}
+                tags={{
+                  catalog: tagCatalog,
+                  assigned: tagsByConv[active.id] ?? [],
+                  createTag,
+                  assign: assignTag,
+                  unassign: unassignTag,
+                }}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
       <AlertDialog open={!!cancelId} onOpenChange={(o) => !o && setCancelId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

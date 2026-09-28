@@ -34,7 +34,6 @@ export function KnowledgeBaseSection({ open }: { open: boolean }) {
     const { data, error } = await supabase
       .from("knowledge_base")
       .select("*")
-      .eq("user_id", user.id)
       .order("topic");
     setLoading(false);
     if (error) {
@@ -96,7 +95,7 @@ export function KnowledgeBaseSection({ open }: { open: boolean }) {
       user_id: user.id,
     };
     const { error } = editingId
-      ? await supabase.from("knowledge_base").update(payload).eq("id", editingId).eq("user_id", user.id)
+      ? await supabase.from("knowledge_base").update(payload).eq("id", editingId)
       : await supabase.from("knowledge_base").insert(payload);
     setSaving(false);
     if (isDuplicateTopic(error)) {
@@ -115,7 +114,7 @@ export function KnowledgeBaseSection({ open }: { open: boolean }) {
     if (!user) return;
     setSaving(true);
     setFormError("");
-    const { error } = await supabase.from("knowledge_base").delete().eq("id", row.id).eq("user_id", user.id);
+    const { error } = await supabase.from("knowledge_base").delete().eq("id", row.id);
     setSaving(false);
     if (error) {
       setFormError(error.message);

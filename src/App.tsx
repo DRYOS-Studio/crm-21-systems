@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AdminRoute } from "@/components/admin/AdminRoute";
 import Login from "./pages/Login";
 import SsoBridge from "./pages/SsoBridge";
 import Conversas from "./pages/Conversas";
@@ -29,9 +28,11 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/sso" element={<SsoBridge />} />
             <Route path="/" element={<ProtectedRoute><Conversas /></ProtectedRoute>} />
-            <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+            <Route path="/crm" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+            <Route path="/kanban" element={<Navigate to="/crm" replace />} />
             <Route path="/prospeccao" element={<ProtectedRoute><Prospeccao /></ProtectedRoute>} />
-            <Route path="/admin/uazapi" element={<ProtectedRoute><AdminRoute><UazapiConfig /></AdminRoute></ProtectedRoute>} />
+            <Route path="/whatsapp" element={<ProtectedRoute><UazapiConfig /></ProtectedRoute>} />
+            <Route path="/admin/uazapi" element={<Navigate to="/whatsapp" replace />} />
             <Route path="/conversas" element={<Navigate to="/" replace />} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/agente" element={<Navigate to="/" replace />} />

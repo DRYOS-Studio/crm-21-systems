@@ -9,7 +9,7 @@ const root = createRoot(document.getElementById("root")!);
 // com tela branca, mostramos exatamente o que está faltando.
 if (!isConfigured) {
   console.error(
-    "[Q7] Configuração do Supabase ausente ou inválida:",
+    "[ProspectIA] Configuração do Supabase ausente ou inválida:",
     envProblems.map((p) => `${p.variable}: ${p.message}`).join(" | ")
   );
   root.render(<SetupRequired problems={envProblems} />);

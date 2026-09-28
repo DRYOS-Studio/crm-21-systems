@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   P_PULAR,
+  INTERVALO_MS,
+  intervaloMs,
   podeDispararAgora,
   tetoEfetivo,
   atingiuTeto,
@@ -10,6 +12,7 @@ import {
   devePularTick,
   sortearVariacao,
   montarToque1,
+  montarToqueCadencia,
 } from "../../supabase/functions/_shared/outreach.ts";
 
 // 2026-09-24 quinta; 26 sáb; 27 dom. SP = UTC-3.
@@ -35,8 +38,11 @@ test("AC-B5: fronteiras SP (não UTC)", () => {
 
 test("AC-B5: sábado e domingo", () => {
   assert.equal(podeDispararAgora(sab900), false, "sáb sem flag");
+  assert.equal(podeDispararAgora(sab900, { saturdayMorning: true, weekdaysOnly: true }), false, "advogado: só útil");
   assert.equal(podeDispararAgora(sab900, { saturdayMorning: true }), true);
   assert.equal(podeDispararAgora(sab1259, { saturdayMorning: true }), true);
+  // 14:48 UTC = 11:48 SP — se o Edge cair em UTC, sábado morre (14 >= 13).
+  assert.equal(podeDispararAgora(new Date("2026-09-26T14:48:00.000Z"), { saturdayMorning: true }), true);
   assert.equal(podeDispararAgora(sab1300, { saturdayMorning: true }), false);
   assert.equal(podeDispararAgora(dom1200, { saturdayMorning: true }), false);
 });
@@ -93,6 +99,27 @@ test("AC-B21: placeholders e vazio sem literal", () => {
   const semTudo = montarToque1("Oi {nome}, tudo bem?", { nome: null }, null);
   assert.equal(semTudo.includes("{nome}"), false);
   assert.match(semTudo, /tudo bem\?/);
+});
+
+test("intervaloMs: default 90s, clamp 30–600", () => {
+  assert.equal(intervaloMs(null), INTERVALO_MS);
+  assert.equal(intervaloMs(90), 90_000);
+  assert.equal(intervaloMs(10), 30_000);
+  assert.equal(intervaloMs(9999), 600_000);
+});
+
+test("toque 2/3 monta texto sem Groq e pode levar link do contexto", () => {
+  const t2 = montarToqueCadencia(
+    2,
+    "Sou da {empresa}. Me responde aqui.",
+    { nome: "Ana" },
+    "DRYOS",
+    "Presente em https://dryos.com.br/x",
+  );
+  assert.match(t2, /DRYOS/);
+  assert.match(t2, /https:\/\/dryos.com.br\/x/);
+  const t3 = montarToqueCadencia(3, "Fico por aqui.", { nome: "Ana" }, null, null);
+  assert.equal(t3, "Fico por aqui.");
 });
 
 test("AC-B23: 10 toques 1 usam mais de uma variação", () => {

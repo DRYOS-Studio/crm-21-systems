@@ -167,3 +167,42 @@ test("T17: resposta e log não carregam o valor de s; body.webhook_url é ignora
     stop();
   }
 });
+
+test("send_media encaminha type+url para /send/media", async () => {
+  const { jwt, instanceToken, serverUrl } = await seedOwner("media");
+  let payload = null;
+  const stop = installFetchStub([
+    passthroughApi(),
+    {
+      match: (url) => url === `${serverUrl}/send/media`,
+      respond: (_url, init) => {
+        payload = JSON.parse(init.body);
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
+  ]);
+  try {
+    const res = await post(
+      {
+        action: "send_media",
+        instance_token: instanceToken,
+        number: "5521999999999",
+        type: "image",
+        file: "https://files.example/foto.jpg",
+        text: "legenda",
+      },
+      jwt,
+    );
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(payload.number, "5521999999999");
+    assert.equal(payload.type, "image");
+    assert.equal(payload.file, "https://files.example/foto.jpg");
+    assert.equal(payload.text, "legenda");
+  } finally {
+    stop();
+  }
+});

@@ -4,6 +4,8 @@ import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { cancelPendingFollowups, scheduleInactivityFollowup } from "../_shared/followups.ts";
 import { aplicarOptout, responderTurno } from "../_shared/turno.ts";
 import { pediuParaSair } from "../_shared/brain.ts";
+import { aindaDigitando, debounceInboundMs, pareceRespostaAutomatica } from "../_shared/inbound-guarda.ts";
+import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
 
 type Admin = ReturnType<typeof createClient>;
 
@@ -14,6 +16,100 @@ const corsHeaders = {
 
 function normalizeName(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase();
+}
+
+type ProspectLead = {
+  id: string;
+  name: string | null;
+  company: string | null;
+  city: string | null;
+  conversation_id: string | null;
+};
+
+async function orgUserIds(supabase: Admin, userId: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc("org_user_ids", { _uid: userId });
+  if (error || data == null) return [userId];
+  const list = Array.isArray(data) ? data : [data];
+  const ids = list
+    .map((row) => (typeof row === "string" ? row : (row as { org_user_ids?: string })?.org_user_ids))
+    .filter((id): id is string => !!id);
+  return ids.length ? [...new Set(ids)] : [userId];
+}
+
+function pickConversation(
+  rows: Record<string, any>[] | null | undefined,
+  instanceId?: string | null,
+) {
+  const list = rows ?? [];
+  if (!list.length) return null;
+  if (instanceId) {
+    const sameInst = list.find((r) => r.instance_id === instanceId);
+    if (sameInst) return sameInst;
+  }
+  return [...list].sort(
+    (a, b) => new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime(),
+  )[0];
+}
+
+async function findConversation(
+  supabase: Admin,
+  userId: string,
+  key: string,
+  phone: string,
+  instanceId?: string | null,
+) {
+  const ids = await orgUserIds(supabase, userId);
+  const { data: byKey } = await supabase
+    .from("conversations")
+    .select("*")
+    .in("user_id", ids)
+    .eq("contact_phone", key);
+  const hit = pickConversation(byKey as Record<string, any>[] | null, instanceId);
+  if (hit) return hit;
+  if (phone) {
+    const { data: byWa } = await supabase
+      .from("conversations")
+      .select("*")
+      .in("user_id", ids)
+      .eq("wa_phone", phone);
+    const wa = pickConversation(byWa as Record<string, any>[] | null, instanceId);
+    if (wa) return wa;
+  }
+  if (key !== phone) {
+    const { data: byWaKey } = await supabase
+      .from("conversations")
+      .select("*")
+      .in("user_id", ids)
+      .eq("wa_phone", key);
+    const waKey = pickConversation(byWaKey as Record<string, any>[] | null, instanceId);
+    if (waKey) return waKey;
+  }
+  return null;
+}
+
+async function findProspectLead(supabase: Admin, userId: string, phone: string): Promise<ProspectLead | null> {
+  const ids = await orgUserIds(supabase, userId);
+  const { data } = await supabase
+    .from("prospects")
+    .select("id, name, company, city, conversation_id")
+    .in("user_id", ids)
+    .eq("phone", phone)
+    .limit(1)
+    .maybeSingle();
+  return (data as ProspectLead | null) ?? null;
+}
+
+/** Nome/empresa importados não cedem lugar ao pushName do WhatsApp. */
+function keepLeadIdentity(
+  existing: { contact_name?: string | null; contact_company?: string | null; contact_city?: string | null } | null,
+  prospect: ProspectLead | null,
+  waName: string | null,
+) {
+  return {
+    contact_name: existing?.contact_name || prospect?.name || waName || null,
+    contact_company: existing?.contact_company || prospect?.company || null,
+    contact_city: existing?.contact_city || prospect?.city || null,
+  };
 }
 
 function ok(body: any = { ok: true }) {
@@ -58,6 +154,24 @@ function jidToPhone(jid: string | null | undefined) {
   return raw.replace(/@.*/, "").replace(/:.*/, "").replace(/\D/g, "");
 }
 
+function firstPhone(...cands: Array<string | null | undefined>) {
+  for (const c of cands) {
+    const phone = jidToPhone(c);
+    if (phone) return phone;
+  }
+  return "";
+}
+
+/** Uazapi às vezes manda fromMe como "false" (string). Qualquer truthy antigo virava takeover. */
+function isFromMe(value: unknown): boolean {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    return v === "true" || v === "1";
+  }
+  return false;
+}
+
 /** O campo `content` da Uazapi chega como string JSON (ex: '{"text":"oi"}') em vários tipos. */
 function readContent(content: any): string | null {
   if (!content) return null;
@@ -76,17 +190,70 @@ function readContent(content: any): string | null {
  * essas mensagens caíam na guarda de "sem_texto" e o lead que só manda áudio — o padrão no
  * Brasil — nunca virava card nem recebia resposta.
  */
-function mediaLabel(m: any): string | null {
+function mediaKind(m: any): string | null {
   const t = String(m?.messageType || m?.mediaType || m?.type || "").toLowerCase();
   if (!t) return null;
-  if (t.includes("audio") || t.includes("ptt")) return "[áudio]";
-  if (t.includes("image")) return "[imagem]";
-  if (t.includes("video")) return "[vídeo]";
-  if (t.includes("sticker")) return "[figurinha]";
-  if (t.includes("document")) return "[documento]";
+  if (t.includes("ptt")) return "ptt";
+  if (t.includes("audio")) return "audio";
+  if (t.includes("sticker")) return "sticker";
+  if (t.includes("image")) return "image";
+  if (t.includes("video")) return "video";
+  if (t.includes("document")) return "document";
+  return null;
+}
+
+function mediaLabel(m: any): string | null {
+  const kind = mediaKind(m);
+  if (kind === "audio" || kind === "ptt") return "[áudio]";
+  if (kind === "image") return "[imagem]";
+  if (kind === "video") return "[vídeo]";
+  if (kind === "sticker") return "[figurinha]";
+  if (kind === "document") return "[documento]";
+  const t = String(m?.messageType || m?.mediaType || m?.type || "").toLowerCase();
   if (t.includes("location")) return "[localização]";
   if (t.includes("contact") || t.includes("vcard")) return "[contato]";
   return null;
+}
+
+function firstHttpUrl(...vals: unknown[]): string | null {
+  for (const v of vals) {
+    const s = String(v || "").trim();
+    if (/^https?:\/\//i.test(s)) return s;
+  }
+  return null;
+}
+
+function mediaCandidates(m: any, parsed: any): unknown[] {
+  return [
+    m?.fileURL,
+    m?.fileUrl,
+    parsed?.fileURL,
+    parsed?.fileUrl,
+    parsed?.url,
+    parsed?.URL,
+    parsed?.mediaUrl,
+    m?.mediaUrl,
+    m?.mediaURL,
+    m?.url,
+    m?.deprecatedMms3Url,
+  ];
+}
+
+function mediaUrlOf(m: any): string | null {
+  let parsed: any = null;
+  if (typeof m?.content === "string" && m.content.startsWith("{")) {
+    try {
+      parsed = JSON.parse(m.content);
+    } catch {
+      parsed = null;
+    }
+  } else if (m?.content && typeof m.content === "object") {
+    parsed = m.content;
+  }
+  const cands = mediaCandidates(m, parsed);
+  const playable = cands.find((v) => isPlayableMediaUrl(String(v || "")));
+  if (playable) return String(playable);
+  return firstHttpUrl(...cands);
 }
 
 function isReaction(m: any): boolean {
@@ -110,7 +277,7 @@ function extractText(body: any) {
     media ||                                    // mídia sem legenda → "[áudio]", "[imagem]"...
     null;
 
-  const fromMe = m?.fromMe ?? m?.key?.fromMe ?? false;
+  const fromMe = isFromMe(m?.fromMe ?? m?.key?.fromMe);
   const rawJid = m?.chatid || m?.key?.remoteJid || chat?.wa_chatid || m?.from || "";
   const isGroup =
     m?.isGroup === true || chat?.wa_isGroup === true || String(rawJid).includes("@g.us");
@@ -118,13 +285,22 @@ function extractText(body: any) {
   // chatid pode vir como @lid (id opaco). Os campos do `chat` sempre apontam para o
   // contato; `sender_pn` aponta para quem enviou — em mensagem nossa (fromMe) esse é
   // o dono da instância, então só serve como fallback quando a mensagem é do contato.
-  const phone =
-    jidToPhone(rawJid) ||
-    jidToPhone(chat?.wa_chatid) ||
-    jidToPhone(chat?.lead_phone) ||
-    jidToPhone(chat?.phone) ||
-    (fromMe ? "" : jidToPhone(m?.sender_pn)) ||
-    "";
+  const phone = firstPhone(
+    rawJid,
+    chat?.wa_chatid,
+    chat?.lead_phone,
+    chat?.phone,
+    chat?.wa_fastid,
+    chat?.contact_phone,
+    chat?.number,
+    chat?.wa_user,
+    fromMe ? null : m?.sender_pn,
+    fromMe ? null : chat?.sender_pn,
+    fromMe ? null : m?.sender,
+    fromMe ? null : m?.author,
+    fromMe ? null : m?.participant,
+    body?.phone,
+  );
 
   // `senderName`/`pushName` descrevem quem ENVIOU: em mensagem nossa (fromMe) são o dono
   // da instância, então usá-los renomeia o lead com o nome do operador a cada resposta.
@@ -141,6 +317,9 @@ function extractText(body: any) {
   return {
     text,
     media,
+    mediaType: mediaKind(m),
+    mediaUrl: mediaUrlOf(m),
+    mediaName: m?.fileName || m?.filename || m?.docName || m?.file_name || null,
     fromMe,
     phone,
     isGroup,
@@ -241,10 +420,18 @@ export async function handle(req: Request): Promise<Response> {
         parsed.instanceName,
         parsed.instanceOwner,
       );
-      if (instRow) {
+      const tokenMatch =
+        !!parsed.instanceToken &&
+        !!instRow?.instance_token &&
+        parsed.instanceToken === instRow.instance_token;
+      if (tokenMatch) {
+        // Uazapi autentica pelo token do envelope. Versalhes às vezes entrega
+        // sem a query `?s=` — recusar isso sumia com as respostas no CRM.
+        autenticado = true;
+      } else if (instRow) {
         const { data: confirmed } = await supabase.rpc("webhook_is_confirmed", { p_instance: instRow.id });
         if (confirmed) {
-          console.warn("[webhook] instância confirmada sem s", { id: instRow.id });
+          console.warn("[webhook] instância confirmada sem s e sem token", { id: instRow.id });
           return unauthorized();
         }
       }
@@ -259,7 +446,7 @@ export async function handle(req: Request): Promise<Response> {
       await supabase.rpc("webhook_confirm", { p_instance: instRow.id });
     }
 
-    const { text, media, fromMe, phone, isGroup, contactName, instanceName, instanceToken, instanceOwner, externalId, reaction } =
+    const { text, media, mediaType, mediaUrl, mediaName, fromMe, phone, isGroup, contactName, instanceName, instanceToken, instanceOwner, externalId, reaction } =
       parsed;
 
     console.log("[webhook] in", {
@@ -302,8 +489,11 @@ export async function handle(req: Request): Promise<Response> {
     if (keyErr) console.error("[webhook] canon_phone falhou", keyErr.message);
     const key = (keyRaw as string | null) || phone;
 
-    // 3. filtro do dono — só no modo novo (AC-A15)
-    if (cerebro && agent?.ownerNotifyPhone && key === agent.ownerNotifyPhone) {
+    const prospect = await findProspectLead(supabase, userId, key);
+
+    // 3. filtro do dono — só no modo novo (AC-A15). Se o número também é prospect
+    // (teste / auto-abordagem), a conversa segue: senão a Edith nunca responderia.
+    if (cerebro && agent?.ownerNotifyPhone && key === agent.ownerNotifyPhone && !prospect) {
       return ok();
     }
 
@@ -316,20 +506,29 @@ export async function handle(req: Request): Promise<Response> {
     }
 
     // 4. Upsert por chave canônica; ai_stage no insert (AC-A18/A18c)
-    const { data: convExisting } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("contact_phone", key)
-      .maybeSingle();
+    const convExisting = await findConversation(supabase, userId, key, phone, instRow.id);
 
     let conv = convExisting;
+    const identity = keepLeadIdentity(convExisting, prospect, contactName);
+
+    // Envio da API (abertura da Edith) às vezes ecoa como fromMe. Não é takeover.
+    if (fromMe && convExisting && await isApiEcho(supabase, convExisting.id, userId, text)) {
+      console.log("[webhook] eco da API, sem takeover", { conversa: convExisting.id });
+      return ok();
+    }
+    if (fromMe && convExisting && mediaType && await isApiMediaEcho(supabase, convExisting.id, userId)) {
+      console.log("[webhook] eco de mídia da API, sem takeover", { conversa: convExisting.id });
+      return ok();
+    }
+
     if (!conv) {
+      const ids = await orgUserIds(supabase, userId);
       const { data: novoLead } = await supabase
         .from("pipeline_stages")
         .select("id")
-        .eq("user_id", userId)
-        .eq("name", "Novo Lead")
+        .in("user_id", ids)
+        .in("name", ["Novo Prospect", "Novo Lead"])
+        .order("position", { ascending: true })
         .limit(1)
         .maybeSingle();
       let firstStage = novoLead;
@@ -337,7 +536,7 @@ export async function handle(req: Request): Promise<Response> {
         const { data: fallback } = await supabase
           .from("pipeline_stages")
           .select("id")
-          .eq("user_id", userId)
+          .in("user_id", ids)
           .order("position", { ascending: true })
           .limit(1)
           .maybeSingle();
@@ -346,14 +545,14 @@ export async function handle(req: Request): Promise<Response> {
       if (!firstStage) {
         console.log("[webhook] kanban vazio, criando etapas padrao", { userId });
         await supabase.from("pipeline_stages").insert([
-          { user_id: userId, name: "Novo Lead", position: 0, color: "#3FB8BE" },
-          { user_id: userId, name: "Em Negociação", position: 1, color: "#F59E0B" },
+          { user_id: userId, name: "Novo Prospect", position: 0, color: "#3FB8BE" },
+          { user_id: userId, name: "Em contato", position: 1, color: "#F59E0B" },
           { user_id: userId, name: "Fechado", position: 2, color: "#10B981" },
         ]);
         const { data: seeded } = await supabase
           .from("pipeline_stages")
           .select("id")
-          .eq("user_id", userId)
+          .in("user_id", await orgUserIds(supabase, userId))
           .order("position", { ascending: true })
           .limit(1)
           .maybeSingle();
@@ -366,7 +565,9 @@ export async function handle(req: Request): Promise<Response> {
           instance_id: instRow.id,
           contact_phone: key,
           wa_phone: phone,
-          contact_name: contactName,
+          contact_name: identity.contact_name,
+          contact_company: identity.contact_company,
+          contact_city: identity.contact_city,
           ai_enabled: fromMe ? false : true,
           ai_stage: fromMe ? "abordar" : "descobrir",
           human_takeover_at: fromMe ? new Date().toISOString() : null,
@@ -377,20 +578,16 @@ export async function handle(req: Request): Promise<Response> {
         .single();
       if (createErr) {
         console.log("[webhook] corrida na criacao, relendo conversa", { phone: key });
-        const { data: raced } = await supabase
-          .from("conversations")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("contact_phone", key)
-          .maybeSingle();
-        conv = raced;
+        conv = await findConversation(supabase, userId, key, phone, instRow.id);
       } else {
         conv = created;
       }
     } else {
       const update: Record<string, any> = {
         last_message_at: new Date().toISOString(),
-        contact_name: contactName || conv.contact_name,
+        contact_name: identity.contact_name,
+        contact_company: identity.contact_company,
+        contact_city: identity.contact_city,
         wa_phone: phone,
       };
       if (fromMe) {
@@ -402,6 +599,22 @@ export async function handle(req: Request): Promise<Response> {
       await supabase.from("conversations").update(update).eq("id", conv.id);
     }
     if (!conv) return ok();
+
+    if (prospect && !prospect.conversation_id) {
+      await supabase.from("prospects").update({ conversation_id: conv.id }).eq("id", prospect.id);
+    }
+
+    const playableUrl = mediaType
+      ? await persistWhatsappMedia({
+          admin: supabase,
+          userId,
+          serverUrl: instRow.server_url,
+          instanceToken: instRow.instance_token,
+          messageId: externalId,
+          mediaType,
+          fallbackUrl: mediaUrl,
+        })
+      : mediaUrl;
 
     // 6. fromMe ⇒ takeover atual (grava outbound, não inbound)
     if (fromMe) {
@@ -417,6 +630,10 @@ export async function handle(req: Request): Promise<Response> {
         direction: "outbound",
         sender: "human",
         content: text,
+        external_id: externalId,
+        media_type: mediaType,
+        media_url: playableUrl,
+        media_name: mediaName,
       });
       return ok();
     }
@@ -429,7 +646,7 @@ export async function handle(req: Request): Promise<Response> {
 
     // 5. inbound com external_id + processed_at null; 23505 = reenvio
     if (!externalId) console.log("[webhook] inbound sem messageid — inserindo sem external_id");
-    const { error: inboundErr } = await supabase
+    const { data: inboundRow, error: inboundErr } = await supabase
       .from("messages")
       .insert({
         conversation_id: conv.id,
@@ -439,7 +656,12 @@ export async function handle(req: Request): Promise<Response> {
         content: text,
         external_id: externalId,
         processed_at: null,
-      });
+        media_type: mediaType,
+        media_url: playableUrl,
+        media_name: mediaName,
+      })
+      .select("id")
+      .single();
     if (inboundErr) {
       if (inboundErr.code === "23505") {
         console.log("[webhook] reenvio (external_id)", { conversa: conv.id });
@@ -448,37 +670,109 @@ export async function handle(req: Request): Promise<Response> {
       console.error("[webhook] insert inbound falhou", inboundErr.message);
       return ok();
     }
-
-    // 7. claim sempre
-    const { data: claimed, error: claimErr } = await supabase.rpc("brain_claim_inbound", {
-      p_user: userId,
-      p_conv: conv.id,
-    });
-    if (claimErr) console.error("[webhook] brain_claim_inbound falhou", claimErr.message);
-    const claim = (claimed || []).map((m: { id: string; content: string }) => ({ id: m.id, content: m.content }));
+    if (!inboundRow?.id) return ok();
 
     // 8. legado byte a byte se não autenticado ou sem cérebro
     if (!autenticado || !modoCerebro(agent)) {
+      await claimInbound(supabase, userId, conv.id);
       return await caminhoLegado({ supabase, userId, conv, instRow, phone: key, agent });
     }
 
     // 9. modo novo, IA desligada na conversa ou agente off: só regra de saída
     if (!conv.ai_enabled || !agent?.enabled) {
+      const claim = await claimInbound(supabase, userId, conv.id);
       if (claim.some((m: { content: string }) => pediuParaSair(m.content))) {
         await aplicarOptout({ admin: supabase, userId, conversationId: conv.id, claim });
       }
       return ok();
     }
 
-    // 10. modo novo, IA ligada
-    if (claim.length) {
-      waitUntil(responderTurno({ admin: supabase, userId, conversationId: conv.id, claim }));
-    }
+    // 10. modo novo, IA ligada: espera o lead terminar de digitar; junta a janela.
+    waitUntil(
+      rodarTurnoComDebounce({
+        supabase,
+        userId,
+        conversationId: conv.id,
+        inboundId: inboundRow.id,
+      }),
+    );
     return ok();
   } catch (e: any) {
     console.error("[webhook] error", e);
     return ok({ ok: false, error: e.message });
   }
+}
+
+async function isApiEcho(supabase: Admin, conversationId: string, userId: string, text: string) {
+  const { data } = await supabase
+    .from("messages")
+    .select("id")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", userId)
+    .eq("sender", "ai")
+    .eq("content", text)
+    .gte("created_at", new Date(Date.now() - 120_000).toISOString())
+    .limit(1)
+    .maybeSingle();
+  return !!data;
+}
+
+async function isApiMediaEcho(supabase: Admin, conversationId: string, userId: string) {
+  const { data } = await supabase
+    .from("messages")
+    .select("media_url")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", userId)
+    .eq("direction", "outbound")
+    .not("media_url", "is", null)
+    .gte("created_at", new Date(Date.now() - 120_000).toISOString())
+    .limit(8);
+  return (data ?? []).some((m: { media_url: string | null }) => isPlayableMediaUrl(m.media_url));
+}
+
+async function claimInbound(supabase: Admin, userId: string, conversationId: string) {
+  const { data: claimed, error: claimErr } = await supabase.rpc("brain_claim_inbound", {
+    p_user: userId,
+    p_conv: conversationId,
+  });
+  if (claimErr) console.error("[webhook] brain_claim_inbound falhou", claimErr.message);
+  return (claimed || []).map((m: { id: string; content: string }) => ({ id: m.id, content: m.content }));
+}
+
+async function rodarTurnoComDebounce(params: {
+  supabase: Admin;
+  userId: string;
+  conversationId: string;
+  inboundId: string;
+}) {
+  const { supabase, userId, conversationId, inboundId } = params;
+  const ms = debounceInboundMs();
+  if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+
+  const { data: latest } = await supabase
+    .from("messages")
+    .select("id")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", userId)
+    .eq("direction", "inbound")
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (aindaDigitando(inboundId, latest?.id)) {
+    console.log("[webhook] debounce: ainda digitando", { conversationId });
+    return;
+  }
+
+  const claim = await claimInbound(supabase, userId, conversationId);
+  const humanos = claim.filter((m) => !pareceRespostaAutomatica(m.content));
+  if (!humanos.length) {
+    console.log("[webhook] inbound automatico ignorado", { conversationId, claim: claim.length });
+    return;
+  }
+
+  await responderTurno({ admin: supabase, userId, conversationId, claim: humanos });
 }
 
 async function caminhoLegado(params: {

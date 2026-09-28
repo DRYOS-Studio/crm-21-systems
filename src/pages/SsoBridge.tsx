@@ -26,7 +26,7 @@ export default function SsoBridge() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="dryos min-h-screen flex items-center justify-center bg-background text-foreground">
       {error ? (
         <div className="text-center space-y-2">
           <p className="text-destructive text-sm">{error}</p>

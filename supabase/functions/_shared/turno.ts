@@ -80,11 +80,12 @@ async function lerHistorico(admin: Admin, userId: string, conversationId: string
   // security r3 W6: filtra por user_id também, não só conversation_id (service role ignora RLS).
   const { data } = await admin
     .from("messages")
-    .select("direction, content")
+    .select("direction, content, created_at, id")
     .eq("conversation_id", conversationId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .order("id", { ascending: false })
+    .limit(40);
   return (data || []).reverse().map((m: any) => ({
     role: (m.direction === "inbound" ? "user" : "assistant") as "user" | "assistant",
     content: m.content,

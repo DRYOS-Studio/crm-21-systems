@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { montarWebhookUrl, redigirJson, redigirSecret } from "../_shared/webhook-url.ts";
+import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,19 +38,18 @@ async function handleWebhookAction(req: Request, body: any) {
     return json({ ok: false, error: "Servidor sem configuração" }, 500);
   }
   const admin = createClient(supabaseUrl, serviceKey);
-  const user = await userFromJwt(admin, req);
-  if (!user) return json({ ok: false, error: "Não autenticado" }, 401);
-
+  const jwtUser = await userFromJwt(admin, req);
   const instance_token = body.instance_token;
   if (!instance_token) return json({ ok: false, error: "Token da instância não informado" });
 
-  const { data: inst } = await admin
+  let instQuery = admin
     .from("whatsapp_instances")
     .select("id, user_id, instance_token, server_url")
-    .eq("instance_token", instance_token)
-    .eq("user_id", user.id)
-    .maybeSingle();
+    .eq("instance_token", instance_token);
+  if (jwtUser) instQuery = instQuery.eq("user_id", jwtUser.id);
+  const { data: inst } = await instQuery.maybeSingle();
   if (!inst?.instance_token) return json({ ok: false, error: "Instância não encontrada" });
+  const user = jwtUser ?? { id: inst.user_id };
   if (!inst.server_url) return json({ ok: false, error: "Instância sem servidor Uazapi" });
 
   const baseUrl = String(inst.server_url).replace(/\/$/, "");
@@ -97,6 +97,9 @@ async function handleWebhookAction(req: Request, body: any) {
   }
 
   const url = montarWebhookUrl(supabaseUrl, secret);
+  if (!/^https?:\/\//i.test(url)) {
+    return json({ ok: false, error: "URL do webhook inválida no servidor" });
+  }
   const webhookBody = {
     enabled: true,
     url,
@@ -143,6 +146,86 @@ async function handleWebhookAction(req: Request, body: any) {
   });
 }
 
+async function handleDownloadMedia(req: Request, body: any) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) {
+    return json({ ok: false, error: "Servidor sem configuração" }, 500);
+  }
+  const admin = createClient(supabaseUrl, serviceKey);
+  const jwtUser = await userFromJwt(admin, req);
+  if (!jwtUser) return json({ ok: false, error: "Não autenticado" }, 401);
+
+  const messageId = String(body.message_id || "").trim();
+  if (!messageId) return json({ ok: false, error: "Mensagem não informada" });
+
+  const { data: msg } = await admin
+    .from("messages")
+    .select("id, user_id, conversation_id, media_type, media_url, external_id")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (!msg) return json({ ok: false, error: "Mensagem não encontrada" }, 404);
+
+  const orgIds = await admin.rpc("org_user_ids", { _uid: jwtUser.id });
+  const allowed = Array.isArray(orgIds.data)
+    ? orgIds.data.map((row: any) => (typeof row === "string" ? row : row?.org_user_ids)).filter(Boolean)
+    : [];
+  if (allowed.length && !allowed.includes(msg.user_id) && msg.user_id !== jwtUser.id) {
+    return json({ ok: false, error: "Sem permissão" }, 403);
+  }
+
+  if (isPlayableMediaUrl(msg.media_url)) {
+    return json({ ok: true, url: msg.media_url });
+  }
+
+  const { data: conv } = await admin
+    .from("conversations")
+    .select("instance_id, user_id")
+    .eq("id", msg.conversation_id)
+    .maybeSingle();
+
+  let inst: { server_url: string | null; instance_token: string | null } | null = null;
+  if (conv?.instance_id) {
+    const { data } = await admin
+      .from("whatsapp_instances")
+      .select("server_url, instance_token")
+      .eq("id", conv.instance_id)
+      .maybeSingle();
+    inst = data;
+  }
+  if (!inst?.server_url || !inst?.instance_token) {
+    const { data } = await admin
+      .from("whatsapp_instances")
+      .select("server_url, instance_token")
+      .eq("user_id", msg.user_id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    inst = data;
+  }
+  if (!inst?.server_url || !inst?.instance_token) {
+    return json({ ok: false, error: "Instância WhatsApp não encontrada" });
+  }
+  if (!msg.external_id) {
+    return json({ ok: false, error: "Áudio sem identificador para baixar" });
+  }
+
+  const url = await persistWhatsappMedia({
+    admin,
+    userId: msg.user_id,
+    serverUrl: inst.server_url,
+    instanceToken: inst.instance_token,
+    messageId: msg.external_id,
+    mediaType: msg.media_type,
+    fallbackUrl: msg.media_url,
+  });
+  if (!url || !isPlayableMediaUrl(url)) {
+    return json({ ok: false, error: "Falha ao baixar o áudio" });
+  }
+  await admin.from("messages").update({ media_url: url }).eq("id", msg.id);
+  return json({ ok: true, url });
+}
+
 export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -154,6 +237,10 @@ export async function handle(req: Request): Promise<Response> {
 
     if (action === "set_webhook" || action === "get_webhooks") {
       return await handleWebhookAction(req, body);
+    }
+
+    if (action === "download_media") {
+      return await handleDownloadMedia(req, body);
     }
 
     // Resolve configuração preferencialmente pela instância do usuário
@@ -323,7 +410,15 @@ export async function handle(req: Request): Promise<Response> {
       console.log(`[status] status=${uazRes.status}, body=${responseText}`);
 
       if (!uazRes.ok) {
-        return json({ ok: false, error: "Falha ao verificar status", details: responseText });
+        if (uazRes.status === 401) {
+          return json({
+            ok: false,
+            error:
+              "Instance Token inválido neste Server URL. Use o token da instância criada nesse servidor — não o Admin Token e não o token do servidor antigo.",
+            code: "INSTANCE_TOKEN_INVALID",
+          });
+        }
+        return json({ ok: false, error: "Falha ao verificar status", details: responseText.slice(0, 200) });
       }
 
       const data = JSON.parse(responseText);
@@ -382,6 +477,47 @@ export async function handle(req: Request): Promise<Response> {
       }
 
       const data = JSON.parse(responseText);
+      return json({ ok: true, success: true, data });
+    }
+
+    // === SEND MEDIA (imagem, vídeo, documento, áudio, ptt, sticker) ===
+    if (action === "send_media") {
+      if (!instance_token) {
+        return json({ ok: false, error: "Token da instância não informado" });
+      }
+      const { number, type, file, text, docName, delay: mediaDelay, readchat } = body;
+      const allowed = ["image", "video", "document", "audio", "ptt", "sticker"];
+      if (!number || !file || !allowed.includes(type)) {
+        return json({ ok: false, error: "Número, tipo e arquivo são obrigatórios" });
+      }
+      if (typeof file === "string" && file.startsWith("data:") && file.length > 6_000_000) {
+        return json({ ok: false, error: "Arquivo grande demais para envio direto" });
+      }
+
+      const sendBody: Record<string, any> = { number, type, file };
+      if (text) sendBody.text = text;
+      if (docName) sendBody.docName = docName;
+      if (mediaDelay) sendBody.delay = mediaDelay;
+      if (readchat !== undefined) sendBody.readchat = readchat;
+
+      const uazRes = await fetch(`${baseUrl}/send/media`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", token: instance_token },
+        body: JSON.stringify(sendBody),
+      });
+      const responseText = await uazRes.text();
+      const fileHint = typeof file === "string" ? file.slice(0, 80) : "";
+      console.log(`[send_media] type=${type} status=${uazRes.status} file=${fileHint}`);
+
+      if (!uazRes.ok) {
+        return json({ ok: false, error: "Falha ao enviar mídia", details: responseText.slice(0, 400) });
+      }
+      let data: unknown = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = responseText;
+      }
       return json({ ok: true, success: true, data });
     }
 

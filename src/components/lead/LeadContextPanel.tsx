@@ -1,0 +1,192 @@
+import { useEffect, useState } from "react";
+import { Building2, MapPin, Mail, Phone, Tag, Tags, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { LeadTagEditor } from "@/components/lead/LeadTagEditor";
+import type { LeadTag } from "@/lib/lead-tags";
+
+export type LeadConversation = {
+  id: string;
+  contact_name: string | null;
+  contact_company: string | null;
+  contact_city: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  wa_phone?: string | null;
+};
+
+type ProspectRow = {
+  name: string | null;
+  company: string | null;
+  city: string | null;
+  extra: Record<string, unknown> | null;
+  origem: string | null;
+};
+
+export function leadTitle(c: LeadConversation) {
+  return c.contact_company || c.contact_name || c.contact_phone || c.contact_email || "Lead";
+}
+
+export function leadPerson(c: LeadConversation) {
+  if (c.contact_name && c.contact_name !== c.contact_company) return c.contact_name;
+  return null;
+}
+
+function Field({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Building2;
+  label: string;
+  value?: string | null;
+}) {
+  if (!value) return null;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+        <Icon className="w-3 h-3" />
+        {label}
+      </div>
+      <div className="text-sm text-foreground break-words">{value}</div>
+    </div>
+  );
+}
+
+type TagTools = {
+  catalog: LeadTag[];
+  assigned: LeadTag[];
+  createTag: (name: string) => Promise<LeadTag | null>;
+  assign: (conversationId: string, tag: LeadTag) => Promise<void>;
+  unassign: (conversationId: string, tagId: string) => Promise<void>;
+};
+
+export function LeadContextBody({
+  conversation,
+  tags,
+}: {
+  conversation: LeadConversation;
+  tags?: TagTools;
+}) {
+  const { user } = useAuth();
+  const [prospect, setProspect] = useState<ProspectRow | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const phone = conversation.contact_phone || conversation.wa_phone;
+      const byId = await supabase
+        .from("prospects")
+        .select("name, company, city, extra, origem")
+        .eq("conversation_id", conversation.id)
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      if (byId.data) {
+        setProspect(byId.data as ProspectRow);
+        return;
+      }
+      if (!phone) {
+        setProspect(null);
+        return;
+      }
+      const byPhone = await supabase
+        .from("prospects")
+        .select("name, company, city, extra, origem")
+        .eq("phone", phone)
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) setProspect((byPhone.data as ProspectRow | null) ?? null);
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, conversation.id, conversation.contact_phone, conversation.wa_phone]);
+
+  const company = conversation.contact_company || prospect?.company || null;
+  const importedName = prospect?.name || null;
+  const person = leadPerson(conversation);
+  const city = conversation.contact_city || prospect?.city || null;
+  const phone = conversation.wa_phone || conversation.contact_phone;
+  const extra = prospect?.extra && typeof prospect.extra === "object" ? prospect.extra : null;
+  const extraEntries = extra
+    ? Object.entries(extra).filter(([, v]) => v != null && String(v).trim() !== "")
+    : [];
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Lead</div>
+        <div className="font-semibold text-sm mt-0.5">{company || importedName || person || leadTitle(conversation)}</div>
+        {prospect?.origem && (
+          <Badge variant="secondary" className="mt-2 text-[10px]">
+            {prospect.origem}
+          </Badge>
+        )}
+      </div>
+
+      <Separator />
+
+      <div className="space-y-3">
+        <Field icon={Building2} label="Empresa" value={company} />
+        <Field icon={User} label="Nome importado" value={importedName} />
+        <Field
+          icon={User}
+          label="Nome no WhatsApp"
+          value={person && person !== importedName ? person : null}
+        />
+        <Field icon={MapPin} label="Cidade" value={city} />
+        <Field icon={Phone} label="WhatsApp" value={phone} />
+        <Field icon={Mail} label="E-mail" value={conversation.contact_email} />
+      </div>
+
+      {tags && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <Tags className="w-3 h-3" />
+              Tags
+            </div>
+            <LeadTagEditor
+              conversationId={conversation.id}
+              catalog={tags.catalog}
+              assigned={tags.assigned}
+              createTag={tags.createTag}
+              assign={tags.assign}
+              unassign={tags.unassign}
+            />
+          </div>
+        </>
+      )}
+
+      {extraEntries.length > 0 && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <Tag className="w-3 h-3" />
+              Dados da importação
+            </div>
+            {extraEntries.map(([k, v]) => (
+              <div key={k} className="space-y-0.5">
+                <div className="text-[11px] text-muted-foreground">{k}</div>
+                <div className="text-sm break-words">{String(v)}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!company && !importedName && !city && extraEntries.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Sem ficha importada. Empresa e cidade entram pelo CSV ou pelo Extrator.
+        </p>
+      )}
+    </div>
+  );
+}

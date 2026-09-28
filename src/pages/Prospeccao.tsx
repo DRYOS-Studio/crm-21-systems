@@ -26,13 +26,19 @@ export default function Prospeccao() {
               Conversas
             </Link>
             <Link
-              to="/kanban"
+              to="/crm"
               className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
             >
-              Kanban
+              CRM
             </Link>
             <Link to="/prospeccao" className="px-3 py-1.5 text-sm rounded-md bg-muted font-medium">
               Prospecção
+            </Link>
+            <Link
+              to="/whatsapp"
+              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
+            >
+              WhatsApp
             </Link>
           </nav>
         </div>
@@ -54,7 +60,8 @@ export default function Prospeccao() {
       <main className="flex-1 overflow-auto p-6">
         <h1 className="text-3xl text-foreground">Prospecção</h1>
         <p className="mt-2 mb-6 text-sm text-muted-foreground">
-          Importe contatos e acompanhe os disparos.
+          Cada conta tem o próprio WhatsApp, a própria fila e os próprios toques. Groq não é
+          obrigatório para disparar.
         </p>
         <div className="space-y-6">
           <CsvImport />

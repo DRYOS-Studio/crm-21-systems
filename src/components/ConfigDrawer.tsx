@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdminRole } from "@/hooks/useAdminRole";
 import {
   Sheet,
   SheetContent,
@@ -18,23 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { KnowledgeBaseSection } from "@/components/knowledge/KnowledgeBaseSection";
-import { Badge } from "@/components/ui/badge";
-import { SUPABASE_URL } from "@/lib/env";
-import { resolveWebhookUrl } from "@/lib/webhookUrl";
-import {
-  Bot,
-  Building2,
-  ExternalLink,
-  TestTube2,
-  Clock,
-  Webhook,
-  Copy,
-  Shield,
-  Smartphone,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-} from "lucide-react";
+import { Bot, Building2, ExternalLink, TestTube2, Clock, Smartphone } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -42,30 +25,8 @@ interface Props {
   initialSection?: "whatsapp" | "agente";
 }
 
-function toQrSrc(raw: string | null | undefined): string | null {
-  if (!raw || !String(raw).trim()) return null;
-  const v = String(raw).trim();
-  if (v.startsWith("data:") || v.startsWith("http")) return v;
-  return `data:image/png;base64,${v}`;
-}
-
-function CheckRow({ ok, warn, label }: { ok?: boolean; warn?: boolean; label: string }) {
-  const Icon = warn ? AlertTriangle : ok ? CheckCircle2 : XCircle;
-  const color = warn ? "text-amber-500" : ok ? "text-emerald-500" : "text-destructive";
-  return (
-    <div className="flex items-start gap-2">
-      <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${color}`} />
-      <span className="text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
 export function ConfigDrawer({ open, onOpenChange }: Props) {
   const { user } = useAuth();
-  const { isAdmin } = useAdminRole();
-  const navigate = useNavigate();
-
-  // Agente state
   const [apiKey, setApiKey] = useState("");
   const [hasKey, setHasKey] = useState(false);
   const [prompt, setPrompt] = useState(
@@ -74,25 +35,6 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
   const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testingHook, setTestingHook] = useState(false);
-  const [hookReport, setHookReport] = useState<any | null>(null);
-  // Conexão Uazapi (por usuário) — nome/telefone são detectados, não digitados
-  const [instanceId, setInstanceId] = useState<string | null>(null);
-  const [instanceName, setInstanceName] = useState("");
-  const [instancePhone, setInstancePhone] = useState("");
-  const [instanceConnected, setInstanceConnected] = useState<boolean | null>(null);
-  const [serverUrl, setServerUrl] = useState("");
-  const [instanceToken, setInstanceToken] = useState("");
-  const [hasInstanceToken, setHasInstanceToken] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [connectStep, setConnectStep] = useState("");
-  const [webhookOk, setWebhookOk] = useState<boolean | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [webhookConfirmed, setWebhookConfirmed] = useState(false);
-  const [qrSrc, setQrSrc] = useState<string | null>(null);
-  const [paircode, setPaircode] = useState<string | null>(null);
-  const [fetchingQr, setFetchingQr] = useState(false);
-  // Follow-up automático
   const [followupOn, setFollowupOn] = useState(false);
   const [followupMinutes, setFollowupMinutes] = useState<number>(60);
   const [followupMax, setFollowupMax] = useState<number>(1);
@@ -112,10 +54,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
       setPrompt(data.system_prompt);
       setEnabled(data.enabled);
       setHasKey(!!data.groq_api_key);
-      const m = (data as any).followup_inactivity_minutes;
+      const m = (data as { followup_inactivity_minutes?: number | null }).followup_inactivity_minutes;
       setFollowupOn(!!m && m > 0);
       setFollowupMinutes(m && m > 0 ? m : 60);
-      setFollowupMax((data as any).followup_max_per_conversation ?? 1);
+      setFollowupMax((data as { followup_max_per_conversation?: number }).followup_max_per_conversation ?? 1);
       setCompanyName(data.company_name ?? "");
       setBusinessContext(data.business_context ?? "");
       setOwnerNotifyPhone(data.owner_notify_phone ?? "");
@@ -123,257 +65,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
     }
   };
 
-  const loadUazapi = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("whatsapp_instances")
-      .select("id,name,phone,status,server_url,instance_token")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data) {
-      setInstanceId(data.id);
-      setInstanceName(data.name || "");
-      setInstancePhone(data.phone || "");
-      setInstanceConnected(data.status === "connected");
-      setServerUrl(data.server_url || "");
-      setHasInstanceToken(!!data.instance_token);
-      await refreshWebhook(data.id);
-    } else {
-      setWebhookUrl("");
-      setWebhookConfirmed(false);
-    }
-  };
-
-  const refreshWebhook = async (id: string | null) => {
-    const url = await resolveWebhookUrl(supabase, SUPABASE_URL, id);
-    setWebhookUrl(url || "");
-    if (!id) {
-      setWebhookConfirmed(false);
-      return;
-    }
-    const { data, error } = await supabase.rpc("webhook_is_confirmed", { p_instance: id });
-    setWebhookConfirmed(!error && data === true);
-  };
-
   useEffect(() => {
     if (!open) return;
-    loadAgent();
-    loadUazapi();
+    void loadAgent();
   }, [open, user]);
-
-  useEffect(() => {
-    if (!open) {
-      setQrSrc(null);
-      setPaircode(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || instanceConnected !== false || (!qrSrc && !paircode)) return;
-    let cancelled = false;
-    const tick = async () => {
-      const token = await resolveToken();
-      if (!token || cancelled) return;
-      const { data } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "status", instance_token: token },
-      });
-      if (cancelled || !data?.ok || !data.connected) return;
-      setInstanceConnected(true);
-      setQrSrc(null);
-      setPaircode(null);
-      if (data.phone) setInstancePhone(data.phone);
-      if (data.name) setInstanceName(data.name);
-      if (instanceId) {
-        await supabase
-          .from("whatsapp_instances")
-          .update({
-            status: "connected",
-            phone: data.phone || undefined,
-            name: data.name || undefined,
-            profile_name: data.profile_name || undefined,
-          })
-          .eq("id", instanceId);
-      }
-      toast({ title: "WhatsApp conectado" });
-    };
-    const id = window.setInterval(tick, 3000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [open, instanceConnected, qrSrc, paircode, instanceId]);
-
-  /** Token da instância: o que foi digitado agora ou o que já está salvo. */
-  const resolveToken = async (): Promise<string> => {
-    const typed = instanceToken.trim();
-    if (typed) return typed;
-    if (!user) return "";
-    const { data } = await supabase
-      .from("whatsapp_instances")
-      .select("instance_token")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    return data?.instance_token || "";
-  };
-
-  const fetchQr = async (tokenOverride?: string) => {
-    const token = tokenOverride || (await resolveToken());
-    if (!token) {
-      toast({ variant: "destructive", title: "Informe o Instance Token" });
-      return;
-    }
-    setFetchingQr(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "connect", instance_token: token },
-      });
-      if (error || !data?.ok) {
-        throw new Error(data?.error || error?.message || "Não consegui gerar o QR.");
-      }
-      if (data.already_connected) {
-        setInstanceConnected(true);
-        setQrSrc(null);
-        setPaircode(null);
-        toast({ title: "WhatsApp já está conectado" });
-        return;
-      }
-      setQrSrc(toQrSrc(data.qrcode));
-      setPaircode(data.paircode || null);
-      if (!data.qrcode && !data.paircode) {
-        toast({
-          variant: "destructive",
-          title: "QR não veio",
-          description: "A Uazapi não devolveu o código. Tente de novo em alguns segundos.",
-        });
-      }
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Falha ao gerar QR", description: e.message });
-    } finally {
-      setFetchingQr(false);
-    }
-  };
-
-  /**
-   * Um clique faz tudo: salva as credenciais, descobre nome e telefone pelo
-   * token, registra o webhook na Uazapi e roda o diagnóstico ponta a ponta.
-   * O usuário não precisa abrir o painel da Uazapi em momento nenhum.
-   */
-  const connectUazapi = async () => {
-    if (!user) return;
-    const url = serverUrl.trim().replace(/\/$/, "");
-    if (!url) {
-      toast({ variant: "destructive", title: "Informe o Server URL" });
-      return;
-    }
-    const token = instanceToken.trim() || (await resolveToken());
-    if (!token) {
-      toast({ variant: "destructive", title: "Informe o Instance Token" });
-      return;
-    }
-
-    setConnecting(true);
-    setWebhookOk(null);
-    setHookReport(null);
-    try {
-      // 1. Grava servidor + token primeiro: o backend descobre a URL do
-      //    servidor a partir do token já salvo no banco.
-      setConnectStep("Salvando credenciais...");
-      let id = instanceId;
-      if (id) {
-        const { error } = await supabase
-          .from("whatsapp_instances")
-          .update({ server_url: url, instance_token: token })
-          .eq("id", id)
-          .eq("user_id", user.id);
-        if (error) throw new Error(error.message);
-      } else {
-        const { data, error } = await supabase
-          .from("whatsapp_instances")
-          .insert({
-            user_id: user.id,
-            server_url: url,
-            instance_token: token,
-            name: "Instância WhatsApp", // provisório: substituído pelo nome real logo abaixo
-            status: "disconnected",
-          })
-          .select("id")
-          .single();
-        if (error) throw new Error(error.message);
-        id = data.id;
-        setInstanceId(id);
-      }
-
-      // 2. O token já identifica a instância — nome e telefone vêm da Uazapi.
-      setConnectStep("Identificando a instância...");
-      const { data: st, error: stErr } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "status", instance_token: token },
-      });
-      if (stErr || !st?.ok) {
-        throw new Error(
-          st?.error ||
-            stErr?.message ||
-            "Não consegui falar com a Uazapi. Confira o Server URL e o Instance Token.",
-        );
-      }
-
-      const detected: any = { status: st.connected ? "connected" : "disconnected" };
-      if (st.name) detected.name = st.name;
-      if (st.phone) detected.phone = st.phone;
-      if (st.profile_name) detected.profile_name = st.profile_name;
-      await supabase.from("whatsapp_instances").update(detected).eq("id", id).eq("user_id", user.id);
-
-      if (st.name) setInstanceName(st.name);
-      if (st.phone) setInstancePhone(st.phone);
-      setInstanceConnected(!!st.connected);
-
-      // 3. Registra o webhook sozinho, direto na Uazapi.
-      setConnectStep("Registrando o webhook...");
-      const { data: wh, error: whErr } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "set_webhook", instance_token: token },
-      });
-      const hookRegistered = !whErr && !!wh?.ok;
-      setWebhookOk(hookRegistered);
-      await refreshWebhook(id);
-
-      // 4. Diagnóstico ponta a ponta, sem clicar em mais nada.
-      setConnectStep("Testando ponta a ponta...");
-      await runWebhookDiagnostic(token, st.name || instanceName);
-
-      setHasInstanceToken(true);
-      setInstanceToken("");
-
-      if (!hookRegistered) {
-        toast({
-          variant: "destructive",
-          title: "Conectado, mas o webhook falhou",
-          description: wh?.error || whErr?.message || "Use 'Reconfigurar webhook' abaixo.",
-        });
-      } else if (!st.connected) {
-        setConnectStep("Gerando QR Code...");
-        await fetchQr(token);
-        toast({
-          title: "Configurado!",
-          description: "Leia o QR abaixo com o WhatsApp do número de atendimento.",
-        });
-      } else {
-        setQrSrc(null);
-        setPaircode(null);
-        toast({
-          title: "Tudo pronto!",
-          description: `${st.name || "Instância"} conectada${st.phone ? ` — ${st.phone}` : ""}.`,
-        });
-      }
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Falha ao conectar", description: e.message });
-    } finally {
-      setConnecting(false);
-      setConnectStep("");
-    }
-  };
 
   const saveAgent = async () => {
     if (!user) return;
@@ -395,7 +90,7 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
       }
 
       const context = businessContext.trim();
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         user_id: user.id,
         system_prompt: prompt,
         enabled,
@@ -406,25 +101,29 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
         owner_notify_phone: ownerPhone,
       };
       if (apiKey.trim()) payload.groq_api_key = apiKey.trim();
-      const { error } = await supabase
-        .from("agent_configs")
-        .upsert(payload, { onConflict: "user_id" });
+      const { error } = await supabase.from("agent_configs").upsert(payload, { onConflict: "user_id" });
       if (error) {
         toast({ variant: "destructive", title: "Erro", description: error.message });
         return;
       }
 
-      if (context && instanceConnected) {
-        const token = await resolveToken();
-        if (token) {
+      if (context) {
+        const { data: inst } = await supabase
+          .from("whatsapp_instances")
+          .select("instance_token, status")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (inst?.instance_token && inst.status === "connected") {
           const { data: wh, error: whErr } = await supabase.functions.invoke("manage-instance", {
-            body: { action: "set_webhook", instance_token: token },
+            body: { action: "set_webhook", instance_token: inst.instance_token },
           });
           if (whErr || !wh?.ok) {
             toast({
               variant: "destructive",
               title: "Negócio salvo, webhook não registrou",
-              description: wh?.error || whErr?.message || "Use 'Reconfigurar webhook'.",
+              description: wh?.error || whErr?.message || "Reenvie o webhook em WhatsApp / Uazapi.",
             });
           }
         }
@@ -459,85 +158,6 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
     }
   };
 
-  const copyWebhook = async () => {
-    const url = webhookUrl || (await resolveWebhookUrl(supabase, SUPABASE_URL, instanceId));
-    if (!url) {
-      toast({ variant: "destructive", title: "Conecte a instância para gerar a URL" });
-      return;
-    }
-    setWebhookUrl(url);
-    try {
-      await navigator.clipboard.writeText(url);
-      toast({ title: "URL copiada!" });
-    } catch {
-      toast({ variant: "destructive", title: "Não foi possível copiar" });
-    }
-  };
-
-  /** Dispara o dry_run no webhook e publica os 4 checks na tela. */
-  const runWebhookDiagnostic = async (token: string, name: string) => {
-    const url = webhookUrl || (await resolveWebhookUrl(supabase, SUPABASE_URL, instanceId));
-    if (!url) {
-      toast({ variant: "destructive", title: "Webhook sem secret — conecte a instância" });
-      return;
-    }
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event: "dry_run", instance: { name, token } }),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast({ variant: "destructive", title: "Webhook inacessível", description: `HTTP ${res.status}` });
-      return;
-    }
-    setHookReport(json.checks || { error: json.error || "Sem detalhes" });
-  };
-
-  const testWebhook = async () => {
-    setTestingHook(true);
-    setHookReport(null);
-    try {
-      await runWebhookDiagnostic(await resolveToken(), instanceName);
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Falha no webhook", description: e.message });
-    } finally {
-      setTestingHook(false);
-    }
-  };
-
-  /** Rede de segurança: reenvia o webhook para a Uazapi se o automático falhar. */
-  const reconfigureWebhook = async () => {
-    setTestingHook(true);
-    try {
-      const token = await resolveToken();
-      if (!token) {
-        toast({ variant: "destructive", title: "Configure a instância primeiro" });
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "set_webhook", instance_token: token, rotate: true },
-      });
-      const ok = !error && !!data?.ok;
-      setWebhookOk(ok);
-      if (ok) {
-        toast({ title: "Webhook registrado na Uazapi" });
-        await refreshWebhook(instanceId);
-        await runWebhookDiagnostic(token, instanceName);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Falha ao registrar",
-          description: data?.error || error?.message || "Erro",
-        });
-      }
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Falha", description: e.message });
-    } finally {
-      setTestingHook(false);
-    }
-  };
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
@@ -549,226 +169,22 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
         </SheetHeader>
 
         <div className="mt-6 space-y-8">
-          {/* Conexão Uazapi (por usuário) */}
           <section className="space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-primary" /> Conexão Uazapi
+              <Smartphone className="w-4 h-4 text-primary" /> WhatsApp
             </h3>
             <p className="text-xs text-muted-foreground">
-              Cole o Server URL e o Instance Token da sua instância na Uazapi. O
-              resto é automático: identificamos a instância e registramos o
-              webhook pra você.
+              Token, servidor, webhook e QR ficam numa tela só.
             </p>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Server URL</Label>
-              <Input
-                value={serverUrl}
-                onChange={(e) => setServerUrl(e.target.value)}
-                placeholder="https://free.uazapi.com"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                Instance Token{" "}
-                {hasInstanceToken && (
-                  <span className="text-muted-foreground">(configurado)</span>
-                )}
-              </Label>
-              <Input
-                type="password"
-                value={instanceToken}
-                onChange={(e) => setInstanceToken(e.target.value)}
-                placeholder={
-                  hasInstanceToken ? "•••••••• (deixe vazio para manter)" : "cole o token da instância"
-                }
-              />
-              <a
-                href="https://docs.uazapi.com/"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                Onde encontrar <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-
-            <Button onClick={connectUazapi} disabled={connecting} className="w-full" size="sm">
-              {connecting ? connectStep || "Conectando..." : "Conectar e configurar tudo"}
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link to="/whatsapp" onClick={() => onOpenChange(false)}>
+                Abrir WhatsApp / Uazapi
+              </Link>
             </Button>
-
-            {instanceConnected !== null && !connecting && (
-              <div className="rounded-md border border-border bg-background p-3 text-xs space-y-1.5">
-                <CheckRow ok label={`Instância: ${instanceName || "—"}`} />
-                <CheckRow
-                  ok={instanceConnected}
-                  warn={!instanceConnected}
-                  label={
-                    instanceConnected
-                      ? `WhatsApp conectado${instancePhone ? ` — ${instancePhone}` : ""}`
-                      : "WhatsApp desconectado — leia o QR abaixo"
-                  }
-                />
-                {webhookOk !== null && (
-                  <CheckRow
-                    ok={webhookOk}
-                    label={webhookOk ? "Webhook registrado automaticamente" : "Webhook não registrado"}
-                  />
-                )}
-              </div>
-            )}
-
-            {!instanceConnected && (hasInstanceToken || instanceToken.trim()) && (
-              <div className="rounded-md border border-border bg-background p-3 space-y-3">
-                {qrSrc ? (
-                  <img
-                    src={qrSrc}
-                    alt="QR Code do WhatsApp"
-                    className="mx-auto w-52 h-52 rounded-md bg-white p-2"
-                  />
-                ) : (
-                  <p className="text-xs text-muted-foreground text-center">
-                    Gere o QR e escaneie no WhatsApp → Aparelhos conectados.
-                  </p>
-                )}
-                {paircode && (
-                  <p className="text-xs text-center font-mono">
-                    Código: <span className="font-semibold">{paircode}</span>
-                  </p>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => fetchQr()}
-                  disabled={fetchingQr || connecting}
-                >
-                  {fetchingQr ? "Gerando QR..." : qrSrc ? "Gerar outro QR" : "Gerar QR Code"}
-                </Button>
-              </div>
-            )}
           </section>
 
           <Separator />
 
-          {isAdmin && (
-            <>
-              <section className="space-y-2">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" /> Admin Token global (opcional)
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Fluxo normal do cliente é o bloco acima. Use esta tela apenas
-                  se precisar gerenciar instâncias no nível do servidor com o
-                  Admin Token.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    onOpenChange(false);
-                    navigate("/admin/uazapi");
-                  }}
-                >
-                  Abrir configuração da Uazapi
-                </Button>
-              </section>
-              <Separator />
-            </>
-          )}
-
-          {/* Webhook Uazapi — DS DRYOS (ADR-14) */}
-          <section className="dryos space-y-3 rounded-lg border border-border bg-card p-5">
-            <h3 className="font-semibold text-sm flex items-center gap-2">
-              <Webhook className="w-4 h-4 text-primary" /> Webhook do WhatsApp (Uazapi)
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              A URL inclui o secret da instância. Sem ele o modo novo não autentica.
-            </p>
-            <div>
-              {webhookConfirmed ? (
-                <Badge variant="ok">confirmado</Badge>
-              ) : (
-                <Badge variant="warning">aguardando 1ª mensagem</Badge>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="webhook-url" className="text-xs">
-                URL do webhook
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="webhook-url"
-                  readOnly
-                  value={webhookUrl}
-                  placeholder="Conecte a instância para gerar"
-                  className="text-xs font-mono"
-                />
-                <Button id="webhook-copy" variant="outline" size="sm" onClick={copyWebhook}>
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={testWebhook}
-                disabled={testingHook}
-                className="flex-1"
-              >
-                <TestTube2 className="w-4 h-4 mr-2" />
-                {testingHook ? "..." : "Testar"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={reconfigureWebhook}
-                disabled={testingHook}
-                className="flex-1"
-              >
-                <Webhook className="w-4 h-4 mr-2" />
-                Reconfigurar
-              </Button>
-            </div>
-
-            {hookReport && (
-              <div className="rounded-md border border-border bg-background p-3 text-xs space-y-1.5">
-                <CheckRow
-                  ok={!!hookReport?.instance?.ok}
-                  label={
-                    hookReport?.instance?.ok
-                      ? `Instância encontrada (por ${hookReport.instance.matched_by}) — ${hookReport.instance.instance_name}`
-                      : `Instância não encontrada${hookReport?.instance?.error ? ` — ${hookReport.instance.error}` : ""}`
-                  }
-                />
-                <CheckRow
-                  ok={!!hookReport?.agent?.ok}
-                  label={
-                    hookReport?.agent?.ok
-                      ? "Agente ativo e configurado"
-                      : `Agente: ${hookReport?.agent?.error || "não configurado"}`
-                  }
-                />
-                <CheckRow
-                  ok={!!hookReport?.groq?.ok}
-                  label={hookReport?.groq?.ok ? "Groq respondendo" : `Groq: ${hookReport?.groq?.error || "falha"}`}
-                />
-                <CheckRow
-                  ok={!!hookReport?.uazapi?.ok}
-                  label={hookReport?.uazapi?.ok ? "Uazapi acessível" : `Uazapi: ${hookReport?.uazapi?.error || "falha"}`}
-                />
-              </div>
-            )}
-          </section>
-
-          <Separator />
-
-          {/* Seu negócio — DS DRYOS (ADR-14). Fora deste wrapper o drawer segue teal. */}
           <section className="dryos space-y-4 rounded-lg border border-border bg-card p-5">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Building2 className="w-4 h-4 text-primary" /> Seu negócio
@@ -832,7 +248,6 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
 
           <Separator />
 
-          {/* Agente IA */}
           <section className="space-y-4">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Bot className="w-4 h-4 text-primary" /> Agente IA (Groq)
@@ -879,10 +294,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
             </label>
 
             <div className="flex gap-2">
-              <Button onClick={saveAgent} disabled={saving} className="flex-1" size="sm">
+              <Button onClick={() => void saveAgent()} disabled={saving} className="flex-1" size="sm">
                 {saving ? "Salvando..." : "Salvar"}
               </Button>
-              <Button variant="outline" size="sm" onClick={testConnection} disabled={testing}>
+              <Button variant="outline" size="sm" onClick={() => void testConnection()} disabled={testing}>
                 <TestTube2 className="w-4 h-4 mr-2" />
                 {testing ? "Testando..." : "Testar"}
               </Button>
@@ -891,7 +306,6 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
 
           <Separator />
 
-          {/* Follow-up automático */}
           <section className="space-y-4">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" /> Follow-up automático
@@ -937,7 +351,6 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
             </p>
           </section>
         </div>
-
       </SheetContent>
     </Sheet>
   );

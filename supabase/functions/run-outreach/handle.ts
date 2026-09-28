@@ -1,15 +1,21 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getAgentConfig, type AIConfig } from "../_shared/get-ai-config.ts";
+import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { runBrainTurn, type ConversaState } from "../_shared/brain.ts";
 import {
-  INTERVALO_MS,
+  intervaloMs,
   devePularTick,
   freio,
   montarToque1,
+  montarToqueCadencia,
   podeDispararAgora,
   proximoToque,
   sortearVariacao,
   tetoEfetivo,
+  wallSP,
+  TOQUE1_PADRAO,
+  TOQUE2_PADRAO,
+  TOQUE3_PADRAO,
 } from "../_shared/outreach.ts";
 
 export const ORCAMENTO_TICK_MS = 90_000;
@@ -27,10 +33,6 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
-function modoCerebro(ctx: string | null | undefined): boolean {
-  return !!ctx?.trim();
-}
-
 function timingSafeEqual(a: string, b: string): boolean {
   const enc = new TextEncoder();
   const ba = enc.encode(a);
@@ -41,8 +43,12 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+function numeroForaDoWhatsapp(errText: string): boolean {
+  return /not on whatsapp|not a valid whatsapp|number.*not exist|exists.?false/i.test(errText);
+}
+
 function openerValida(text: string, company: string | null): boolean {
-  if (!text?.trim() || text.length > 120) return false;
+  if (!text?.trim() || text.length > 280) return false;
   if (/(https?:\/\/|www\.|wa\.me)/i.test(text)) return false;
   if (text.includes("{empresa}") && !company?.trim()) return false;
   return true;
@@ -50,13 +56,13 @@ function openerValida(text: string, company: string | null): boolean {
 
 function instrucaoDoToque(n: number): string {
   if (n === 2) {
-    return "Este é o TOQUE 2, três dias depois da abordagem, e ela não respondeu. Ângulo diferente do primeiro. Uma bolha só, curta.";
+    return "Este é o TOQUE 2: o toque 1 foi só um olá e ela não respondeu. Não mande outro cumprimento. Uma bolha: quem você é + o que o CONTEXTO pede (presente / oferta), sem cobrança. Se o CONTEXTO tiver página de conversão, o link pode ir.";
   }
-  return "Este é o TOQUE 3, o último. Despedida: deixa a porta aberta e encerra. Sem cobrança. Uma bolha só.";
+  return "Este é o TOQUE 3, o último. Despedida curta, porta aberta, sem cobrança e sem cara de campanha. Se o CONTEXTO tiver página, manda o link uma última vez.";
 }
 
 function hojeSP(agora: Date): string {
-  return agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).slice(0, 10);
+  return wallSP(agora).iso;
 }
 
 export type TickDeps = { agora?: Date; rng?: () => number };
@@ -83,44 +89,75 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
   const { data: agents } = await supabase
     .from("agent_configs")
     .select(
-      "user_id, business_context, company_name, owner_notify_phone, outreach_enabled, outreach_paused_reason, outreach_instance_id, outreach_daily_cap, outreach_ramp_start, outreach_saturday_morning, outreach_last_tick_at",
+      "user_id, business_context, company_name, owner_notify_phone, outreach_enabled, outreach_paused_reason, outreach_instance_id, outreach_daily_cap, outreach_interval_sec, outreach_ramp_start, outreach_saturday_morning, outreach_weekdays_only, outreach_last_tick_at",
     )
     .eq("outreach_enabled", true)
     .is("outreach_paused_reason", null)
     .order("outreach_last_tick_at", { ascending: true, nullsFirst: true });
 
   let enviados = 0;
+  const skip: string[] = [];
+  if (!(agents ?? []).length) skip.push("sem_agente");
   for (const agent of agents ?? []) {
-    if (Date.now() - inicio >= ORCAMENTO_TICK_MS) break;
-    if (!modoCerebro(agent.business_context)) continue;
+    if (Date.now() - inicio >= ORCAMENTO_TICK_MS) {
+      skip.push("orcamento");
+      break;
+    }
 
     await supabase
       .from("agent_configs")
       .update({ outreach_last_tick_at: new Date().toISOString() })
       .eq("user_id", agent.user_id);
 
-    if (!agent.outreach_instance_id) continue;
     const { data: inst } = await supabase
       .from("whatsapp_instances")
       .select("id, instance_token, server_url, status, user_id")
-      .eq("id", agent.outreach_instance_id)
       .eq("user_id", agent.user_id)
+      .not("instance_token", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
-    if (!inst || inst.status !== "connected" || !inst.instance_token || !inst.server_url) continue;
+    const uaz = await getUazapiConfig();
+    const token = inst?.instance_token || uaz?.instanceToken;
+    const serverUrl = (inst?.server_url || uaz?.serverUrl || "").replace(/\/$/, "");
+    if (!inst?.id || !token || !serverUrl || inst.status === "disconnected") {
+      skip.push(inst?.status === "disconnected" ? "desconectado" : "sem_instancia");
+      continue;
+    }
     const { data: confirmed } = await supabase.rpc("webhook_is_confirmed", { p_instance: inst.id });
-    if (confirmed !== true) continue;
+    if (confirmed !== true) {
+      skip.push("webhook");
+      continue;
+    }
 
-    if (!podeDispararAgora(agora, { saturdayMorning: !!agent.outreach_saturday_morning })) continue;
-    if (devePularTick(rng)) continue;
+    if (!podeDispararAgora(agora, {
+      saturdayMorning: !!agent.outreach_saturday_morning,
+      weekdaysOnly: agent.outreach_weekdays_only !== false,
+    })) {
+      skip.push("fora_janela");
+      continue;
+    }
+    if (devePularTick(rng)) {
+      skip.push("pular");
+      continue;
+    }
 
     const teto = tetoEfetivo(agent.outreach_daily_cap, agent.outreach_ramp_start, agora);
     const reserved = await supabase.rpc("outreach_reserve", {
       p_user: agent.user_id,
       p_teto: teto,
-      p_intervalo: `${INTERVALO_MS} milliseconds`,
+      p_intervalo: `${intervaloMs(agent.outreach_interval_sec)} milliseconds`,
     });
+    if (reserved.error) {
+      console.error("[outreach] reserve", reserved.error.message);
+      skip.push("reserve_erro");
+      continue;
+    }
     const row = reserved.data?.[0];
-    if (!row?.send_id) continue;
+    if (!row?.send_id) {
+      skip.push("sem_reserva");
+      continue;
+    }
 
     const prospect = row.prospect ?? {};
     const conv = row.conversation ?? {};
@@ -155,28 +192,25 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
         .eq("user_id", agent.user_id)
         .eq("active", true);
       const validas = (openers ?? []).map((o) => o.text).filter((t) => openerValida(t, agent.company_name));
-      if (validas.length < 2) {
+      if (validas.length === 1) {
         await supabase.rpc("outreach_release", {
           p_user: agent.user_id,
           p_send: row.send_id,
           p_motivo: "menos de 2 variações válidas",
         });
+        skip.push("openers");
         continue;
       }
+      const pool = validas.length >= 2 ? validas : TOQUE1_PADRAO;
       texto = montarToque1(
-        sortearVariacao(validas, rng),
+        sortearVariacao(pool, rng),
         { nome: prospect.name ?? prospect.nome, empresa: prospect.company ?? prospect.empresa },
         agent.company_name,
       );
     } else {
-      const cfg = await getAgentConfig(agent.user_id);
-      if (!cfg) {
-        await supabase.rpc("outreach_release", { p_user: agent.user_id, p_send: row.send_id, p_motivo: "IA: sem chave" });
-        continue;
-      }
-      texto = await textoToqueIA(supabase, cfg, conv, prospect, toque);
+      texto = await textoToqueCadencia(supabase, agent, conv, prospect, toque, rng);
       if (!texto) {
-        await supabase.rpc("outreach_release", { p_user: agent.user_id, p_send: row.send_id, p_motivo: "IA nao devolveu mensagem" });
+        await supabase.rpc("outreach_release", { p_user: agent.user_id, p_send: row.send_id, p_motivo: "sem texto do toque" });
         continue;
       }
     }
@@ -197,12 +231,11 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
     }
 
     const numero = freshC?.wa_phone || freshC?.contact_phone;
-    const serverUrl = inst.server_url.replace(/\/$/, "");
     let sendRes: Response;
     try {
       sendRes = await fetch(`${serverUrl}/send/text`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", token: inst.instance_token },
+        headers: { "Content-Type": "application/json", token },
         body: JSON.stringify({ number: numero, text: texto }),
         signal: AbortSignal.timeout(15_000),
       });
@@ -217,11 +250,20 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
     }
     if (!sendRes.ok) {
       const errText = await sendRes.text();
+      const motivo = `uazapi ${sendRes.status}: ${errText.slice(0, 200)}`;
+      if (numeroForaDoWhatsapp(errText) && prospect.id) {
+        await supabase
+          .from("prospects")
+          .update({ estado: "descartado", proximo_toque: null, ultima_falha_motivo: motivo })
+          .eq("id", prospect.id)
+          .eq("user_id", agent.user_id);
+      }
       await supabase.rpc("outreach_release", {
         p_user: agent.user_id,
         p_send: row.send_id,
-        p_motivo: `uazapi ${sendRes.status}: ${errText.slice(0, 200)}`,
+        p_motivo: motivo,
       });
+      skip.push(numeroForaDoWhatsapp(errText) ? "numero_fora" : "uazapi");
       continue;
     }
 
@@ -261,7 +303,30 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
     }
   }
 
-  return json(200, { ok: true, enviados });
+  return json(200, { ok: true, enviados, skip });
+}
+
+async function textoToqueCadencia(
+  admin: ReturnType<typeof createClient>,
+  agent: { user_id: string; company_name: string | null; business_context: string | null },
+  conv: Record<string, unknown>,
+  prospect: Record<string, unknown>,
+  toque: number,
+  rng: () => number,
+): Promise<string> {
+  const cfg = await getAgentConfig(agent.user_id);
+  if (cfg) {
+    const ia = await textoToqueIA(admin, cfg, conv, prospect, toque);
+    if (ia) return ia;
+  }
+  const pack = toque === 2 ? TOQUE2_PADRAO : TOQUE3_PADRAO;
+  return montarToqueCadencia(
+    toque,
+    sortearVariacao(pack, rng),
+    { nome: prospect.name ?? prospect.nome, empresa: prospect.company ?? prospect.empresa },
+    agent.company_name,
+    agent.business_context,
+  );
 }
 
 async function textoToqueIA(

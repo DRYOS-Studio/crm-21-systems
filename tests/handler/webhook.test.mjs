@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import "../_harness/edge-shim.mjs";
+process.env.DEBOUNCE_INBOUND_MS = process.env.DEBOUNCE_INBOUND_MS ?? "0";
 import { status, adminClient } from "../_harness/db.mjs";
 import { installFetchStub } from "../_harness/fetch-stub.mjs";
 import { createUser } from "../_harness/sessions.mjs";
@@ -290,7 +291,7 @@ test("T15: reenvio com o mesmo external_id (message.messageid) grava 1 mensagem"
   }
 });
 
-test("T15: instância confirmada sem s ⇒ 401; dry_run com s não confirma; s inválido ⇒ 401", async () => {
+test("T15: s inválido ⇒ 401; dry_run com s não confirma; token no body autentica sem s", async () => {
   const admin = adminClient();
   const { instanceToken, secret, inst, serverUrl } = await seedTenant(admin, "t15-auth", {
     withSecret: true,
@@ -326,7 +327,68 @@ test("T15: instância confirmada sem s ⇒ 401; dry_run com s não confirma; s i
     assert.equal(afterMsg, true, "messages real com s deveria confirmar");
 
     const semS = await post(inboundBody({ token: instanceToken, phone, text: "depois de confirmada" }));
-    assert.equal(semS.status, 401, "instância confirmada sem s deveria ser 401");
+    assert.equal(semS.status, 200, "token no envelope autentica sem s");
+    await wait.flush();
+    const { data: saved } = await admin
+      .from("messages")
+      .select("direction")
+      .eq("content", "depois de confirmada")
+      .maybeSingle();
+    assert.equal(saved?.direction, "inbound");
+
+    const semCred = await post({
+      EventType: "messages",
+      message: { text: "sem credencial", fromMe: false, chatid: `${uniquePhone()}@s.whatsapp.net` },
+    });
+    assert.equal(semCred.status, 401, "confirmada sem s e sem token ⇒ 401");
+  } finally {
+    wait.restore();
+    stop();
+  }
+});
+
+test("T15: @lid usa lead_phone; fromMe 'false' não vira takeover", async () => {
+  const admin = adminClient();
+  const { instanceToken, secret, serverUrl, user } = await seedTenant(admin, "t15-lid", {
+    withSecret: true,
+    businessContext: "Contexto que liga o modo novo.",
+  });
+  const phone = uniquePhone();
+  const stop = installFetchStub([
+    passthroughApi(),
+    stubGroqModels(),
+    stubGroqChat(),
+    stubUazapi(serverUrl),
+  ]);
+  const wait = trackWaitUntil();
+  try {
+    const res = await post(
+      {
+        EventType: "messages",
+        token: instanceToken,
+        message: {
+          text: "oi do lid",
+          fromMe: "false",
+          chatid: "123456789012345@lid",
+        },
+        chat: { lead_phone: phone, wa_chatid: "123456789012345@lid" },
+      },
+      `http://localhost/whatsapp-webhook?s=${secret}`,
+    );
+    assert.equal(res.status, 200);
+    await wait.flush();
+    const { data: conv } = await admin
+      .from("conversations")
+      .select("id, contact_phone")
+      .eq("user_id", user.id)
+      .eq("contact_phone", phone)
+      .maybeSingle();
+    assert.ok(conv, "conversa deveria nascer do lead_phone, não do @lid");
+    const { data: msgs } = await admin
+      .from("messages")
+      .select("direction, sender")
+      .eq("conversation_id", conv.id);
+    assert.equal(msgs.some((m) => m.direction === "inbound" && m.sender === "contact"), true);
   } finally {
     wait.restore();
     stop();
@@ -406,6 +468,132 @@ test("T15: ReactionMessage não aciona a IA (mesmo com .text preenchido)", async
     const { data: convs } = await admin.from("conversations").select("id").eq("user_id", user.id).eq("contact_phone", phone);
     assert.equal(convs.length, 0, "reação 1:1 não deveria abrir conversa");
   } finally {
+    wait.restore();
+    stop();
+  }
+});
+
+test("T15: fromMe eco da API (mesmo texto de outbound ai recente) não desliga a IA", async () => {
+  const admin = adminClient();
+  const { instanceToken, serverUrl, user, inst } = await seedTenant(admin, "t15-echo");
+  const phone = uniquePhone();
+  const texto = "Oi Rafael, Edith da DRYOS. Ainda fazem inicial no dedo?";
+  const { data: conv, error } = await admin
+    .from("conversations")
+    .insert({
+      user_id: user.id,
+      instance_id: inst.id,
+      contact_phone: phone,
+      ai_enabled: true,
+      ai_stage: "abordar",
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`seed conv falhou: ${error.message}`);
+  await admin.from("messages").insert({
+    conversation_id: conv.id,
+    user_id: user.id,
+    direction: "outbound",
+    sender: "ai",
+    content: texto,
+  });
+
+  const stop = installFetchStub([passthroughApi(), stubGroqModels(), stubGroqChat(), stubUazapi(serverUrl)]);
+  try {
+    const res = await post(inboundBody({ token: instanceToken, phone, text: texto, fromMe: true }));
+    assert.equal(res.status, 200);
+    const after = (await admin.from("conversations").select("ai_enabled").eq("id", conv.id).single()).data;
+    assert.equal(after.ai_enabled, true);
+  } finally {
+    stop();
+  }
+});
+
+test("T15: resposta automática do WhatsApp não chama a Groq", async () => {
+  const admin = adminClient();
+  const { instanceToken, secret, serverUrl, user } = await seedTenant(admin, "t15-auto", {
+    withSecret: true,
+    businessContext: "Vendemos treinamento de vendas.",
+  });
+  const phone = uniquePhone();
+  let groqCalls = 0;
+  const wait = trackWaitUntil();
+  const stop = installFetchStub([passthroughApi(), stubGroqModels(), stubGroqChat(() => groqCalls++), stubUazapi(serverUrl)]);
+  try {
+    const res = await post(
+      inboundBody({
+        token: instanceToken,
+        phone,
+        text: "Mensagem automática: não estou disponível. Retornaremos em breve.",
+        messageid: `auto-${Date.now()}`,
+      }),
+      `http://localhost/whatsapp-webhook?s=${secret}`,
+    );
+    assert.equal(res.status, 200);
+    await wait.flush();
+    assert.equal(groqCalls, 0, "auto-reply não pode ir pra Groq");
+    const { data: conv } = await admin.from("conversations").select("id").eq("user_id", user.id).eq("contact_phone", phone).maybeSingle();
+    assert.ok(conv, "conversa deveria existir");
+    const { data: out } = await admin.from("messages").select("id").eq("conversation_id", conv.id).eq("direction", "outbound");
+    assert.equal((out || []).length, 0);
+  } finally {
+    wait.restore();
+    stop();
+  }
+});
+
+test("T15: dois inbound em sequência viram um turno só", async () => {
+  const prev = process.env.DEBOUNCE_INBOUND_MS;
+  process.env.DEBOUNCE_INBOUND_MS = "200";
+  const admin = adminClient();
+  const { instanceToken, secret, serverUrl, user } = await seedTenant(admin, "t15-deb", {
+    withSecret: true,
+    businessContext: "Vendemos treinamento de vendas.",
+  });
+  const phone = uniquePhone();
+  let groqCalls = 0;
+  const wait = trackWaitUntil();
+  const brainOk = {
+    match: (url) => url.includes("api.groq.com/openai/v1/chat/completions"),
+    respond: () => {
+      groqCalls++;
+      return new Response(
+        JSON.stringify({
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                mensagens: ["Beleza, e no escritório a inicial ainda sai no dedo?"],
+                etapa: "descobrir",
+                qualificacao: {},
+                escalar: false,
+                optout: false,
+                qualificado: false,
+              }),
+            },
+          }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  };
+  const stop = installFetchStub([passthroughApi(), stubGroqModels(), brainOk, stubUazapi(serverUrl)]);
+  try {
+    const [a, b] = await Promise.all([
+      post(
+        inboundBody({ token: instanceToken, phone, text: "oi", messageid: `d1-${Date.now()}` }),
+        `http://localhost/whatsapp-webhook?s=${secret}`,
+      ),
+      post(
+        inboundBody({ token: instanceToken, phone, text: "ainda estou aqui", messageid: `d2-${Date.now() + 1}` }),
+        `http://localhost/whatsapp-webhook?s=${secret}`,
+      ),
+    ]);
+    assert.equal(a.status, 200);
+    assert.equal(b.status, 200);
+    await wait.flush();
+    assert.equal(groqCalls, 1, "duas bolhas do lead = um turno");
+  } finally {
+    process.env.DEBOUNCE_INBOUND_MS = prev;
     wait.restore();
     stop();
   }

@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 const BATCH = 5000;
-const PHONE_KEYS = new Set(["telefone", "phone", "celular"]);
-const NAME_KEYS = new Set(["nome", "name"]);
-const COMPANY_KEYS = new Set(["empresa", "company"]);
-const CITY_KEYS = new Set(["cidade", "city"]);
+const PHONE_KEYS = new Set(["telefone", "phone", "celular", "fone", "whatsapp", "mobile", "tel"]);
+const NAME_KEYS = new Set(["nome", "name", "contato"]);
+const COMPANY_KEYS = new Set(["empresa", "company", "companhia", "razaosocial", "nomeempresa", "business"]);
+const CITY_KEYS = new Set(["cidade", "city", "municipio"]);
 
 type ProspectInsert = {
   user_id: string;
@@ -23,7 +23,7 @@ type ProspectInsert = {
 };
 
 function normHeader(h: string) {
-  return h.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  return h.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[\s_]+/g, "");
 }
 
 function cell(v: unknown): string {
@@ -70,12 +70,25 @@ async function canonBatch(phones: string[]): Promise<(string | null)[]> {
   return out;
 }
 
+function importErrorMessage(e: unknown): string {
+  const msg = e instanceof Error ? e.message : "Falha de rede";
+  if (/schema cache|does not exist|could not find the table|could not find the function/i.test(msg)) {
+    return "O banco ainda não tem a tabela de prospects. As migrations de prospecção precisam ser aplicadas.";
+  }
+  if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+    return "Falha de rede ao falar com o banco. Tente de novo; se persistir, o schema de prospecção pode estar ausente.";
+  }
+  return msg;
+}
+
 async function upsertProspects(rows: ProspectInsert[]) {
-  const { error } = await supabase.from("prospects" as never).upsert(rows as never, {
-    onConflict: "user_id,phone",
-    ignoreDuplicates: true,
-  });
-  if (error) throw error;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const { error } = await supabase.from("prospects" as never).upsert(rows.slice(i, i + BATCH) as never, {
+      onConflict: "user_id,phone",
+      ignoreDuplicates: true,
+    });
+    if (error) throw error;
+  }
 }
 
 export function CsvImport() {
@@ -139,8 +152,7 @@ export function CsvImport() {
       if (payload.length) await upsertProspects(payload);
       setResult({ importados: payload.length, rejeitados });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Falha de rede";
-      setNetworkError(msg);
+      setNetworkError(importErrorMessage(e));
     } finally {
       setSaving(false);
     }

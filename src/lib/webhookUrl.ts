@@ -4,7 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 /** Único lugar em `src/` que conhece o path do webhook (ADR-11). */
 export function montarWebhookUrl(supabaseUrl: string, secret: string): string {
   const origin = String(supabaseUrl || "").replace(/\/$/, "");
-  return `${origin}/functions/v1/whatsapp-webhook?s=${encodeURIComponent(secret)}`;
+  return `${origin}/functions/v1/whatsapp-webhook/s/${encodeURIComponent(secret)}`;
 }
 
 export async function resolveWebhookUrl(

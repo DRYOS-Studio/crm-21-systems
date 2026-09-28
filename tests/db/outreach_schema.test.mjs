@@ -7,7 +7,11 @@ import { createUser, createAuthenticatedClient } from "../_harness/sessions.mjs"
 const MIGRATION = fileURLToPath(
   new URL("../../supabase/migrations/20260925030000_outreach.sql", import.meta.url),
 );
+const OPENER_LEN = fileURLToPath(
+  new URL("../../supabase/migrations/20260926154100_opener_conversa.sql", import.meta.url),
+);
 psqlFile(MIGRATION);
+psqlFile(OPENER_LEN);
 
 function lastLine(out) {
   const lines = out.trim().split("\n");
@@ -23,6 +27,8 @@ function asUser(userId, sql) {
 test("T26 AC-C1: migration aplica 2x seguidas sem erro", () => {
   psqlFile(MIGRATION);
   psqlFile(MIGRATION);
+  psqlFile(OPENER_LEN);
+  psqlFile(OPENER_LEN);
 });
 
 test("T26 AC-B6: outreach_daily_cap < 1 é recusado", async () => {
@@ -38,7 +44,7 @@ test("T26 AC-B6: outreach_daily_cap < 1 é recusado", async () => {
   assert.match(error.message, /outreach_daily_cap|check|violat/i);
 });
 
-test("T26 AC-B22: save_openers recusa <2, link, >120 e {empresa} sem company_name", async () => {
+test("T26 AC-B22: save_openers recusa <2, link, >280 e {empresa} sem company_name", async () => {
   const user = await createUser("t26-op");
   const { client } = await createAuthenticatedClient(user.email, user.password);
   const admin = adminClient();
@@ -61,7 +67,7 @@ test("T26 AC-B22: save_openers recusa <2, link, >120 e {empresa} sem company_nam
   });
   assert.ok(link.error);
 
-  const longa = "x".repeat(121);
+  const longa = "x".repeat(281);
   const big = await client.rpc("save_openers", { p_texts: [longa, "segunda válida"] });
   assert.ok(big.error);
 

@@ -168,7 +168,7 @@ begin
 end $$;
 
 insert into public.app_settings (key, value)
-select 'outreach_cron_secret', encode(gen_random_bytes(24), 'hex')
+select 'outreach_cron_secret', encode(extensions.gen_random_bytes(24), 'hex')
 where not exists (select 1 from public.app_settings where key = 'outreach_cron_secret');
 
 -- =============================================================================

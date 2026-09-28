@@ -1,28 +1,47 @@
 /** Regras puras do disparo (T28). Relógio e RNG entram por argumento. */
 
 export const P_PULAR = 0.3;
-export const INTERVALO_MS = 60_000;
+/** Fallback se o tenant não tiver `outreach_interval_sec`. */
+export const INTERVALO_MS = 90_000;
+export const INTERVALO_SEC_MIN = 30;
+export const INTERVALO_SEC_MAX = 600;
+
+/** Segundos do tenant → ms, limitado a 30–600. */
+export function intervaloMs(sec?: number | null): number {
+  if (sec == null) return INTERVALO_MS;
+  const n = Number(sec);
+  if (!Number.isFinite(n) || n <= 0) return INTERVALO_MS;
+  const clamped = Math.min(INTERVALO_SEC_MAX, Math.max(INTERVALO_SEC_MIN, Math.round(n)));
+  return clamped * 1000;
+}
 export const FREIO_MIN_ENVIADOS = 30;
 export const FREIO_TAXA = 0.05;
 
 export type FlagsDisparo = {
   saturdayMorning?: boolean;
+  weekdaysOnly?: boolean;
 };
 
-function wallSP(agora: Date) {
-  const s = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
-  const [date, time] = s.split(" ");
-  const [y, mo, da] = date.split("-").map(Number);
-  const [h, mi] = time.split(":").map(Number);
-  const dow = new Date(Date.UTC(y, mo - 1, da)).getUTCDay();
-  return { y, mo, da, h, mi, dow, iso: date };
+/** Brasília é UTC−3 o ano todo. Evita toLocaleString: no Edge o fuso some e o sábado morre. */
+export function wallSP(agora: Date) {
+  const sp = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
+  const y = sp.getUTCFullYear();
+  const mo = sp.getUTCMonth() + 1;
+  const da = sp.getUTCDate();
+  const h = sp.getUTCHours();
+  const mi = sp.getUTCMinutes();
+  const dow = sp.getUTCDay();
+  const iso = `${y}-${String(mo).padStart(2, "0")}-${String(da).padStart(2, "0")}`;
+  return { y, mo, da, h, mi, dow, iso };
 }
 
-/** AC-B5 — domingo nunca; sábado só com flag e 9–13h SP; dia útil 9–18h SP. */
+/** AC-B5 — domingo nunca; sábado só com flag e 9–13h SP; dia útil 9–18h SP.
+ * `weekdaysOnly` (advogado) ganha do sábado: segunda a sexta, ponto. */
 export function podeDispararAgora(agora: Date, flags: FlagsDisparo = {}): boolean {
   const { h, dow } = wallSP(agora);
   if (dow === 0) return false;
   if (dow === 6) {
+    if (flags.weekdaysOnly) return false;
     if (!flags.saturdayMorning) return false;
     return h >= 9 && h < 13;
   }
@@ -109,6 +128,41 @@ export function montarToque1(
   const nome = (prospect.nome ?? "").trim();
   const empresa = (companyName ?? prospect.empresa ?? "").trim();
   return preencher(preencher(variacao, "nome", nome), "empresa", empresa).trim();
+}
+
+/** Toque 1 se o tenant ainda não cadastrou 2 variações. */
+export const TOQUE1_PADRAO = ["Olá, tudo bem?", "Olá, tudo bem?"];
+
+export const TOQUE2_PADRAO = [
+  "Sou da {empresa}. Vi o perfil e queria te contar uma coisa — se fizer sentido, me responde aqui.",
+  "Aqui é da {empresa}. Posso te explicar em uma mensagem o que preparamos?",
+];
+
+export const TOQUE3_PADRAO = [
+  "Fico por aqui. Se quiser conversar, é só responder.",
+  "Deixo o convite aberto — qualquer coisa, me chama.",
+];
+
+export function linkDoContexto(ctx: string | null | undefined): string | null {
+  const m = String(ctx || "").match(/https?:\/\/[^\s<>"']+/i);
+  if (!m) return null;
+  return m[0].replace(/[).,;]+$/g, "");
+}
+
+/** Toques 2 e 3: texto pronto. Groq é opcional. Link do contexto só depois do olá. */
+export function montarToqueCadencia(
+  toque: number,
+  variacao: string,
+  prospect: { nome?: string | null; empresa?: string | null },
+  companyName?: string | null,
+  businessContext?: string | null,
+): string {
+  let texto = montarToque1(variacao, prospect, companyName);
+  if (toque >= 2) {
+    const link = linkDoContexto(businessContext);
+    if (link && !texto.includes(link)) texto = `${texto} ${link}`.trim();
+  }
+  return texto;
 }
 
 function preencher(texto: string, chave: string, valor: string): string {

@@ -15,7 +15,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Space Grotesk", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        sans: ["Onest", "system-ui", "sans-serif"],
         display: ['"Funnel Display"', "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
@@ -52,6 +52,12 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        bubble: {
+          DEFAULT: "hsl(var(--bubble-out))",
+          foreground: "hsl(var(--bubble-out-foreground))",
+          in: "hsl(var(--bubble-in))",
+          "in-foreground": "hsl(var(--bubble-in-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

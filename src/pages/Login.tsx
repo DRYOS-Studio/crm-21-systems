@@ -58,7 +58,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+    <div className="dryos min-h-screen flex items-center justify-center bg-background p-4 relative">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
@@ -135,7 +135,7 @@ const Login = () => {
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground">© 2026 Q7 Educação</p>
+        <p className="text-center text-xs text-muted-foreground">© 2026 DRYOS</p>
       </div>
     </div>
   );

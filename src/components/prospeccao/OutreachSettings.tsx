@@ -14,11 +14,11 @@ export function OutreachSettings() {
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(false);
   const [pausedReason, setPausedReason] = useState<string | null>(null);
-  const [instanceId, setInstanceId] = useState("");
   const [cap, setCap] = useState("40");
+  const [intervalSec, setIntervalSec] = useState("90");
   const [weekdaysOnly, setWeekdaysOnly] = useState(true);
   const [saturdayMorning, setSaturdayMorning] = useState(false);
-  const [instances, setInstances] = useState<Instance[]>([]);
+  const [instance, setInstance] = useState<Instance | null>(null);
   const [saving, setSaving] = useState(false);
   const [capError, setCapError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -29,7 +29,7 @@ export function OutreachSettings() {
       const { data: cfg } = await supabase
         .from("agent_configs" as never)
         .select(
-          "outreach_enabled, outreach_paused_reason, outreach_instance_id, outreach_daily_cap, outreach_weekdays_only, outreach_saturday_morning",
+          "outreach_enabled, outreach_paused_reason, outreach_instance_id, outreach_daily_cap, outreach_interval_sec, outreach_weekdays_only, outreach_saturday_morning",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -38,14 +38,15 @@ export function OutreachSettings() {
         outreach_paused_reason?: string | null;
         outreach_instance_id?: string | null;
         outreach_daily_cap?: number;
+        outreach_interval_sec?: number;
         outreach_weekdays_only?: boolean;
         outreach_saturday_morning?: boolean;
       } | null;
       if (row) {
         setEnabled(!!row.outreach_enabled);
         setPausedReason(row.outreach_paused_reason ?? null);
-        setInstanceId(row.outreach_instance_id ?? "");
         setCap(String(row.outreach_daily_cap ?? 40));
+        setIntervalSec(String(row.outreach_interval_sec ?? 90));
         setWeekdaysOnly(row.outreach_weekdays_only ?? true);
         setSaturdayMorning(!!row.outreach_saturday_morning);
       }
@@ -53,16 +54,23 @@ export function OutreachSettings() {
         .from("whatsapp_instances")
         .select("id, name, status")
         .eq("user_id", user.id)
-        .order("created_at");
-      setInstances((inst ?? []) as Instance[]);
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setInstance((inst as Instance | null) ?? null);
     })();
   }, [user?.id]);
 
   const save = async () => {
     if (!user) return;
     const n = Number(cap);
+    const gap = Number(intervalSec);
     if (!Number.isInteger(n) || n < 1) {
       setCapError("O teto diário precisa ser no mínimo 1.");
+      return;
+    }
+    if (!Number.isInteger(gap) || gap < 30 || gap > 600) {
+      setCapError("O intervalo entre números precisa ser entre 30 e 600 segundos.");
       return;
     }
     setCapError("");
@@ -75,10 +83,10 @@ export function OutreachSettings() {
           user_id: user.id,
           outreach_enabled: enabled,
           outreach_paused_reason: nextReason,
-          outreach_instance_id: instanceId || null,
           outreach_daily_cap: n,
+          outreach_interval_sec: gap,
           outreach_weekdays_only: weekdaysOnly,
-          outreach_saturday_morning: saturdayMorning,
+          outreach_saturday_morning: weekdaysOnly ? false : saturdayMorning,
         } as never,
         { onConflict: "user_id" },
       );
@@ -122,25 +130,15 @@ export function OutreachSettings() {
           }}
         />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="outreach-instance" className="text-xs">
-          Instância
-        </Label>
-        <select
-          id="outreach-instance"
-          disabled={saving}
-          value={instanceId}
-          onChange={(e) => setInstanceId(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-        >
-          <option value="">Nenhuma</option>
-          {instances.map((i) => (
-            <option key={i.id} value={i.id}>
-              {i.name} ({i.status})
-            </option>
-          ))}
-        </select>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {instance
+          ? `Usa a conexão WhatsApp do Q7: ${instance.name} (${instance.status}).`
+          : "Conecte o WhatsApp em WhatsApp / Uazapi. O disparo usa essa mesma instância."}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Os toques de abordagem saem com os textos prontos. Groq não é necessário para disparar — só para a Edith
+        responder depois que a pessoa falar.
+      </p>
       <div className="space-y-1.5">
         <Label htmlFor="outreach-cap" className="text-xs">
           Teto diário
@@ -158,6 +156,27 @@ export function OutreachSettings() {
           }}
         />
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="outreach-interval" className="text-xs">
+          Segundos entre cada número
+        </Label>
+        <Input
+          id="outreach-interval"
+          type="number"
+          min={30}
+          max={600}
+          value={intervalSec}
+          disabled={saving}
+          onChange={(e) => {
+            setIntervalSec(e.target.value);
+            setCapError("");
+            setSaved(false);
+          }}
+        />
+        <p className="text-xs text-muted-foreground">
+          Uma abordagem por vez. 90s é o padrão — abaixo de 60s o WhatsApp costuma barrar o número.
+        </p>
+      </div>
       <label className="flex items-center gap-2 text-sm text-foreground">
         <input
           id="outreach-weekdays"
@@ -166,18 +185,21 @@ export function OutreachSettings() {
           disabled={saving}
           onChange={(e) => setWeekdaysOnly(e.target.checked)}
         />
-        Só dias úteis
+        Só dias úteis (segunda a sexta)
       </label>
       <label className="flex items-center gap-2 text-sm text-foreground">
         <input
           id="outreach-saturday"
           type="checkbox"
-          checked={saturdayMorning}
-          disabled={saving}
+          checked={saturdayMorning && !weekdaysOnly}
+          disabled={saving || weekdaysOnly}
           onChange={(e) => setSaturdayMorning(e.target.checked)}
         />
         Sábado de manhã (9h–13h)
       </label>
+      <p className="text-xs text-muted-foreground">
+        Escritório de advocacia: WhatsApp de trabalho é segunda a sexta. Sábado não responde.
+      </p>
       {capError && (
         <p className="text-sm text-destructive" role="alert">
           {capError}

@@ -30,8 +30,8 @@ function offenderIndexes(texts: string[], err: string): number[] {
   if (/pelo menos 2/i.test(err)) {
     return texts.map((t, i) => (t.trim() && filled.length < 2 ? i : -1)).filter((i) => i >= 0);
   }
-  if (/len_chk|120|character/i.test(err)) {
-    return texts.map((t, i) => (t.length > 120 || !t.trim() ? i : -1)).filter((i) => i >= 0);
+  if (/len_chk|120|280|character/i.test(err)) {
+    return texts.map((t, i) => (t.length > 280 || !t.trim() ? i : -1)).filter((i) => i >= 0);
   }
   if (/no_link|link|wa\.me|www\./i.test(err)) {
     return texts.map((t, i) => (hasLink(t) ? i : -1)).filter((i) => i >= 0);
@@ -101,7 +101,7 @@ export function OpenersEditor() {
     <section className="space-y-3 rounded-lg border border-border bg-card p-5">
       <h2 className="text-lg text-foreground">Variações do toque 1</h2>
       <p className="text-sm text-muted-foreground">
-        Pelo menos 2, até 120 caracteres, sem link. Use {"{nome}"} e {"{empresa}"}.
+        Pelo menos 2, até 280 caracteres, sem link. Use {"{nome}"} e {"{empresa}"}. Conversa, não script.
       </p>
       <div className="space-y-4">
         {texts.map((text, i) => {
@@ -113,16 +113,16 @@ export function OpenersEditor() {
                   Variação {i + 1}
                 </Label>
                 <span
-                  className={`text-xs font-mono ${text.length > 120 ? "text-destructive" : "text-muted-foreground"}`}
+                  className={`text-xs font-mono ${text.length > 280 ? "text-destructive" : "text-muted-foreground"}`}
                 >
-                  {text.length}/120
+                  {text.length}/280
                 </span>
               </div>
               <Textarea
                 id={`opener-${i}`}
                 value={text}
                 disabled={saving}
-                maxLength={200}
+                maxLength={280}
                 onChange={(e) => setAt(i, e.target.value)}
                 className={bad ? "border-destructive" : undefined}
               />
