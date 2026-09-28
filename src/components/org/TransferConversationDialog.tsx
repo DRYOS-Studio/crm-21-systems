@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/select";
 import { memberFilterLabel, type OrgMember } from "@/hooks/useOrgMembers";
 import { transferConversation } from "@/lib/transfer-conversation";
-import { suggestTransferStageId, type TransferStageOption } from "@/lib/transfer-stage-suggest";
+import {
+  dedupeOrgPipelineStages,
+  suggestTransferStageId,
+  type TransferStageOption,
+} from "@/lib/transfer-stage-suggest";
 import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
@@ -65,7 +69,7 @@ export function TransferConversationDialog({
   }, [open, targets]);
 
   useEffect(() => {
-    if (!open || !targetId) {
+    if (!open) {
       setTargetStages([]);
       setStageId("");
       return;
@@ -76,34 +80,35 @@ export function TransferConversationDialog({
       const { data, error: qErr } = await supabase
         .from("pipeline_stages")
         .select("id, name, position")
-        .eq("user_id", targetId)
         .order("position", { ascending: true });
       if (cancelled) return;
       setLoadingStages(false);
       if (qErr) {
         setTargetStages([]);
         setStageId("");
+        setError("Não foi possível carregar as etapas do funil.");
         return;
       }
-      const rows = (data ?? []) as TransferStageOption[];
+      setError(null);
+      const rows = dedupeOrgPipelineStages((data ?? []) as TransferStageOption[]);
       setTargetStages(rows);
       const suggested = suggestTransferStageId(sourceStageName, rows);
-      setStageId(suggested ?? "");
+      setStageId(suggested ?? rows[0]?.id ?? "");
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, [open, targetId, sourceStageName]);
+  }, [open, sourceStageName]);
 
   const stageHint = useMemo(() => {
     if (!sourceStageName?.trim()) return null;
     const suggested = suggestTransferStageId(sourceStageName, targetStages);
     if (suggested && stageId === suggested) {
-      return `Sugerimos a etapa equivalente a “${sourceStageName.trim()}” no funil de quem vai receber.`;
+      return `Sugerimos a etapa equivalente a “${sourceStageName.trim()}” no funil do time.`;
     }
     if (targetStages.length > 0) {
-      return `Hoje está em “${sourceStageName.trim()}”. Confirme a etapa no funil do novo responsável.`;
+      return `Hoje está em “${sourceStageName.trim()}”. Confirme a etapa no funil compartilhado.`;
     }
     return null;
   }, [sourceStageName, targetStages, stageId]);

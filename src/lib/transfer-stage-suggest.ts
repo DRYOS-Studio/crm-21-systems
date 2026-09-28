@@ -4,6 +4,17 @@ function normName(name: string) {
   return name.trim().toLowerCase();
 }
 
+/** Funil compartilhado na org: uma linha por nome (primeira por position). */
+export function dedupeOrgPipelineStages(rows: TransferStageOption[]): TransferStageOption[] {
+  const sorted = [...rows].sort((a, b) => a.position - b.position);
+  const byName = new Map<string, TransferStageOption>();
+  for (const s of sorted) {
+    const key = normName(s.name);
+    if (!byName.has(key)) byName.set(key, s);
+  }
+  return [...byName.values()].sort((a, b) => a.position - b.position);
+}
+
 function ehEmContato(nome: string) {
   return /em\s*contato/i.test(nome);
 }
