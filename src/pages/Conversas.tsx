@@ -61,7 +61,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { LeadContextBody, leadPerson, leadTitle } from "@/components/lead/LeadContextPanel";
+import { LeadContextBody, leadPerson, leadTitle, type LeadEditableFields } from "@/components/lead/LeadContextPanel";
 import { LeadTagChips, TagFilterSelect } from "@/components/lead/LeadTagEditor";
 import { useLeadTags } from "@/hooks/useLeadTags";
 import { useViewFilters } from "@/hooks/useViewFilters";
@@ -726,6 +726,13 @@ export default function Conversas() {
           onTransfer: () => setTransferOpen(true),
         }
       : {};
+
+  const onLeadSaved = (fields: LeadEditableFields) => {
+    if (!active) return;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === active.id ? { ...c, ...fields } : c)),
+    );
+  };
 
   const changeStage = (stageId: string) => {
     if (!active || active.stage_id === stageId) return;
@@ -1546,6 +1553,7 @@ export default function Conversas() {
             <LeadContextBody
               conversation={active}
               lossLabel={activeLossLabel}
+              onSaved={onLeadSaved}
               {...leadContextOwnerProps}
               tags={{
                 catalog: tagCatalog,
@@ -1569,6 +1577,7 @@ export default function Conversas() {
               <LeadContextBody
                 conversation={active}
                 lossLabel={activeLossLabel}
+                onSaved={onLeadSaved}
                 {...leadContextOwnerProps}
                 tags={{
                   catalog: tagCatalog,
