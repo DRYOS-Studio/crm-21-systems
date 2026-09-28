@@ -10,6 +10,7 @@ import { useLeadTags } from "@/hooks/useLeadTags";
 import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { useViewFilters } from "@/hooks/useViewFilters";
 import { LeadTagChips, TagFilterSelect } from "@/components/lead/LeadTagEditor";
+import { conversationMatchesTagFilter } from "@/lib/tag-filter";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import {
   AlertDialog,
@@ -64,7 +65,7 @@ export function ProspectsTable() {
   const [toDelete, setToDelete] = useState<Prospect | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { tagFilter, userFilter } = filters;
+  const { tagFilters, userFilter } = filters;
   const orgMembers = useOrgMembers();
   const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
 
@@ -145,9 +146,10 @@ export function ProspectsTable() {
     rows == null
       ? null
       : rows.filter((p) => {
-          if (tagFilter !== "all" && !(p.conversation_id && (tagsByConv[p.conversation_id] ?? []).some((t) => t.id === tagFilter))) {
-            return false;
-          }
+          const tagIds = p.conversation_id
+            ? (tagsByConv[p.conversation_id] ?? []).map((t) => t.id)
+            : [];
+          if (!conversationMatchesTagFilter(tagIds, tagFilters)) return false;
           if (userFilter !== "all" && p.user_id !== userFilter) return false;
           return true;
         });
@@ -164,8 +166,8 @@ export function ProspectsTable() {
         </p>
         <TagFilterSelect
           catalog={tagCatalog}
-          value={tagFilter}
-          onChange={(next) => updateFilters({ tagFilter: next })}
+          value={tagFilters}
+          onChange={(next) => updateFilters({ tagFilters: next })}
         />
         <UserFilterSelect
           members={orgMembers}

@@ -1,19 +1,29 @@
 import type { InboxFilter } from "./inbox";
 
+function parseStoredTagFilters(raw: unknown, legacyTagFilter?: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter((id): id is string => typeof id === "string" && id.length > 0);
+  }
+  if (typeof legacyTagFilter === "string" && legacyTagFilter && legacyTagFilter !== "all") {
+    return [legacyTagFilter];
+  }
+  return [];
+}
+
 const INBOX_FILTERS = new Set<InboxFilter>(["todas", "responder", "aguardando", "humano", "encerrados"]);
 
 export const INSTANCE_FILTER_NONE = "none";
 
 export type ViewFilters = {
   inboxFilter: InboxFilter;
-  tagFilter: string;
+  tagFilters: string[];
   userFilter: string;
   instanceFilter: string;
 };
 
 export const DEFAULT_VIEW_FILTERS: ViewFilters = {
   inboxFilter: "todas",
-  tagFilter: "all",
+  tagFilters: [],
   userFilter: "all",
   instanceFilter: "all",
 };
@@ -63,14 +73,14 @@ export function parseViewFilters(raw: string | null | undefined): ViewFilters {
     const inboxFilter = INBOX_FILTERS.has(v.inboxFilter as InboxFilter)
       ? (v.inboxFilter as InboxFilter)
       : DEFAULT_VIEW_FILTERS.inboxFilter;
-    const tagFilter = typeof v.tagFilter === "string" && v.tagFilter ? v.tagFilter : DEFAULT_VIEW_FILTERS.tagFilter;
+    const tagFilters = parseStoredTagFilters(v.tagFilters, v.tagFilter);
     const userFilter =
       typeof v.userFilter === "string" && v.userFilter ? v.userFilter : DEFAULT_VIEW_FILTERS.userFilter;
     const instanceFilter =
       typeof v.instanceFilter === "string" && v.instanceFilter
         ? v.instanceFilter
         : DEFAULT_VIEW_FILTERS.instanceFilter;
-    return { inboxFilter, tagFilter, userFilter, instanceFilter };
+    return { inboxFilter, tagFilters, userFilter, instanceFilter };
   } catch {
     return { ...DEFAULT_VIEW_FILTERS };
   }
@@ -79,7 +89,7 @@ export function parseViewFilters(raw: string | null | undefined): ViewFilters {
 export function serializeViewFilters(filters: ViewFilters): string {
   return JSON.stringify({
     inboxFilter: filters.inboxFilter,
-    tagFilter: filters.tagFilter,
+    tagFilters: filters.tagFilters,
     userFilter: filters.userFilter,
     instanceFilter: filters.instanceFilter,
   });

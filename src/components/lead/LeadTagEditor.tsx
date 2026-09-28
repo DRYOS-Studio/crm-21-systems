@@ -109,31 +109,4 @@ export function LeadTagChips({ tags, max = 3 }: { tags: LeadTag[]; max?: number 
   );
 }
 
-export function TagFilterSelect({
-  catalog,
-  value,
-  onChange,
-  className,
-}: {
-  catalog: LeadTag[];
-  value: string;
-  onChange: (tagId: string) => void;
-  className?: string;
-}) {
-  if (catalog.length === 0) return null;
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className={className ?? "h-8 w-[160px] text-xs"}>
-        <SelectValue placeholder="Filtrar tag" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">Todas as tags</SelectItem>
-        {catalog.map((t) => (
-          <SelectItem key={t.id} value={t.id}>
-            {t.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
+export { TagFilterSelect, TagFiltersControl } from "@/components/lead/TagFiltersControl";

@@ -32,6 +32,7 @@ import { InstanceFilterSelect } from "@/components/inbox/InstanceFilterSelect";
 import { useOrgWhatsappInstances } from "@/hooks/useOrgWhatsappInstances";
 import { coerceInstanceFilter, conversationMatchesInstanceFilter } from "@/lib/view-filters";
 import { ehPerdido } from "@/lib/inbox";
+import { conversationMatchesTagFilter } from "@/lib/tag-filter";
 import type { LeadTag } from "@/lib/lead-tags";
 import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
 import { useLossReasons } from "@/hooks/useLossReasons";
@@ -232,7 +233,7 @@ export default function Kanban() {
   const [newStageName, setNewStageName] = useState("");
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { tagFilter, userFilter, instanceFilter } = filters;
+  const { tagFilters, userFilter, instanceFilter } = filters;
   const orgMembers = useOrgMembers();
   const whatsappInstances = useOrgWhatsappInstances();
   useEffect(() => {
@@ -249,7 +250,14 @@ export default function Kanban() {
     (c) => !c.instance_id && (userFilter === "all" || c.user_id === userFilter),
   );
   const visibleConversations = conversations.filter((c) => {
-    if (tagFilter !== "all" && !(tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter)) return false;
+    if (
+      !conversationMatchesTagFilter(
+        (tagsByConv[c.id] ?? []).map((t) => t.id),
+        tagFilters,
+      )
+    ) {
+      return false;
+    }
     if (userFilter !== "all" && c.user_id !== userFilter) return false;
     if (!conversationMatchesInstanceFilter(c.instance_id, instanceFilter, c.user_id, whatsappInstances)) return false;
     return true;
@@ -536,7 +544,7 @@ export default function Kanban() {
           value={userFilter}
           onChange={(next) => updateFilters({ userFilter: next })}
         />
-        <TagFilterSelect catalog={tagCatalog} value={tagFilter} onChange={(next) => updateFilters({ tagFilter: next })} />
+        <TagFilterSelect catalog={tagCatalog} value={tagFilters} onChange={(next) => updateFilters({ tagFilters: next })} />
         <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setFunnelOpen(true)}>
           <Columns3 className="w-3.5 h-3.5 mr-1.5" />
           Etapas do funil

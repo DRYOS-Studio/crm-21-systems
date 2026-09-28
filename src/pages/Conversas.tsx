@@ -18,6 +18,7 @@ import {
   threadDateLabel,
   waMeUrl,
 } from "@/lib/inbox";
+import { conversationMatchesTagFilter } from "@/lib/tag-filter";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { MainHeader } from "@/components/layout/MainHeader";
@@ -186,7 +187,7 @@ export default function Conversas() {
   const [lastByConv, setLastByConv] = useState<Record<string, LastSnap>>({});
   const [inboxQuery, setInboxQuery] = useState("");
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { inboxFilter, tagFilter, userFilter, instanceFilter } = filters;
+  const { inboxFilter, tagFilters, userFilter, instanceFilter } = filters;
   const orgMembers = useOrgMembers();
   const whatsappInstances = useOrgWhatsappInstances();
   useEffect(() => {
@@ -269,9 +270,12 @@ export default function Conversas() {
       return true;
     };
     const passaTag = (c: Conversation) =>
-      tagFilter === "all" || (tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter);
+      conversationMatchesTagFilter(
+        (tagsByConv[c.id] ?? []).map((t) => t.id),
+        tagFilters,
+      );
     return scopedConversations.filter((c) => passaBusca(c) && passaFiltro(c) && passaTag(c));
-  }, [scopedConversations, inboxQuery, inboxFilter, lastByConv, tagFilter, tagsByConv, perdidoStageIds]);
+  }, [scopedConversations, inboxQuery, inboxFilter, lastByConv, tagFilters, tagsByConv, perdidoStageIds]);
 
   const filteredPriority = useMemo(
     () => visibleConversations.filter((c) => priorityConversations.some((p) => p.id === c.id)),
@@ -284,7 +288,7 @@ export default function Conversas() {
   const flattenList =
     inboxFilter !== "todas" ||
     !!inboxQuery.trim() ||
-    tagFilter !== "all" ||
+    tagFilters.length > 0 ||
     userFilter !== "all" ||
     instanceFilter !== "all";
 
@@ -1071,7 +1075,7 @@ export default function Conversas() {
               onChange={(next) => updateFilters({ userFilter: next })}
               className="h-8 w-full text-xs"
             />
-            <TagFilterSelect catalog={tagCatalog} value={tagFilter} onChange={(next) => updateFilters({ tagFilter: next })} className="h-8 w-full text-xs" />
+            <TagFilterSelect catalog={tagCatalog} value={tagFilters} onChange={(next) => updateFilters({ tagFilters: next })} className="h-8 w-full text-xs" />
           </div>
           <div className="flex-1 overflow-y-auto">
             {needsSetup && (

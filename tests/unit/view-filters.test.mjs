@@ -18,14 +18,15 @@ test("parseViewFilters: vazio e lixo caem no default", () => {
 
 test("parseViewFilters: ignora chip inválido e campos vazios", () => {
   assert.equal(parseViewFilters(JSON.stringify({ inboxFilter: "xyz" })).inboxFilter, "todas");
-  assert.equal(parseViewFilters(JSON.stringify({ tagFilter: "" })).tagFilter, "all");
+  assert.deepEqual(parseViewFilters(JSON.stringify({ tagFilters: [] })).tagFilters, []);
+  assert.deepEqual(parseViewFilters(JSON.stringify({ tagFilter: "tag-x" })).tagFilters, ["tag-x"]);
   assert.equal(parseViewFilters(JSON.stringify({ userFilter: 12 })).userFilter, "all");
 });
 
 test("parseViewFilters: round-trip preserva escolha válida", () => {
   const saved = {
     inboxFilter: "responder",
-    tagFilter: "tag-1",
+    tagFilters: ["tag-1"],
     userFilter: "user-9",
     instanceFilter: "inst-42",
   };
