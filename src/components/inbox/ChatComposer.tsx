@@ -52,10 +52,10 @@ export function ChatComposer({ disabled, sending, aiEnabled, placeholder, onSend
   };
 
   const dispatch = async (payload: ComposerPayload) => {
+    setText("");
+    setPending(null);
     try {
       await onSend(payload);
-      setText("");
-      setPending(null);
     } catch {
       // o parent já mostra o toast
     }

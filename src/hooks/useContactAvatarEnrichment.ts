@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type ConvRef = {
@@ -9,32 +9,42 @@ type ConvRef = {
   instance_id?: string | null;
 };
 
-const MAX_PER_RUN = 8;
+const MAX_PER_RUN = 2;
+const GAP_MS = 900;
 
 /** Preenche fotos faltantes via Uazapi /chat/details (conversas antigas, antes do webhook guardar avatar). */
 export function useContactAvatarEnrichment(conversations: ConvRef[]) {
   const tried = useRef(new Set<string>());
 
+  const missingKey = useMemo(() => {
+    return conversations
+      .filter((c) => !c.contact_avatar_url && (c.wa_phone || c.contact_phone) && c.instance_id)
+      .map((c) => c.id)
+      .sort()
+      .join(",");
+  }, [conversations]);
+
   useEffect(() => {
-    const missing = conversations.filter(
-      (c) => !c.contact_avatar_url && (c.wa_phone || c.contact_phone) && c.instance_id,
-    );
-    const batch = missing.filter((c) => !tried.current.has(c.id)).slice(0, MAX_PER_RUN);
+    if (!missingKey || (typeof document !== "undefined" && document.hidden)) return;
+
+    const ids = missingKey.split(",").filter(Boolean);
+    const batch = ids.filter((id) => !tried.current.has(id)).slice(0, MAX_PER_RUN);
     if (!batch.length) return;
 
     let cancelled = false;
 
     (async () => {
-      for (const c of batch) {
+      for (const id of batch) {
         if (cancelled) break;
-        tried.current.add(c.id);
-        const number = c.wa_phone || c.contact_phone;
+        tried.current.add(id);
+        const c = conversations.find((x) => x.id === id);
+        const number = c?.wa_phone || c?.contact_phone;
         if (!number) continue;
         try {
           const { data, error } = await supabase.functions.invoke("manage-instance", {
             body: {
               action: "enrich_contact_avatar",
-              conversation_id: c.id,
+              conversation_id: id,
               number,
             },
           });
@@ -42,11 +52,12 @@ export function useContactAvatarEnrichment(conversations: ConvRef[]) {
         } catch {
           /* best-effort */
         }
+        if (!cancelled) await new Promise((r) => setTimeout(r, GAP_MS));
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [conversations]);
+  }, [missingKey, conversations]);
 }

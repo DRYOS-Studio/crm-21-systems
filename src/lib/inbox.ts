@@ -7,6 +7,20 @@ export type LastSnap = {
   created_at: string;
 };
 
+export function lastSnapFromMessage(row: {
+  content: string;
+  direction: "inbound" | "outbound";
+  sender: "contact" | "ai" | "human";
+  created_at: string;
+}): LastSnap {
+  return {
+    content: row.content,
+    direction: row.direction,
+    sender: row.sender,
+    created_at: row.created_at,
+  };
+}
+
 export function inboxInitials(title: string) {
   const parts = title.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();

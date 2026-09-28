@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   matchesInboxQuery,
   precisaResponder,
   previewText,
+  lastSnapFromMessage,
   threadDateLabel,
   waMeUrl,
 } from "@/lib/inbox";
@@ -190,6 +191,8 @@ export default function Conversas() {
   const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
     useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const instanceTokenCache = useRef<{ key: string; token: string } | null>(null);
+  const inboxReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { activeReasons, reasonById } = useLossReasons();
   const [pendingLossStage, setPendingLossStage] = useState<string | null>(null);
   const [savingLoss, setSavingLoss] = useState(false);
@@ -330,10 +333,40 @@ export default function Conversas() {
     stripOpenParam();
   }, [searchParams, activeId]);
 
-  // Load conversations + realtime
+  const applyMessageToInbox = useCallback((row: Message & { conversation_id: string }) => {
+    const snap = lastSnapFromMessage(row);
+    setLastByConv((prev) => ({ ...prev, [row.conversation_id]: snap }));
+    if (row.direction === "inbound") {
+      setLastInboundAt((prev) => {
+        const prevAt = prev[row.conversation_id];
+        if (prevAt && prevAt >= row.created_at) return prev;
+        return { ...prev, [row.conversation_id]: row.created_at };
+      });
+    }
+    setConversations((prev) => {
+      const idx = prev.findIndex((c) => c.id === row.conversation_id);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      next[idx] = { ...next[idx], last_message_at: row.created_at };
+      return next;
+    });
+  }, []);
+
+  const scheduleInboxReload = useCallback(() => {
+    if (inboxReloadTimer.current) clearTimeout(inboxReloadTimer.current);
+    inboxReloadTimer.current = setTimeout(() => {
+      inboxReloadTimer.current = null;
+      void loadInboxRef.current?.();
+    }, 1200);
+  }, []);
+
+  const loadInboxRef = useRef<(() => Promise<void>) | null>(null);
+
+  // Load conversations + realtime (incremental — evita 3 queries a cada mensagem enviada)
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
+
+    const loadInbox = async () => {
       const [{ data }, inbound, recent] = await Promise.all([
         supabase.from("conversations").select("*").order("last_message_at", { ascending: false }),
         supabase
@@ -354,12 +387,7 @@ export default function Conversas() {
       const lastMap: Record<string, LastSnap> = {};
       for (const row of (recent.data ?? []) as (LastSnap & { conversation_id: string })[]) {
         if (!lastMap[row.conversation_id]) {
-          lastMap[row.conversation_id] = {
-            content: row.content,
-            direction: row.direction,
-            sender: row.sender,
-            created_at: row.created_at,
-          };
+          lastMap[row.conversation_id] = lastSnapFromMessage(row);
         }
       }
       setLastInboundAt(inboundMap);
@@ -377,25 +405,35 @@ export default function Conversas() {
         return ranked[0]?.id ?? current;
       });
     };
-    void load();
+    loadInboxRef.current = loadInbox;
+    void loadInbox();
 
     const ch = supabase
       .channel("conversations-list")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "conversations" },
-        () => void load(),
+        { event: "INSERT", schema: "public", table: "conversations" },
+        () => scheduleInboxReload(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversations" },
+        (payload) => {
+          const row = payload.new as Conversation;
+          setConversations((prev) => prev.map((c) => (c.id === row.id ? { ...c, ...row } : c)));
+        },
       )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
-        () => void load(),
+        (payload) => applyMessageToInbox(payload.new as Message & { conversation_id: string }),
       )
       .subscribe();
     return () => {
+      if (inboxReloadTimer.current) clearTimeout(inboxReloadTimer.current);
       supabase.removeChannel(ch);
     };
-  }, [user]);
+  }, [user, applyMessageToInbox, scheduleInboxReload, emContatoStageIds]);
 
   // Load stages
   useEffect(() => {
@@ -475,7 +513,21 @@ export default function Conversas() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeId}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as Message]),
+        (payload) => {
+          const row = payload.new as Message;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === row.id)) return prev;
+            const trimmed = prev.filter(
+              (m) =>
+                !(
+                  m.id.startsWith("temp-") &&
+                  m.direction === row.direction &&
+                  m.content === row.content
+                ),
+            );
+            return [...trimmed, row];
+          });
+        },
       )
       .subscribe();
     return () => {
@@ -720,6 +772,27 @@ export default function Conversas() {
     }
   };
 
+  const resolveInstanceToken = async (conv: Conversation) => {
+    const key = conv.instance_id ?? `user:${user!.id}`;
+    if (instanceTokenCache.current?.key === key) return instanceTokenCache.current.token;
+    const { data: inst } = conv.instance_id
+      ? await supabase
+          .from("whatsapp_instances")
+          .select("instance_token")
+          .eq("id", conv.instance_id)
+          .maybeSingle()
+      : await supabase
+          .from("whatsapp_instances")
+          .select("instance_token")
+          .eq("user_id", user!.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+    if (!inst?.instance_token) throw new Error("Nenhuma instância WhatsApp conectada");
+    instanceTokenCache.current = { key, token: inst.instance_token };
+    return inst.instance_token;
+  };
+
   const sendPayload = async (payload: ComposerPayload) => {
     if (!active) return;
     if (encerrado(active)) {
@@ -731,24 +804,37 @@ export default function Conversas() {
       toast({ variant: "destructive", title: "Sem WhatsApp", description: "Esse contato só tem email — não dá pra mandar mensagem." });
       return;
     }
+
+    const content =
+      payload.kind === "text" ? payload.text : mediaLabel(payload.type, payload.caption, payload.name);
+    const nowIso = new Date().toISOString();
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimistic: Message = {
+      id: tempId,
+      conversation_id: active.id,
+      direction: "outbound",
+      sender: "human",
+      content,
+      created_at: nowIso,
+      media_type: payload.kind === "media" ? payload.type : null,
+      media_url: null,
+      media_name: payload.kind === "media" ? payload.name || payload.file.name : null,
+    };
+
+    setMessages((prev) => [...prev, optimistic]);
+    applyMessageToInbox(optimistic);
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === active.id
+          ? { ...c, last_message_at: nowIso, ai_enabled: false, human_takeover_at: nowIso }
+          : c,
+      ),
+    );
+
     setSending(true);
     try {
-      const { data: inst } = active.instance_id
-        ? await supabase
-            .from("whatsapp_instances")
-            .select("instance_token")
-            .eq("id", active.instance_id)
-            .maybeSingle()
-        : await supabase
-            .from("whatsapp_instances")
-            .select("instance_token")
-            .eq("user_id", user!.id)
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-      if (!inst?.instance_token) throw new Error("Nenhuma instância WhatsApp conectada");
+      const instanceToken = await resolveInstanceToken(active);
 
-      let content = payload.kind === "text" ? payload.text : mediaLabel(payload.type, payload.caption, payload.name);
       let mediaUrl: string | null = null;
       let mediaType: string | null = null;
       let mediaName: string | null = null;
@@ -757,7 +843,7 @@ export default function Conversas() {
         const { data, error } = await supabase.functions.invoke("manage-instance", {
           body: {
             action: "send_text",
-            instance_token: inst.instance_token,
+            instance_token: instanceToken,
             number,
             text: payload.text,
           },
@@ -772,7 +858,7 @@ export default function Conversas() {
         const { data, error } = await supabase.functions.invoke("manage-instance", {
           body: {
             action: "send_media",
-            instance_token: inst.instance_token,
+            instance_token: instanceToken,
             number,
             type: payload.type,
             file: uploaded.url,
@@ -781,27 +867,43 @@ export default function Conversas() {
           },
         });
         if (error || !data?.ok) throw new Error(data?.error || error?.message || "Falha ao enviar mídia");
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId ? { ...m, media_url: mediaUrl, media_type: mediaType, media_name: mediaName } : m,
+          ),
+        );
       }
 
-      await supabase.from("messages").insert({
-        conversation_id: active.id,
-        user_id: user!.id,
-        direction: "outbound",
-        sender: "human",
-        content,
-        media_type: mediaType,
-        media_url: mediaUrl,
-        media_name: mediaName,
-      });
-      await supabase
+      const { data: saved, error: insertErr } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: active.id,
+          user_id: user!.id,
+          direction: "outbound",
+          sender: "human",
+          content,
+          media_type: mediaType,
+          media_url: mediaUrl,
+          media_name: mediaName,
+        })
+        .select()
+        .single();
+      if (insertErr) throw insertErr;
+
+      if (saved) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? (saved as Message) : m)));
+      }
+
+      void supabase
         .from("conversations")
         .update({
-          last_message_at: new Date().toISOString(),
+          last_message_at: nowIso,
           ai_enabled: false,
-          human_takeover_at: new Date().toISOString(),
+          human_takeover_at: nowIso,
         })
         .eq("id", active.id);
     } catch (e: any) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       toast({ variant: "destructive", title: "Erro", description: e.message });
       throw e;
     } finally {
