@@ -1,0 +1,71 @@
+import type { ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { LogOut, Settings } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const NAV = [
+  { to: "/", label: "Conversas", match: (p: string) => p === "/" || p.startsWith("/?") },
+  { to: "/crm", label: "CRM", match: (p: string) => p === "/crm" || p.startsWith("/kanban") },
+  { to: "/prospeccao", label: "Prospecção", match: (p: string) => p.startsWith("/prospeccao") },
+  {
+    to: "/configuracoes",
+    label: "Configurações",
+    match: (p: string) => p.startsWith("/configuracoes") || p.startsWith("/whatsapp"),
+  },
+] as const;
+
+type Props = {
+  onLogout: () => void;
+  configNeedsAttention?: boolean;
+  trailing?: ReactNode;
+};
+
+export function MainHeader({ onLogout, configNeedsAttention, trailing }: Props) {
+  const { pathname } = useLocation();
+
+  return (
+    <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0 bg-background">
+      <div className="flex items-center gap-3 min-w-0">
+        <Logo horizontal width={26} height={26} />
+        <nav className="hidden sm:flex items-center gap-1 ml-2">
+          {NAV.map((item) => {
+            const active = item.match(pathname);
+            return (
+              <Link
+                key={item.to}
+                to={item.to === "/configuracoes" ? "/configuracoes/agente" : item.to}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition",
+                  active ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+      <div className="flex items-center gap-1">
+        {trailing}
+        <ThemeToggle />
+        <Button
+          variant={configNeedsAttention ? "default" : "ghost"}
+          size="icon"
+          className="sm:hidden"
+          asChild
+          title="Configurações"
+        >
+          <Link to="/configuracoes/agente">
+            <Settings className="w-4 h-4" />
+          </Link>
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onLogout} title="Sair">
+          <LogOut className="w-4 h-4" />
+        </Button>
+      </div>
+    </header>
+  );
+}

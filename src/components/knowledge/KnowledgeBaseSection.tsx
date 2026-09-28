@@ -16,7 +16,7 @@ function isDuplicateTopic(error: { code?: string; message?: string } | null): bo
   return error.code === "23505" || /knowledge_base.*topic|unique.*topic/i.test(error.message || "");
 }
 
-export function KnowledgeBaseSection({ open }: { open: boolean }) {
+export function KnowledgeBaseSection({ open = true }: { open?: boolean }) {
   const { user } = useAuth();
   const [items, setItems] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(false);

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Bot, User, MessageSquare, Settings, LogOut, Sparkles, Clock, Trello, X, PanelRight, Search, ArrowRightLeft } from "lucide-react";
+import { Bot, User, MessageSquare, Sparkles, Clock, Trello, X, PanelRight, Search, ArrowRightLeft } from "lucide-react";
 import {
   type LastSnap,
   ehEmContato,
@@ -20,9 +20,7 @@ import {
 } from "@/lib/inbox";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ConfigDrawer } from "@/components/ConfigDrawer";
+import { MainHeader } from "@/components/layout/MainHeader";
 import {
   Popover,
   PopoverContent,
@@ -169,7 +167,6 @@ export default function Conversas() {
   const [activeId, setActiveId] = useState<string | null>(searchParams.get("open"));
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
-  const [configOpen, setConfigOpen] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [stages, setStages] = useState<Stage[]>([]);
   const [followups, setFollowups] = useState<Followup[]>([]);
@@ -551,7 +548,7 @@ export default function Conversas() {
       setNeedsSetup(!agent?.groq_api_key);
     };
     check();
-  }, [user, configOpen]);
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
@@ -981,54 +978,15 @@ export default function Conversas() {
 
   return (
     <div className="dryos h-screen flex flex-col bg-background text-foreground">
-      {/* Header */}
-      <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <Logo horizontal width={26} height={26} />
-          <nav className="hidden sm:flex items-center gap-1 ml-2">
-            <Link to="/" className="px-3 py-1.5 text-sm rounded-md bg-muted font-medium">
-              Conversas
-            </Link>
-            <Link
-              to="/crm"
-              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
-            >
-              CRM
-            </Link>
-            <Link
-              to="/prospeccao"
-              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
-            >
-              Prospecção
-            </Link>
-            <Link
-              to="/whatsapp"
-              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition"
-            >
-              WhatsApp
-            </Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-1">
+      <MainHeader
+        configNeedsAttention={needsSetup}
+        onLogout={handleLogout}
+        trailing={
           <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => navigate("/crm")} title="CRM">
             <Trello className="w-4 h-4" />
           </Button>
-          <ThemeToggle />
-          <Button
-            variant={needsSetup ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setConfigOpen(true)}
-          >
-            <Settings className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Configuração</span>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
-      </header>
-
-      <ConfigDrawer open={configOpen} onOpenChange={setConfigOpen} />
+        }
+      />
 
       {/* Main */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-[340px_1fr] gap-0 overflow-hidden">

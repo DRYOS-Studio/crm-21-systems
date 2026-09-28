@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
-import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { useNavigate } from "react-router-dom";
+import { MainHeader } from "@/components/layout/MainHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +18,7 @@ import {
   useDroppable,
   useDraggable,
 } from "@dnd-kit/core";
-import { Bot, Clock, LogOut, Plus, Settings, Trash2, User, Pencil, Building2, Columns3, ArrowRightLeft } from "lucide-react";
+import { Bot, Clock, Plus, Trash2, User, Pencil, Building2, Columns3, ArrowRightLeft } from "lucide-react";
 import { TransferConversationDialog } from "@/components/org/TransferConversationDialog";
 import { FunnelStagesDialog } from "@/components/crm/FunnelStagesDialog";
 import { nextFunnelColor } from "@/lib/funnel-colors";
@@ -31,7 +30,6 @@ import { useViewFilters } from "@/hooks/useViewFilters";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import { ehPerdido } from "@/lib/inbox";
 import type { LeadTag } from "@/lib/lead-tags";
-import { ConfigDrawer } from "@/components/ConfigDrawer";
 import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
 import { useLossReasons } from "@/hooks/useLossReasons";
 import {
@@ -225,7 +223,6 @@ export default function Kanban() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeCard, setActiveCard] = useState<Conversation | null>(null);
-  const [configOpen, setConfigOpen] = useState(false);
   const [addStageOpen, setAddStageOpen] = useState(false);
   const [funnelOpen, setFunnelOpen] = useState(false);
   const [newStageName, setNewStageName] = useState("");
@@ -503,35 +500,12 @@ export default function Kanban() {
 
   return (
     <div className="dryos h-screen flex flex-col bg-background text-foreground">
-      <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <Logo horizontal width={26} height={26} />
-          <nav className="hidden sm:flex items-center gap-1 ml-2">
-            <Link to="/" className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition">
-              Conversas
-            </Link>
-            <Link to="/crm" className="px-3 py-1.5 text-sm rounded-md bg-muted font-medium">
-              CRM
-            </Link>
-            <Link to="/prospeccao" className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition">
-              Prospecção
-            </Link>
-            <Link to="/whatsapp" className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted transition">
-              WhatsApp
-            </Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-1">
-          <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={() => setConfigOpen(true)}>
-            <Settings className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Configuração</span>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={async () => { await signOut(); navigate("/login"); }} title="Sair">
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
-      </header>
+      <MainHeader
+        onLogout={async () => {
+          await signOut();
+          navigate("/login");
+        }}
+      />
 
       <div className="border-b border-border px-4 py-2 flex flex-wrap items-center gap-2 shrink-0 sticky top-0 z-10 bg-card">
         <UserFilterSelect
@@ -546,8 +520,6 @@ export default function Kanban() {
           Etapas do funil
         </Button>
       </div>
-
-      <ConfigDrawer open={configOpen} onOpenChange={setConfigOpen} />
 
       <LossReasonDialog
         open={!!pendingLoss}

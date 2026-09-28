@@ -11,8 +11,13 @@ import SsoBridge from "./pages/SsoBridge";
 import Conversas from "./pages/Conversas";
 import Kanban from "./pages/Kanban";
 import Prospeccao from "./pages/Prospeccao";
-import UazapiConfig from "./pages/admin/UazapiConfig";
 import NotFound from "./pages/NotFound";
+import SettingsLayout, { SettingsIndexRedirect } from "./pages/configuracoes/SettingsLayout";
+import SettingsWhatsAppPage from "./pages/configuracoes/SettingsWhatsAppPage";
+import SettingsNegocioPage from "./pages/configuracoes/SettingsNegocioPage";
+import SettingsAgentePage from "./pages/configuracoes/SettingsAgentePage";
+import SettingsConhecimentoPage from "./pages/configuracoes/SettingsConhecimentoPage";
+import SettingsCrmPage from "./pages/configuracoes/SettingsCrmPage";
 
 const queryClient = new QueryClient();
 
@@ -31,8 +36,16 @@ const App = () => (
             <Route path="/crm" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
             <Route path="/kanban" element={<Navigate to="/crm" replace />} />
             <Route path="/prospeccao" element={<ProtectedRoute><Prospeccao /></ProtectedRoute>} />
-            <Route path="/whatsapp" element={<ProtectedRoute><UazapiConfig /></ProtectedRoute>} />
-            <Route path="/admin/uazapi" element={<Navigate to="/whatsapp" replace />} />
+            <Route path="/configuracoes" element={<ProtectedRoute><SettingsLayout /></ProtectedRoute>}>
+              <Route index element={<SettingsIndexRedirect />} />
+              <Route path="whatsapp" element={<SettingsWhatsAppPage />} />
+              <Route path="negocio" element={<SettingsNegocioPage />} />
+              <Route path="agente" element={<SettingsAgentePage />} />
+              <Route path="conhecimento" element={<SettingsConhecimentoPage />} />
+              <Route path="crm" element={<SettingsCrmPage />} />
+            </Route>
+            <Route path="/whatsapp" element={<Navigate to="/configuracoes/whatsapp" replace />} />
+            <Route path="/admin/uazapi" element={<Navigate to="/configuracoes/whatsapp" replace />} />
             <Route path="/conversas" element={<Navigate to="/" replace />} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/agente" element={<Navigate to="/" replace />} />
