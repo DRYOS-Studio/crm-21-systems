@@ -11,7 +11,6 @@ import {
   ehEmContato,
   ehPerdido,
   formatInboxTime,
-  inboxInitials,
   matchesInboxQuery,
   precisaResponder,
   previewText,
@@ -70,6 +69,8 @@ import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
 import { MessageMedia } from "@/components/inbox/MessageMedia";
+import { InboxContactAvatar } from "@/components/inbox/InboxContactAvatar";
+import { useContactAvatarEnrichment } from "@/hooks/useContactAvatarEnrichment";
 import { assertMediaSize, mediaLabel, uploadChatFile } from "@/lib/chat-media";
 
 type Conversation = {
@@ -88,6 +89,7 @@ type Conversation = {
   user_id: string;
   loss_reason_id: string | null;
   loss_reason_note: string | null;
+  contact_avatar_url: string | null;
 };
 
 function destPhone(c: Conversation): string | null {
@@ -205,6 +207,8 @@ export default function Conversas() {
     () => priorizarConversas(conversations, lastInboundAt, emContatoStageIds),
     [conversations, lastInboundAt, emContatoStageIds],
   );
+
+  useContactAvatarEnrichment(conversations);
 
   const scopedConversations = useMemo(
     () =>
@@ -794,13 +798,7 @@ export default function Conversas() {
         } ${waiting ? "border-l-2 border-l-primary" : "border-l-2 border-l-transparent"}`}
       >
         <div className="flex gap-2.5">
-          <div
-            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-              waiting ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {inboxInitials(title)}
-          </div>
+          <InboxContactAvatar title={title} avatarUrl={c.contact_avatar_url} waiting={waiting} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-medium text-sm truncate">{title}</span>
@@ -1019,15 +1017,13 @@ export default function Conversas() {
             <>
               <div className="p-3 border-b flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                      precisaResponder(lastByConv[active.id])
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {inboxInitials(leadTitle(active))}
-                  </div>
+                  <InboxContactAvatar
+                    title={leadTitle(active)}
+                    avatarUrl={active.contact_avatar_url}
+                    waiting={precisaResponder(lastByConv[active.id])}
+                    size="md"
+                    className="mt-0"
+                  />
                   <div className="min-w-0">
                     <div className="font-semibold text-sm truncate">{leadTitle(active)}</div>
                     <div className="text-xs text-muted-foreground truncate">

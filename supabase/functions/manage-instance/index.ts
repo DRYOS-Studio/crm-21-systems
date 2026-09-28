@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { montarWebhookUrl, redigirJson, redigirSecret } from "../_shared/webhook-url.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
+import { contactAvatarFromUazapiChat } from "../_shared/contact-avatar.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -226,6 +227,91 @@ async function handleDownloadMedia(req: Request, body: any) {
   return json({ ok: true, url });
 }
 
+async function handleEnrichContactAvatar(req: Request, body: any) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) {
+    return json({ ok: false, error: "Servidor sem configuração" }, 500);
+  }
+  const admin = createClient(supabaseUrl, serviceKey);
+  const jwtUser = await userFromJwt(admin, req);
+  if (!jwtUser) return json({ ok: false, error: "Não autenticado" }, 401);
+
+  const conversationId = String(body.conversation_id || "").trim();
+  const number = String(body.number || "").replace(/\D/g, "");
+  if (!conversationId || !number) {
+    return json({ ok: false, error: "Conversa ou número inválido" });
+  }
+
+  const { data: conv } = await admin
+    .from("conversations")
+    .select("id, user_id, instance_id, contact_avatar_url, wa_phone, contact_phone")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (!conv) return json({ ok: false, error: "Conversa não encontrada" }, 404);
+
+  const orgRes = await admin.rpc("org_user_ids", { _uid: jwtUser.id });
+  const allowed = Array.isArray(orgRes.data)
+    ? orgRes.data
+        .map((row: unknown) => (typeof row === "string" ? row : (row as { org_user_ids?: string })?.org_user_ids))
+        .filter(Boolean)
+    : [];
+  const canAccess =
+    conv.user_id === jwtUser.id || (allowed.length > 0 && allowed.includes(conv.user_id));
+  if (!canAccess) return json({ ok: false, error: "Sem permissão" }, 403);
+
+  if (conv.contact_avatar_url) {
+    return json({ ok: true, avatar_url: conv.contact_avatar_url, cached: true });
+  }
+
+  let inst: { server_url: string | null; instance_token: string | null } | null = null;
+  if (conv.instance_id) {
+    const { data } = await admin
+      .from("whatsapp_instances")
+      .select("server_url, instance_token")
+      .eq("id", conv.instance_id)
+      .maybeSingle();
+    inst = data;
+  }
+  if (!inst?.server_url || !inst?.instance_token) {
+    const { data } = await admin
+      .from("whatsapp_instances")
+      .select("server_url, instance_token")
+      .eq("user_id", conv.user_id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    inst = data;
+  }
+  if (!inst?.server_url || !inst?.instance_token) {
+    return json({ ok: false, error: "Instância WhatsApp não encontrada" });
+  }
+
+  const baseUrl = String(inst.server_url).replace(/\/$/, "");
+  const uazRes = await fetch(`${baseUrl}/chat/details`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", token: inst.instance_token },
+    body: JSON.stringify({ number, preview: true }),
+  });
+  const responseText = await uazRes.text();
+  if (!uazRes.ok) {
+    return json({ ok: false, error: "Falha ao buscar foto", details: responseText.slice(0, 200) });
+  }
+
+  let chat: Record<string, unknown> = {};
+  try {
+    chat = JSON.parse(responseText) as Record<string, unknown>;
+  } catch {
+    return json({ ok: false, error: "Resposta inválida da Uazapi" });
+  }
+
+  const avatarUrl = contactAvatarFromUazapiChat(chat);
+  if (!avatarUrl) return json({ ok: true, avatar_url: null });
+
+  await admin.from("conversations").update({ contact_avatar_url: avatarUrl }).eq("id", conv.id);
+  return json({ ok: true, avatar_url: avatarUrl });
+}
+
 export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -241,6 +327,10 @@ export async function handle(req: Request): Promise<Response> {
 
     if (action === "download_media") {
       return await handleDownloadMedia(req, body);
+    }
+
+    if (action === "enrich_contact_avatar") {
+      return await handleEnrichContactAvatar(req, body);
     }
 
     // Resolve configuração preferencialmente pela instância do usuário

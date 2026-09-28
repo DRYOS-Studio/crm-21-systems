@@ -6,6 +6,7 @@ import { aplicarOptout, responderTurno } from "../_shared/turno.ts";
 import { pediuParaSair } from "../_shared/brain.ts";
 import { aindaDigitando, debounceInboundMs, pareceRespostaAutomatica } from "../_shared/inbound-guarda.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
+import { contactAvatarFromUazapiChat } from "../_shared/contact-avatar.ts";
 
 type Admin = ReturnType<typeof createClient>;
 
@@ -307,6 +308,7 @@ function extractText(body: any) {
   const contactName = fromMe
     ? chat?.lead_name || chat?.wa_name || null
     : m?.senderName || chat?.lead_name || chat?.wa_name || m?.pushName || null;
+  const contactAvatar = !isGroup ? contactAvatarFromUazapiChat(chat) : null;
   const instanceName = body.instance?.name || body.instanceName || "";
   const instanceToken = body.token || body.instance?.token || m?.token || null;
   // `owner` é o telefone da instância: último recurso pra achar o dono sem token nem nome
@@ -324,6 +326,7 @@ function extractText(body: any) {
     phone,
     isGroup,
     contactName,
+    contactAvatar,
     instanceName,
     instanceToken,
     instanceOwner,
@@ -446,7 +449,7 @@ export async function handle(req: Request): Promise<Response> {
       await supabase.rpc("webhook_confirm", { p_instance: instRow.id });
     }
 
-    const { text, media, mediaType, mediaUrl, mediaName, fromMe, phone, isGroup, contactName, instanceName, instanceToken, instanceOwner, externalId, reaction } =
+    const { text, media, mediaType, mediaUrl, mediaName, fromMe, phone, isGroup, contactName, contactAvatar, instanceName, instanceToken, instanceOwner, externalId, reaction } =
       parsed;
 
     console.log("[webhook] in", {
@@ -568,6 +571,7 @@ export async function handle(req: Request): Promise<Response> {
           contact_name: identity.contact_name,
           contact_company: identity.contact_company,
           contact_city: identity.contact_city,
+          ...(contactAvatar ? { contact_avatar_url: contactAvatar } : {}),
           ai_enabled: fromMe ? false : true,
           ai_stage: fromMe ? "abordar" : "descobrir",
           human_takeover_at: fromMe ? new Date().toISOString() : null,
@@ -590,6 +594,7 @@ export async function handle(req: Request): Promise<Response> {
         contact_city: identity.contact_city,
         wa_phone: phone,
       };
+      if (contactAvatar) update.contact_avatar_url = contactAvatar;
       if (fromMe) {
         update.ai_enabled = false;
         update.human_takeover_at = new Date().toISOString();
