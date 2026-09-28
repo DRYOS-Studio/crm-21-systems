@@ -63,6 +63,9 @@ import { LeadContextBody, leadPerson, leadTitle } from "@/components/lead/LeadCo
 import { LeadTagChips, TagFilterSelect } from "@/components/lead/LeadTagEditor";
 import { useLeadTags } from "@/hooks/useLeadTags";
 import { useViewFilters } from "@/hooks/useViewFilters";
+import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
+import { useLossReasons } from "@/hooks/useLossReasons";
+import { lossReasonLabel } from "@/lib/loss-reasons";
 import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
@@ -83,6 +86,8 @@ type Conversation = {
   human_takeover_at: string | null;
   stage_id: string | null;
   user_id: string;
+  loss_reason_id: string | null;
+  loss_reason_note: string | null;
 };
 
 function destPhone(c: Conversation): string | null {
@@ -182,6 +187,9 @@ export default function Conversas() {
   const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
     useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { activeReasons, reasonById } = useLossReasons();
+  const [pendingLossStage, setPendingLossStage] = useState<string | null>(null);
+  const [savingLoss, setSavingLoss] = useState(false);
 
   const emContatoStageIds = useMemo(
     () => new Set(stages.filter((s) => ehEmContato(s.name)).map((s) => s.id)),
@@ -524,27 +532,72 @@ export default function Conversas() {
     }
   };
 
-  const changeStage = async (stageId: string) => {
+  const applyStage = async (
+    stageId: string,
+    loss?: { reasonId: string | null; note: string },
+  ) => {
     if (!active) return;
     const lost = perdidoStageIds.has(stageId);
-    const { error } = await supabase.from("conversations").update({ stage_id: stageId }).eq("id", active.id);
+    const patch = {
+      stage_id: stageId,
+      ...(lost
+        ? {
+            loss_reason_id: loss?.reasonId ?? null,
+            loss_reason_note: loss?.note || null,
+          }
+        : { loss_reason_id: null, loss_reason_note: null }),
+    };
+    const { error } = await supabase.from("conversations").update(patch).eq("id", active.id);
     if (error) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
       return;
     }
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === active.id
+          ? {
+              ...c,
+              stage_id: stageId,
+              loss_reason_id: patch.loss_reason_id ?? null,
+              loss_reason_note: patch.loss_reason_note ?? null,
+              ...(lost
+                ? { ai_enabled: false, human_takeover_at: c.human_takeover_at || new Date().toISOString() }
+                : {}),
+            }
+          : c,
+      ),
+    );
     if (lost) {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === active.id
-            ? { ...c, stage_id: stageId, ai_enabled: false, human_takeover_at: c.human_takeover_at || new Date().toISOString() }
-            : c,
-        ),
-      );
       setFollowups([]);
       updateFilters({ inboxFilter: "encerrados" });
       toast({ title: "Atendimento encerrado", description: "Lead marcado como perdido." });
     }
   };
+
+  const changeStage = (stageId: string) => {
+    if (!active || active.stage_id === stageId) return;
+    if (perdidoStageIds.has(stageId)) {
+      setPendingLossStage(stageId);
+      return;
+    }
+    void applyStage(stageId);
+  };
+
+  const confirmLostStage = async (payload: { reasonId: string | null; note: string }) => {
+    if (!pendingLossStage) return;
+    setSavingLoss(true);
+    try {
+      await applyStage(pendingLossStage, payload);
+      setPendingLossStage(null);
+    } finally {
+      setSavingLoss(false);
+    }
+  };
+
+  const activeLossLabel =
+    active && encerrado(active)
+      ? lossReasonLabel(reasonById(active.loss_reason_id), active.loss_reason_note)
+      : null;
 
   const scheduleFollowup = async () => {
     if (!active || !user) return;
@@ -1291,6 +1344,7 @@ export default function Conversas() {
           <aside className="hidden xl:flex w-[300px] shrink-0 flex-col border-l bg-card overflow-y-auto p-4">
             <LeadContextBody
               conversation={active}
+              lossLabel={activeLossLabel}
               tags={{
                 catalog: tagCatalog,
                 assigned: tagsByConv[active.id] ?? [],
@@ -1312,6 +1366,7 @@ export default function Conversas() {
             <div className="mt-6">
               <LeadContextBody
                 conversation={active}
+                lossLabel={activeLossLabel}
                 tags={{
                   catalog: tagCatalog,
                   assigned: tagsByConv[active.id] ?? [],
@@ -1324,6 +1379,13 @@ export default function Conversas() {
           )}
         </SheetContent>
       </Sheet>
+      <LossReasonDialog
+        open={!!pendingLossStage}
+        onOpenChange={(o) => !o && !savingLoss && setPendingLossStage(null)}
+        reasons={activeReasons}
+        saving={savingLoss}
+        onConfirm={confirmLostStage}
+      />
       <AlertDialog open={!!cancelId} onOpenChange={(o) => !o && setCancelId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

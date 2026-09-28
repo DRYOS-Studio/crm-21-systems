@@ -31,6 +31,8 @@ import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import { ehPerdido } from "@/lib/inbox";
 import type { LeadTag } from "@/lib/lead-tags";
 import { ConfigDrawer } from "@/components/ConfigDrawer";
+import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
+import { useLossReasons } from "@/hooks/useLossReasons";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +64,8 @@ type Conversation = {
   last_message_at: string;
   inactivity_followup_at: string | null;
   user_id: string;
+  loss_reason_id: string | null;
+  loss_reason_note: string | null;
 };
 
 function Card({ c, tags, ownerLabel }: { c: Conversation; tags?: LeadTag[]; ownerLabel?: string | null }) {
@@ -201,6 +205,9 @@ export default function Kanban() {
   const { tagFilter, userFilter } = filters;
   const orgMembers = useOrgMembers();
   const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
+  const { activeReasons } = useLossReasons();
+  const [pendingLoss, setPendingLoss] = useState<{ convId: string; stageId: string } | null>(null);
+  const [savingLoss, setSavingLoss] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const visibleConversations = conversations.filter((c) => {
     if (tagFilter !== "all" && !(tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter)) return false;
@@ -237,7 +244,7 @@ export default function Kanban() {
   const loadConvs = async () => {
     const { data } = await supabase
       .from("conversations")
-      .select("id, contact_name, contact_company, contact_city, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at, user_id")
+      .select("id, contact_name, contact_company, contact_city, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at, user_id, loss_reason_id, loss_reason_note")
       .order("last_message_at", { ascending: false });
     setConversations((data as Conversation[]) || []);
   };
@@ -273,24 +280,66 @@ export default function Kanban() {
 
     // optimistic
     const lost = ehPerdido(stages.find((s) => s.id === newStageId)?.name);
+    if (lost) {
+      setPendingLoss({ convId, stageId: newStageId });
+      return;
+    }
     setConversations((prev) =>
       prev.map((c) =>
         c.id === convId
-          ? {
-              ...c,
-              stage_id: newStageId,
-              ...(lost ? { ai_enabled: false, inactivity_followup_at: null } : {}),
-            }
+          ? { ...c, stage_id: newStageId, loss_reason_id: null, loss_reason_note: null }
           : c,
       ),
     );
     const { error } = await supabase
       .from("conversations")
-      .update({ stage_id: newStageId })
+      .update({ stage_id: newStageId, loss_reason_id: null, loss_reason_note: null })
       .eq("id", convId);
     if (error) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
       loadConvs();
+    }
+  };
+
+  const confirmLost = async (payload: { reasonId: string | null; note: string }) => {
+    if (!pendingLoss) return;
+    setSavingLoss(true);
+    const { convId, stageId } = pendingLoss;
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({
+          stage_id: stageId,
+          loss_reason_id: payload.reasonId,
+          loss_reason_note: payload.note || null,
+        })
+        .eq("id", convId);
+      if (error) throw error;
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === convId
+            ? {
+                ...c,
+                stage_id: stageId,
+                loss_reason_id: payload.reasonId,
+                loss_reason_note: payload.note || null,
+                ai_enabled: false,
+                inactivity_followup_at: null,
+              }
+            : c,
+        ),
+      );
+      setPendingLoss(null);
+      toast({ title: "Lead marcado como perdido" });
+    } catch (e: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: e instanceof Error ? e.message : "Falha ao salvar",
+      });
+      loadConvs();
+    } finally {
+      setSavingLoss(false);
     }
   };
 
@@ -450,6 +499,14 @@ export default function Kanban() {
       </div>
 
       <ConfigDrawer open={configOpen} onOpenChange={setConfigOpen} />
+
+      <LossReasonDialog
+        open={!!pendingLoss}
+        onOpenChange={(o) => !o && !savingLoss && setPendingLoss(null)}
+        reasons={activeReasons}
+        saving={savingLoss}
+        onConfirm={confirmLost}
+      />
 
       <FunnelStagesDialog
         open={funnelOpen}

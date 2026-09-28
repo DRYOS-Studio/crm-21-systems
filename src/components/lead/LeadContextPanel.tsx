@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, MapPin, Mail, Phone, Tag, Tags, User } from "lucide-react";
+import { Building2, CircleSlash, MapPin, Mail, Phone, Tag, Tags, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
@@ -66,9 +66,11 @@ type TagTools = {
 export function LeadContextBody({
   conversation,
   tags,
+  lossLabel,
 }: {
   conversation: LeadConversation;
   tags?: TagTools;
+  lossLabel?: string | null;
 }) {
   const { user } = useAuth();
   const [prospect, setProspect] = useState<ProspectRow | null>(null);
@@ -128,6 +130,13 @@ export function LeadContextBody({
           </Badge>
         )}
       </div>
+
+      {lossLabel && (
+        <>
+          <Separator />
+          <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />
+        </>
+      )}
 
       <Separator />
 

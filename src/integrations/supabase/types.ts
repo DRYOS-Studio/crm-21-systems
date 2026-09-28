@@ -156,6 +156,8 @@ export type Database = {
           inactivity_followup_at: string | null
           instance_id: string | null
           last_message_at: string
+          loss_reason_id: string | null
+          loss_reason_note: string | null
           optout: boolean
           optout_motivo: string | null
           qualification: Json
@@ -181,6 +183,8 @@ export type Database = {
           inactivity_followup_at?: string | null
           instance_id?: string | null
           last_message_at?: string
+          loss_reason_id?: string | null
+          loss_reason_note?: string | null
           optout?: boolean
           optout_motivo?: string | null
           qualification?: Json
@@ -206,6 +210,8 @@ export type Database = {
           inactivity_followup_at?: string | null
           instance_id?: string | null
           last_message_at?: string
+          loss_reason_id?: string | null
+          loss_reason_note?: string | null
           optout?: boolean
           optout_motivo?: string | null
           qualification?: Json
@@ -227,6 +233,13 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_loss_reason_id_fkey"
+            columns: ["loss_reason_id"]
+            isOneToOne: false
+            referencedRelation: "loss_reasons"
             referencedColumns: ["id"]
           },
         ]
@@ -420,6 +433,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      loss_reasons: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          position: number
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       lead_tags: {
         Row: {

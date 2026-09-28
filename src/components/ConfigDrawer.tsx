@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { KnowledgeBaseSection } from "@/components/knowledge/KnowledgeBaseSection";
+import { LossReasonsSection } from "@/components/crm/LossReasonsSection";
 import { Bot, Building2, ExternalLink, TestTube2, Clock, Smartphone } from "lucide-react";
 
 interface Props {
@@ -350,6 +351,10 @@ export function ConfigDrawer({ open, onOpenChange }: Props) {
               que o cliente responde.
             </p>
           </section>
+
+          <Separator />
+
+          <LossReasonsSection />
         </div>
       </SheetContent>
     </Sheet>
