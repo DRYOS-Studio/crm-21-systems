@@ -4,6 +4,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|proposta-assis-sat|.*\\.(svg|png|jpg|ico|txt|json|html)).*)", "destination": "/index.html" }
   ]
 }

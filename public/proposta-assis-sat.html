@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposta Comercial — Assis Sat | CRM com IA por DRYOS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FAF9F5;
+      --fg: #0A0A0A;
+      --card: #FFFFFF;
+      --card-border: #E8E8E4;
+      --primary: #1E382B;
+      --primary-hover: #162B21;
+      --primary-glow: #2D523F;
+      --primary-fg: #FAF9F5;
+      --secondary: #F2EFE9;
+      --muted: #73736C;
+      --accent: #E8EFE9;
+      --accent-fg: #1E382B;
+      --success: #1E6B3E;
+      --success-bg: #E8F5EC;
+      --warning: #B45309;
+      --warning-bg: #FEF3C7;
+      --destructive: #991B1B;
+      --destructive-bg: #FEE2E2;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-subtle: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+      --shadow-card: 0 4px 20px -2px rgba(30, 56, 43, 0.06), 0 2px 6px -1px rgba(0,0,0,0.03);
+      --shadow-elevated: 0 12px 36px -4px rgba(30, 56, 43, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 0 0 80px 0;
+    }
+
+    .font-display {
+      font-family: 'Funnel Display', 'Onest', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header & Navigation Bar */
+    header {
+      background: rgba(250, 249, 245, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 16px 0;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 19px;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-sup {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .brand-title {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1.1;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-primary {
+      background: var(--accent);
+      color: var(--primary);
+      border: 1px solid rgba(30, 56, 43, 0.15);
+    }
+
+    .badge-success {
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid rgba(30, 107, 62, 0.2);
+    }
+
+    .badge-warning {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      box-shadow: 0 2px 6px rgba(30, 56, 43, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(30, 56, 43, 0.35);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--fg);
+    }
+
+    .btn-outline:hover {
+      background: var(--secondary);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+
+    .hero-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.15;
+      margin-bottom: 16px;
+      max-width: 860px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-title span {
+      color: #3B7052;
+      position: relative;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 680px;
+      margin: 0 auto 32px;
+      font-weight: 400;
+    }
+
+    .target-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      max-width: 650px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: var(--shadow-subtle);
+      text-align: left;
+    }
+
+    .target-info h4 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .target-info p {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Sections */
+    section {
+      padding: 40px 0;
+    }
+
+    .section-header {
+      margin-bottom: 32px;
+      text-align: left;
+    }
+
+    .section-eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary-glow);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--fg);
+      line-height: 1.25;
+    }
+
+    .section-desc {
+      font-size: 15px;
+      color: var(--muted);
+      margin-top: 6px;
+      max-width: 720px;
+    }
+
+    /* Problem / Diagnosis Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      .target-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-subtle);
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-card);
+      border-color: #D1D5DB;
+    }
+
+    .card-danger {
+      border-left: 4px solid var(--destructive);
+    }
+
+    .card-solution {
+      border-left: 4px solid var(--success);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 8px;
+    }
+
+    .card-text {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* Comparison Table: DRYOS vs DataCrazy */
+    .comparison-container {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 14px;
+    }
+
+    .comparison-table th {
+      background: var(--secondary);
+      font-weight: 700;
+      color: var(--fg);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-table th.highlight-col {
+      background: var(--accent);
+      color: var(--primary);
+      border-left: 2px solid var(--primary);
+      border-right: 2px solid var(--primary);
+    }
+
+    .comparison-table td.highlight-col {
+      background: rgba(232, 239, 233, 0.4);
+      font-weight: 600;
+      color: var(--primary);
+      border-left: 2px solid var(--primary);
+      border-right: 2px solid var(--primary);
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-check {
+      color: var(--success);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-cross {
+      color: var(--destructive);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Tela de Conversas / Chat ao Vivo */
+    .chat-preview-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      margin-top: 32px;
+      margin-bottom: 32px;
+    }
+
+    .window-header {
+      background: #F2EFE9;
+      border-bottom: 1px solid var(--card-border);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .window-title {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .chat-app-grid {
+      display: grid;
+      grid-template-columns: 270px 1fr 270px;
+      min-height: 520px;
+      background: #FAF9F5;
+    }
+
+    @media (max-width: 990px) {
+      .chat-app-grid {
+        grid-template-columns: 1fr;
+      }
+      .chat-sidebar, .chat-lead-context {
+        display: none;
+      }
+    }
+
+    .chat-sidebar {
+      border-right: 1px solid var(--card-border);
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-sidebar-search {
+      padding: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .chat-sidebar-search input {
+      width: 100%;
+      padding: 7px 12px;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      font-size: 12px;
+      background: #FAF9F5;
+      outline: none;
+    }
+
+    .chat-sidebar-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid #F0EFEB;
+      cursor: pointer;
+      display: flex;
+      gap: 10px;
+      transition: background 0.15s;
+    }
+
+    .chat-sidebar-item.active {
+      background: #E8EFE9;
+      border-left: 3px solid var(--primary);
+    }
+
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1E382B;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .chat-thread {
+      display: flex;
+      flex-direction: column;
+      background: #FAF9F5;
+    }
+
+    .chat-thread-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chat-thread-body {
+      flex: 1;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .chat-bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      position: relative;
+    }
+
+    .bubble-in {
+      align-self: flex-start;
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      color: var(--fg);
+      border-bottom-left-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .bubble-out-ai {
+      align-self: flex-end;
+      background: #E0EFE5;
+      border: 1px solid #C4DFC9;
+      color: #163625;
+      border-bottom-right-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .bubble-out-human {
+      align-self: flex-end;
+      background: #1E382B;
+      border: 1px solid #1E382B;
+      color: #FAF9F5;
+      border-bottom-right-radius: 2px;
+      box-shadow: 0 2px 6px rgba(30,56,43,0.18);
+    }
+
+    .bubble-sender {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bubble-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      font-size: 10.5px;
+      margin-top: 4px;
+      opacity: 0.75;
+    }
+
+    .takeover-banner {
+      align-self: center;
+      background: #FEF3C7;
+      border: 1px solid #FCD34D;
+      color: #92400E;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 6px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .chat-composer {
+      background: #FFFFFF;
+      border-top: 1px solid var(--card-border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chat-composer input {
+      flex: 1;
+      padding: 9px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      background: #FAF9F5;
+    }
+
+    .chat-lead-context {
+      background: #FFFFFF;
+      border-left: 1px solid var(--card-border);
+      padding: 18px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Interactive Pipeline / Kanban Simulation */
+    .pipeline-preview {
+      background: #F8F7F3;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .pipeline-lanes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .pipeline-lanes {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pipeline-lane {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .lane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .lane-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .lane-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--secondary);
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+
+    .lead-item {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .lead-name {
+      font-weight: 700;
+      color: var(--fg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .lead-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+
+    /* ROI / Impact Calculator */
+    .calculator-box {
+      background: linear-gradient(135deg, #1E382B 0%, #15291F 100%);
+      color: #FAF9F5;
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 36px;
+      align-items: center;
+      box-shadow: var(--shadow-elevated);
+    }
+
+    @media (max-width: 768px) {
+      .calculator-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .calculator-controls h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .calculator-controls p {
+      font-size: 14px;
+      color: #B4C4BA;
+      margin-bottom: 24px;
+    }
+
+    .calc-slider-group {
+      margin-bottom: 20px;
+    }
+
+    .calc-slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #D3E0D8;
+    }
+
+    .calc-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #3B5A49;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #7DE2A5;
+      cursor: pointer;
+    }
+
+    .calc-result-box {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .calc-result-number {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 44px;
+      font-weight: 800;
+      color: #7DE2A5;
+      line-height: 1.1;
+      margin: 8px 0;
+    }
+
+    .calc-result-caption {
+      font-size: 12px;
+      color: #B4C4BA;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* Investment / Pricing Card */
+    .pricing-card {
+      background: var(--card);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: var(--primary-fg);
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .pricing-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .pricing-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .pricing-price {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .pricing-currency {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .pricing-val {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 56px;
+      font-weight: 800;
+      color: var(--fg);
+      line-height: 1;
+    }
+
+    .pricing-period {
+      font-size: 16px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .pricing-features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 640px) {
+      .pricing-features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--fg);
+    }
+
+    .feature-icon {
+      color: var(--success);
+      flex-shrink: 0;
+      margin-top: 2px;
+      font-weight: bold;
+    }
+
+    .addons-box {
+      background: var(--secondary);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+
+    .addon-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      font-size: 14px;
+    }
+
+    .addon-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .addon-price {
+      font-weight: 700;
+      color: var(--primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Implementation Timeline */
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .timeline-step {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      position: relative;
+    }
+
+    .step-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Footer & CTA */
+    .cta-banner {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-radius: var(--radius-lg);
+      padding: 48px;
+      text-align: center;
+      margin-top: 48px;
+      box-shadow: var(--shadow-elevated);
+    }
+
+    .cta-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .cta-desc {
+      font-size: 16px;
+      color: #D3E0D8;
+      max-width: 600px;
+      margin: 0 auto 28px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-light {
+      background: #FAF9F5;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 15px;
+      padding: 12px 28px;
+    }
+
+    .btn-light:hover {
+      background: #FFFFFF;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--card-border);
+      padding-top: 24px;
+    }
+
+    /* Print styles for Clean PDF generation */
+    @media print {
+      body {
+        background: #FFF;
+        padding: 0;
+      }
+      header, .header-actions, .cta-banner button, .btn {
+        display: none !important;
+      }
+      .card, .pricing-card, .comparison-container, .calculator-box {
+        box-shadow: none !important;
+        border: 1px solid #CCC !important;
+        break-inside: avoid;
+      }
+      .calculator-box {
+        background: #2D523F !important;
+        color: #FFF !important;
+      }
+      .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Header -->
+  <header>
+    <div class="container header-content">
+      <a href="#" class="brand" aria-label="DRYOS - Sistemas de Crescimento">
+        <img src="dryos-logo.svg" alt="DRYOS" style="height: 28px; width: auto; display: block;" />
+      </a>
+      <div class="header-actions">
+        <span class="badge badge-primary">Exclusivo · Assis Sat</span>
+        <button onclick="window.print()" class="btn btn-outline" title="Exportar ou Imprimir em PDF">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          PDF
+        </button>
+        <a href="#investimento" class="btn btn-primary">Aceitar Proposta</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-meta">
+        <span class="badge badge-success">Proposta Estratégica</span>
+        <span class="font-mono" style="font-size: 13px; color: var(--muted);">REF: PROP-2026-ASSISSAT-01</span>
+      </div>
+      <h1 class="hero-title font-display">
+        Atendimento Inteligente & CRM com IA para a <span>Assis Sat</span>
+      </h1>
+      <p class="hero-subtitle">
+        Elimine o atraso de resposta no WhatsApp, recupere leads perdidos com follow-up automático em cadeia e converta cotações de rastreamento 24h por dia.
+      </p>
+
+      <div class="target-card">
+        <div class="target-info">
+          <h4>Destinatário</h4>
+          <p>Vinicius — Diretor / Comercial Assis Sat</p>
+        </div>
+        <div style="text-align: right;">
+          <h4 style="font-size: 12px; color: var(--muted); text-transform: uppercase;">Validade</h4>
+          <p style="font-size: 14px; font-weight: 600; color: var(--primary);">10 dias úteis</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- O Diagnóstico: Por que a Assis Sat está perdendo vendas? -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Diagnóstico Comercial
+        </div>
+        <h2 class="section-title font-display">Onde o dinheiro está escapando no seu WhatsApp hoje</h2>
+        <p class="section-desc">
+          No mercado de rastreamento veicular e segurança, o cliente que pede cotação no WhatsApp está decidindo agora. Uma demora de 10 minutos é suficiente para ele fechar com o concorrente.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card card-danger">
+          <div class="card-icon" style="background: var(--destructive-bg); color: var(--destructive);">⏱️</div>
+          <h3 class="card-title">Fricção no Tempo de Resposta</h3>
+          <p class="card-text">
+            O lead entra perguntando preço ou proteção para o veículo. Se o vendedor estiver em ligação ou ocupado, a resposta atrasa. O lead esfria imediatamente e busca outra empresa.
+          </p>
+        </div>
+
+        <div class="card card-danger">
+          <div class="card-icon" style="background: var(--destructive-bg); color: var(--destructive);">📉</div>
+          <h3 class="card-title">Abandono de Follow-Up</h3>
+          <p class="card-text">
+            Mais de 65% das vendas acontecem no 2º ao 4º contato. Hoje, se o cliente visualiza a cotação e não responde, seu time raramente faz o reengajamento no timing perfeito.
+          </p>
+        </div>
+
+        <div class="card card-danger">
+          <div class="card-icon" style="background: var(--destructive-bg); color: var(--destructive);">🔒</div>
+          <h3 class="card-title">O Perigo do "SaaS Genérico"</h3>
+          <p class="card-text">
+            Soluções como a DataCrazy (R$ 297/mês) parecem baratas, mas impõem limites severos de automações, fluxos de bot engessados e cobram adicionais a cada novo disparo ou contato ativo.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- A Solução DRYOS CRM com IA -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Nossa Arquitetura
+        </div>
+        <h2 class="section-title font-display">Tecnologia desenhada para fechar contratos de rastreamento</h2>
+        <p class="section-desc">
+          Não entregamos um chatbot "robótico". Entregamos uma IA com raciocínio consultivo (SDR), base de conhecimento exclusiva da Assis Sat e pipeline Kanban integrado.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card card-solution">
+          <div class="card-icon" style="background: var(--success-bg); color: var(--success);">🧠</div>
+          <h3 class="card-title">Cérebro SDR com Qualificação NAVT</h3>
+          <p class="card-text">
+            A IA conduz uma conversa humana, em português falado brasileiro, curta e direta. Ela descobre <strong>Necessidade</strong> (carro, moto ou frota?), <strong>Autoridade</strong> (quem decide), <strong>Volume</strong> e <strong>Gatilho de compra</strong>, entregando o lead pronto e quente para o fechamento.
+          </p>
+        </div>
+
+        <div class="card card-solution">
+          <div class="card-icon" style="background: var(--success-bg); color: var(--success);">🔄</div>
+          <h3 class="card-title">Follow-up Infinito em Cadeia (Sem Limites)</h3>
+          <p class="card-text">
+            Se o cliente parar de responder após a cotação, nosso cron automático envia toques inteligentes no tempo configurado (ex: 20 min, 3 horas, 24 horas). Você nunca mais perde uma venda por esquecimento da equipe.
+          </p>
+        </div>
+
+        <div class="card card-solution">
+          <div class="card-icon" style="background: var(--success-bg); color: var(--success);">🤝</div>
+          <h3 class="card-title">Human Takeover Instantâneo</h3>
+          <p class="card-text">
+            Assim que Vinicius ou qualquer atendente digita uma mensagem na conversa, a IA entra em pausa silenciosa imediatamente. Zero conflito entre homem e máquina. Se quiser devolver o atendimento para a IA, basta 1 clique.
+          </p>
+        </div>
+
+        <div class="card card-solution">
+          <div class="card-icon" style="background: var(--success-bg); color: var(--success);">📚</div>
+          <h3 class="card-title">Base de Conhecimento Dinâmica</h3>
+          <p class="card-text">
+            A IA consulta em tempo real tabelas de preços, planos de bloqueio, cobertura nacional, modelos de rastreadores e condições da Assis Sat antes de responder. <strong>Ela nunca alucina nem inventa informações.</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Demonstração Visual: Tela Real de Conversas com IA e Human Takeover -->
+      <div style="margin-top: 48px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span class="section-eyebrow" style="margin-bottom: 4px;">Demonstração ao Vivo</span>
+            <h3 class="font-display" style="font-size: 22px; font-weight: 700; color: var(--primary);">
+              Tela do Sistema: Atendimento ao Vivo no WhatsApp da Assis Sat
+            </h3>
+            <p style="font-size: 13.5px; color: var(--muted);">
+              Veja como o Cérebro SDR atende em segundos, qualifica o lead e pausa automaticamente quando você ou seu vendedor assume a conversa (Human Takeover).
+            </p>
+          </div>
+          <span class="badge badge-primary">Visão de Atendimento em Tempo Real</span>
+        </div>
+
+        <div class="chat-preview-card">
+          <!-- Window Header (Mac Style) -->
+          <div class="window-header">
+            <div class="window-dots">
+              <span class="window-dot" style="background: #FF5F56;"></span>
+              <span class="window-dot" style="background: #FFBD2E;"></span>
+              <span class="window-dot" style="background: #27C93F;"></span>
+            </div>
+            <span class="window-title">DRYOS CRM · Assis Sat — Conversas ao Vivo</span>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+              <span class="badge badge-success" style="font-size: 11px; text-transform: none; letter-spacing: 0;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #1E6B3E; display: inline-block;"></span>
+                Instância WhatsApp Conectada
+              </span>
+            </div>
+          </div>
+
+          <!-- App 3-Column Grid -->
+          <div class="chat-app-grid">
+            
+            <!-- Coluna 1: Lista de Conversas -->
+            <div class="chat-sidebar">
+              <div class="chat-sidebar-search">
+                <input type="text" placeholder="🔍 Buscar lead ou placa..." readonly value="Marcos Silva">
+              </div>
+
+              <!-- Item 1: Ativo -->
+              <div class="chat-sidebar-item active">
+                <div class="chat-avatar" style="background: #1E382B;">MS</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <strong style="font-size: 13px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Marcos Silva</strong>
+                    <span style="font-size: 10px; color: var(--muted);">14:41</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--primary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                    Vinicius: Consigo liberar a taxa de...
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+                    <span style="font-size: 9.5px; background: #FEF3C7; color: #92400E; padding: 1px 5px; border-radius: 3px; font-weight: 700;">Hilux 2024</span>
+                    <span style="font-size: 9.5px; background: #DCFCE7; color: #166534; padding: 1px 5px; border-radius: 3px; font-weight: 700;">Lead Quente</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="chat-sidebar-item">
+                <div class="chat-avatar" style="background: #2D523F;">TL</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <strong style="font-size: 13px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Transp. Leste</strong>
+                    <span style="font-size: 10px; color: var(--muted);">14:28</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                    IA: Nosso plano para frotas inclui...
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 9.5px; background: #E0E7FF; color: #3730A3; padding: 1px 5px; border-radius: 3px; font-weight: 700;">14 Veículos</span>
+                    <span style="font-size: 9.5px; background: #E8EFE9; color: var(--primary); padding: 1px 5px; border-radius: 3px; font-weight: 700;">🤖 IA Ativa</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="chat-sidebar-item">
+                <div class="chat-avatar" style="background: #3B7052;">DC</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <strong style="font-size: 13px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Dra. Camila</strong>
+                    <span style="font-size: 10px; color: var(--muted);">13:50</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                    Camila: Vocês atendem a domicílio?
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 9.5px; background: #F3E8FF; color: #6B21A8; padding: 1px 5px; border-radius: 3px; font-weight: 700;">Jeep Compass</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 4 -->
+              <div class="chat-sidebar-item">
+                <div class="chat-avatar" style="background: #506155;">RR</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <strong style="font-size: 13px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rodrigo Ramos</strong>
+                    <span style="font-size: 10px; color: var(--muted);">11:15</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                    IA: Oi Rodrigo, tudo bem? Conseg...
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 9.5px; background: #FEE2E2; color: #991B1B; padding: 1px 5px; border-radius: 3px; font-weight: 700;">⏱️ Follow-up 2</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Coluna 2: Chat / Mensagens em Tempo Real -->
+            <div class="chat-thread">
+              <!-- Chat Header -->
+              <div class="chat-thread-header">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h4 style="font-size: 15px; font-weight: 700; color: var(--fg);">Marcos Silva</h4>
+                    <span style="font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace;">(11) 98765-4321</span>
+                  </div>
+                  <div style="font-size: 11px; color: var(--success); display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+                    Online agora · Toyota Hilux GR-Sport 2024
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: 700;">
+                    ⚡ Human Takeover Ativo (IA Pausada)
+                  </span>
+                  <span class="badge badge-primary" style="font-size: 10px;">
+                    Etapa: Proposta Enviada
+                  </span>
+                </div>
+              </div>
+
+              <!-- Chat Message Stream -->
+              <div class="chat-thread-body">
+                
+                <!-- Mensagem 1: Lead Inbound -->
+                <div class="chat-bubble bubble-in">
+                  <div class="bubble-sender" style="color: var(--muted);">Marcos Silva (Lead)</div>
+                  <p>Boa tarde! Acabei de tirar uma Hilux 2024 na concessionária e o seguro ficou um absurdo de caro. Vocês têm rastreador com bloqueio pelo celular? Quanto fica a mensalidade?</p>
+                  <div class="bubble-meta">
+                    <span>14:32</span>
+                  </div>
+                </div>
+
+                <!-- Mensagem 2: Resposta IA SDR (< 3 segundos) -->
+                <div class="chat-bubble bubble-out-ai">
+                  <div class="bubble-sender" style="color: var(--primary);">
+                    <span>🤖 Cérebro SDR (IA Assis Sat)</span>
+                    <span style="font-size: 9px; background: #C4DFC9; color: #163625; padding: 1px 4px; border-radius: 3px;">Resposta Instantânea</span>
+                  </div>
+                  <p>Boa tarde, Marcos! Parabéns pela Hilux nova! Temos sim. Nosso rastreador tem bloqueio imediato pelo aplicativo no seu celular, localização em tempo real de segundo a segundo e assistência 24h em todo o Brasil. Você vai usar o carro mais na cidade ou viaja com frequência?</p>
+                  <div class="bubble-meta" style="color: #2F6E4B;">
+                    <span>14:32</span>
+                    <span title="Lida pelo cliente">✓✓</span>
+                  </div>
+                </div>
+
+                <!-- Mensagem 3: Resposta Lead -->
+                <div class="chat-bubble bubble-in">
+                  <div class="bubble-sender" style="color: var(--muted);">Marcos Silva (Lead)</div>
+                  <p>Uso na cidade para o dia a dia e viajo nos fins de semana para o sítio. Gostei disso do app. Como funciona a instalação? Tem que cortar fio do carro? Tenho medo de perder a garantia de fábrica.</p>
+                  <div class="bubble-meta">
+                    <span>14:34</span>
+                  </div>
+                </div>
+
+                <!-- Mensagem 4: Resposta IA SDR com Base de Conhecimento -->
+                <div class="chat-bubble bubble-out-ai">
+                  <div class="bubble-sender" style="color: var(--primary);">
+                    <span>🤖 Cérebro SDR (IA Assis Sat)</span>
+                    <span style="font-size: 9px; background: #C4DFC9; color: #163625; padding: 1px 4px; border-radius: 3px;">Base de Conhecimento</span>
+                  </div>
+                  <p>Não corta nenhum fio original! Nossa instalação preserva 100% da garantia da Toyota da sua Hilux e nosso técnico homologado pode ir até a sua casa ou você instala na nossa base. Nosso plano completo com bloqueio e app fica R$ 69,90/mês. Você prefere que a gente agende para amanhã ou quinta-feira?</p>
+                  <div class="bubble-meta" style="color: #2F6E4B;">
+                    <span>14:34</span>
+                    <span title="Lida pelo cliente">✓✓</span>
+                  </div>
+                </div>
+
+                <!-- Banner de Transição: Human Takeover -->
+                <div class="takeover-banner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                  <span>Human Takeover: Vinicius (Diretor Comercial) enviou mensagem. A IA pausou silenciosamente para esta conversa.</span>
+                </div>
+
+                <!-- Mensagem 5: Atendente Humano (Vinicius) entra para fechar o contrato -->
+                <div class="chat-bubble bubble-out-human">
+                  <div class="bubble-sender" style="color: #FAF9F5;">
+                    <span>👤 Vinicius (Assis Sat · Humano)</span>
+                    <span style="font-size: 9px; background: rgba(255,255,255,0.2); color: #FFF; padding: 1px 5px; border-radius: 3px;">Fechador</span>
+                  </div>
+                  <p>Fala Marcos! Vinicius aqui da Assis Sat. Se fecharmos agora para colocar na escala do técnico, eu libero a taxa de instalação de graça pra você e já mando ele amanhã às 9h aí no seu condomínio. O que acha? Me passa o endereço que já reservo o equipamento.</p>
+                  <div class="bubble-meta" style="color: #D3E0D8;">
+                    <span>14:41</span>
+                    <span title="Entregue">✓✓</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Chat Composer Mock -->
+              <div class="chat-composer">
+                <button style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--muted); padding: 4px;" title="Anexar arquivo ou proposta">📎</button>
+                <input type="text" placeholder="Digite uma mensagem como Vinicius..." readonly value="Perfeito, vou emitir o contrato agora!">
+                <button style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--muted); padding: 4px;" title="Gravar áudio">🎙️</button>
+                <button class="btn btn-primary" style="padding: 8px 14px; font-size: 12px; border-radius: 6px;">
+                  Enviar ➤
+                </button>
+              </div>
+            </div>
+
+            <!-- Coluna 3: Painel Lateral de Contexto do Lead & Qualificação NAVT -->
+            <div class="chat-lead-context">
+              <div style="padding-bottom: 12px; border-bottom: 1px solid var(--card-border);">
+                <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">Contexto do Lead</h4>
+                <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Alimentado pela IA e editável pela equipe</div>
+              </div>
+
+              <!-- Dados de Contato -->
+              <div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 600;">Veículo & Contato</div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--fg); margin-top: 2px;">Toyota Hilux GR-Sport 2024</div>
+                <div style="font-size: 12px; color: var(--muted);">São Paulo / SP</div>
+                <div style="font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace;">Origem: Google Ads (Cotação)</div>
+              </div>
+
+              <!-- Qualificação NAVT -->
+              <div style="background: var(--secondary); padding: 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <div style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                  <span>🎯 Qualificação NAVT (IA)</span>
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--fg);">
+                  <p><strong>N (Necessidade):</strong> Rastreador + Bloqueio via app sem cortar fio (garantia da montadora)</p>
+                  <p style="margin-top: 4px;"><strong>A (Autoridade):</strong> Marcos (proprietário e decisor único)</p>
+                  <p style="margin-top: 4px;"><strong>V (Volume):</strong> 1 Veículo particular</p>
+                  <p style="margin-top: 4px;"><strong>T (Trigger):</strong> Seguro na concessionária muito elevado</p>
+                </div>
+              </div>
+
+              <!-- Tags Aplicadas -->
+              <div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">Tags de Segmentação</div>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  <span style="font-size: 10px; background: #DCFCE7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: 700;">✓ Hilux 2024</span>
+                  <span style="font-size: 10px; background: #FEF3C7; color: #92400E; padding: 2px 6px; border-radius: 4px; font-weight: 700;">★ Lead Quente</span>
+                  <span style="font-size: 10px; background: #E0E7FF; color: #3730A3; padding: 2px 6px; border-radius: 4px; font-weight: 700;">Bloqueio App</span>
+                  <span style="font-size: 10px; background: #F3E8FF; color: #6B21A8; padding: 2px 6px; border-radius: 4px; font-weight: 700;">Instalação Grátis</span>
+                </div>
+              </div>
+
+              <!-- Follow-Up Timer -->
+              <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px; border-radius: 6px;">
+                <div style="font-size: 11px; font-weight: 700; color: #92400E; display: flex; align-items: center; gap: 4px;">
+                  <span>⏱️ Motor de Follow-Up</span>
+                </div>
+                <div style="font-size: 11px; color: #92400E; margin-top: 4px;">
+                  Próximo toque automático em <strong>45 min</strong> se o lead não responder. O contador zera sozinho assim que o lead responder.
+                </div>
+              </div>
+
+              <!-- Responsável -->
+              <div style="border-top: 1px solid var(--card-border); padding-top: 12px; margin-top: auto;">
+                <div style="font-size: 11px; color: var(--muted);">Atendente Responsável:</div>
+                <div style="font-size: 12.5px; font-weight: 700; color: var(--primary);">Vinicius (Diretor Comercial)</div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Visual do Pipeline Kanban Real do Sistema -->
+      <div class="pipeline-preview">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h4 style="font-weight: 700; color: var(--primary); font-size: 16px;">Pipeline Comercial Assis Sat (Visão Kanban ao Vivo)</h4>
+            <p style="font-size: 12px; color: var(--muted);">Funil dinâmico com arrastar e soltar, motivos de perda e filtro por vendedor</p>
+          </div>
+          <span class="badge badge-primary">Interface Nativa DRYOS</span>
+        </div>
+
+        <div class="pipeline-lanes">
+          <!-- Coluna 1 -->
+          <div class="pipeline-lane">
+            <div class="lane-header">
+              <span class="lane-badge" style="background: #EBF5FF; color: #1E40AF;">Novo Lead</span>
+              <span class="lane-count">12</span>
+            </div>
+            <div class="lead-item">
+              <div class="lead-name">Marcos (Hilux 2024) <span>🤖 IA</span></div>
+              <div style="font-size: 11px; color: var(--muted);">Chegou via Google Ads</div>
+              <span class="lead-tag" style="background: #FEF3C7; color: #92400E;">Cotação Particular</span>
+            </div>
+            <div class="lead-item">
+              <div class="lead-name">Transportadora Silva <span>🤖 IA</span></div>
+              <div style="font-size: 11px; color: var(--muted);">14 caminhões baú</div>
+              <span class="lead-tag" style="background: #E0E7FF; color: #3730A3;">Frota Pesada</span>
+            </div>
+          </div>
+
+          <!-- Coluna 2 -->
+          <div class="pipeline-lane">
+            <div class="lane-header">
+              <span class="lane-badge" style="background: #FEF3C7; color: #92400E;">Qualificado / NAVT</span>
+              <span class="lane-count">7</span>
+            </div>
+            <div class="lead-item">
+              <div class="lead-name">Dra. Camila (Compass) <span>👤 Vinicius</span></div>
+              <div style="font-size: 11px; color: var(--muted);">Quer bloqueio remoto via app</div>
+              <span class="lead-tag" style="background: #DCFCE7; color: #166534;">Pronto p/ Proposta</span>
+            </div>
+          </div>
+
+          <!-- Coluna 3 -->
+          <div class="pipeline-lane">
+            <div class="lane-header">
+              <span class="lane-badge" style="background: #F3E8FF; color: #6B21A8;">Follow-up Ativo</span>
+              <span class="lane-count">9</span>
+            </div>
+            <div class="lead-item">
+              <div class="lead-name">Roberto (Corolla Cross) <span>⏱️ Auto</span></div>
+              <div style="font-size: 11px; color: var(--muted);">Reengajamento em 45 min</div>
+              <span class="lead-tag" style="background: #F3E8FF; color: #6B21A8;">Aguardando Resposta</span>
+            </div>
+          </div>
+
+          <!-- Coluna 4 -->
+          <div class="pipeline-lane">
+            <div class="lane-header">
+              <span class="lane-badge" style="background: #DCFCE7; color: #166534;">Instalação Agendada</span>
+              <span class="lane-count">18</span>
+            </div>
+            <div class="lead-item">
+              <div class="lead-name">Auto Locadora Regional <span>✅ Ganho</span></div>
+              <div style="font-size: 11px; color: var(--muted);">Instalação 5 veículos 14h</div>
+              <span class="lead-tag" style="background: #DCFCE7; color: #166534;">Contrato Fechado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabela Comparativa Matadora: DataCrazy vs DRYOS CRM -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Comparativo Direto
+        </div>
+        <h2 class="section-title font-display">Por que a proposta da DataCrazy de R$ 297 sai muito mais cara?</h2>
+        <p class="section-desc">
+          Compare item por item antes de assinar. A DataCrazy cobra mensalidade com travas que limitam seu crescimento; nosso modelo entrega potência ilimitada com evolução vitalícia.
+        </p>
+      </div>
+
+      <div class="comparison-container">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th style="width: 38%;">Recursos & Capacidades</th>
+              <th style="width: 31%;">DataCrazy (R$ 297/mês)</th>
+              <th style="width: 31%;" class="highlight-col">DRYOS CRM com IA (Assis Sat)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Setup de Implantação & Onboarding</strong></td>
+              <td><span class="status-cross">✕ Sem setup assistido</span> (você precisa configurar sozinho do zero)</td>
+              <td class="highlight-col"><span class="status-check">✓ R$ 1.000 (Chave na Mão)</span> Setup completo, IA treinada nos seus planos e treinamento da equipe</td>
+            </tr>
+            <tr>
+              <td><strong>Mensalidade Base</strong></td>
+              <td>R$ 297/mês (cobra extras quando o volume sobe)</td>
+              <td class="highlight-col"><span class="status-check">✓ R$ 347/mês</span> (Tudo incluso: 5 usuários, sem travas de disparos)</td>
+            </tr>
+            <tr>
+              <td><strong>Limite de Automações & Gatilhos</strong></td>
+              <td><span class="status-cross">✕ Limitado</span> (bloqueia quando o volume sobe)</td>
+              <td class="highlight-col"><span class="status-check">✓ 100% Ilimitado</span> (sem travas ou pegadinhas)</td>
+            </tr>
+            <tr>
+              <td><strong>Evolução do Produto & Atualizações</strong></td>
+              <td><span class="status-cross">✕ Pagamento extra</span> para novos módulos</td>
+              <td class="highlight-col"><span class="status-check">✓ Atualizações Gratuitas</span> para sempre no plano</td>
+            </tr>
+            <tr>
+              <td><strong>Usuários / Atendentes Inclusos</strong></td>
+              <td>Geralmente 1 a 2 (cobra adicionais caros)</td>
+              <td class="highlight-col"><span class="status-check">✓ 5 Usuários completos</span> inclusos</td>
+            </tr>
+            <tr>
+              <td><strong>Números de WhatsApp Extras</strong></td>
+              <td>R$ 90 a R$ 150 por número adicional</td>
+              <td class="highlight-col"><span class="status-check">✓ Apenas R$ 29/mês</span> por número extra</td>
+            </tr>
+            <tr>
+              <td><strong>Custo Operacional de IA</strong></td>
+              <td>Cobrança embutida com margem alta</td>
+              <td class="highlight-col"><span class="status-check">✓ R$ 0,00 inicial</span> com API Groq ultra-rápida</td>
+            </tr>
+            <tr>
+              <td><strong>Liberdade de Modelos de IA</strong></td>
+              <td>Modelo fechado e proprietário</td>
+              <td class="highlight-col"><span class="status-check">✓ Liberdade total:</span> Groq, Gemini, GPT-4o, Claude</td>
+            </tr>
+            <tr>
+              <td><strong>Identidade Visual (White-Label)</strong></td>
+              <td><span class="status-cross">✕ Marca DataCrazy</span> visível</td>
+              <td class="highlight-col"><span class="status-check">✓ White-Label Total</span> com Logo da Assis Sat</td>
+            </tr>
+            <tr>
+              <td><strong>Desenvolvimento de Features Sob Medida</strong></td>
+              <td><span class="status-cross">✕ Impossível</span> (SaaS engessado)</td>
+              <td class="highlight-col"><span class="status-check">✓ Contratação Exclusiva</span> sob demanda</td>
+            </tr>
+            <tr>
+              <td><strong>Follow-Up Automático em Cadeia</strong></td>
+              <td>Mensagens isoladas e robotizadas</td>
+              <td class="highlight-col"><span class="status-check">✓ SDR Cognitivo</span> que lê o contexto e reengaja</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Simulador de Retorno sobre o Investimento (ROI) -->
+    <section>
+      <div class="calculator-box">
+        <div class="calculator-controls">
+          <span class="badge" style="background: rgba(255,255,255,0.15); color: #FFF; margin-bottom: 12px;">Simulador Financeiro</span>
+          <h3 class="font-display">O cálculo é simples: o CRM se paga sozinho</h3>
+          <p>
+            Quantas instalações ou mensalidades de rastreamento a Assis Sat perde por mês simplesmente porque o cliente não recebeu resposta imediata ou follow-up?
+          </p>
+
+          <div class="calc-slider-group">
+            <div class="calc-slider-label">
+              <span>Leads perdidos recuperados por mês:</span>
+              <span id="leads-val" class="font-mono" style="color: #7DE2A5; font-size: 16px;">3 veículos</span>
+            </div>
+            <input type="range" min="1" max="25" value="3" class="calc-slider" id="leads-slider" oninput="updateROI()">
+          </div>
+
+          <div class="calc-slider-group">
+            <div class="calc-slider-label">
+              <span>Ticket Médio por Veículo (Adesão + Anualidade):</span>
+              <span id="ticket-val" class="font-mono" style="color: #7DE2A5; font-size: 16px;">R$ 650,00</span>
+            </div>
+            <input type="range" min="300" max="1500" step="50" value="650" class="calc-slider" id="ticket-slider" oninput="updateROI()">
+          </div>
+        </div>
+
+        <div class="calc-result-box">
+          <div class="calc-result-caption">Receita Extra Recuperada / Ano</div>
+          <div class="calc-result-number" id="roi-annual">R$ 23.400</div>
+          <div style="font-size: 13px; color: #D3E0D8; margin-top: 8px;">
+            Receita mensal recuperada: <strong id="roi-monthly" style="color: #FFF;">R$ 1.950/mês</strong>
+          </div>
+          <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 12px; color: #9EB5A7;">
+            Recuperando apenas <strong>1 único cliente</strong> no mês, o sistema paga a mensalidade de R$ 347 e amortiza o setup de R$ 1.000 logo nas primeiras semanas.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Oferta Comercial e Investimento -->
+    <section id="investimento">
+      <div class="section-header" style="text-align: center;">
+        <div class="section-eyebrow" style="justify-content: center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Condições Especiais
+        </div>
+        <h2 class="section-title font-display">Investimento Transparente & Sem Pegadinhas</h2>
+        <p class="section-desc" style="margin-left: auto; margin-right: auto;">
+          Nenhum custo oculto por disparos. Infraestrutura robusta pronta para escalar a operação da Assis Sat.
+        </p>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-badge">Plano Assis Sat Enterprise Pro</div>
+
+        <div class="pricing-header">
+          <h3 class="pricing-name">DRYOS CRM com IA White-Label</h3>
+          <p style="color: var(--muted); font-size: 14px;">Atendimento automatizado, follow-up infinito, implantação assistida e pipeline comercial</p>
+
+          <div style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-top: 20px; align-items: center;">
+            <!-- Setup -->
+            <div style="background: var(--secondary); padding: 14px 22px; border-radius: var(--radius-md); border: 1px solid var(--card-border); text-align: center;">
+              <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Setup & Implantação Chave na Mão</span>
+              <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-top: 4px;">
+                <span class="pricing-currency" style="font-size: 18px;">R$</span>
+                <span class="pricing-val" style="font-size: 40px; color: var(--primary);">1.000</span>
+                <span style="font-size: 13px; color: var(--muted); font-weight: 600;">(taxa única)</span>
+              </div>
+              <span style="font-size: 11px; color: var(--primary); font-weight: 600;">Setup assistido + Treinamento de IA + Logo</span>
+            </div>
+
+            <!-- Mensalidade -->
+            <div style="background: var(--accent); padding: 14px 22px; border-radius: var(--radius-md); border: 1.5px solid var(--primary); text-align: center;">
+              <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--primary); letter-spacing: 0.05em;">Mensalidade All-Inclusive</span>
+              <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-top: 4px;">
+                <span class="pricing-currency" style="font-size: 18px;">R$</span>
+                <span class="pricing-val" style="font-size: 40px; color: var(--primary);">347</span>
+                <span class="pricing-period" style="font-size: 14px;">/mês</span>
+              </div>
+              <span style="font-size: 11px; color: var(--success); font-weight: 700;">5 Usuários Inclusos · Automações Ilimitadas</span>
+            </div>
+          </div>
+
+          <p style="font-size: 13px; color: var(--muted); margin-top: 18px; max-width: 580px; margin-left: auto; margin-right: auto;">
+            ★ Por apenas R$ 50 de diferença em relação à mensalidade da DataCrazy, você leva <strong>5 usuários inclusos</strong> (que na concorrência custariam o triplo), <strong>automações 100% livres</strong> e a máquina entregue pronta pela equipe DRYOS.
+          </p>
+        </div>
+
+        <div class="pricing-features-grid">
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>Implantação Assistida Completa (Setup R$ 1.000)</strong><br><span style="font-size: 12px; color: var(--muted);">Calibração dos planos de rastreamento na IA, funil e treinamento da equipe.</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>Automações 100% Ilimitadas</strong><br><span style="font-size: 12px; color: var(--muted);">Sem limite de mensagens, regras, disparos ou contatos ativos.</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>Evolução Contínua Gratuita</strong><br><span style="font-size: 12px; color: var(--muted);">Todas as melhorias e novos lançamentos saem de graça, para sempre.</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>5 Usuários Inclusos no Plano</strong><br><span style="font-size: 12px; color: var(--muted);">Vinicius + 4 atendentes com acessos e relatórios separados.</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>1 Conexão WhatsApp Oficial</strong><br><span style="font-size: 12px; color: var(--muted);">Instância via Uazapi conectada via QR Code com alta estabilidade.</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>Custo de IA R$ 0,00 no Início</strong><br><span style="font-size: 12px; color: var(--muted);">Groq API Gratuita (Llama 3.3 70B de ultra-velocidade).</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>White-Label com Logo Assis Sat</strong><br><span style="font-size: 12px; color: var(--muted);">Sistema personalizado com a identidade visual da sua empresa.</span></div>
+          </div>
+
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <div><strong>Human Takeover Instantâneo</strong><br><span style="font-size: 12px; color: var(--muted);">Pausa automática da IA assim que o atendente humano digita.</span></div>
+          </div>
+        </div>
+
+        <div class="addons-box">
+          <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; margin-bottom: 8px;">
+            Opcionais de Expansão (Quando você quiser crescer)
+          </h4>
+          <div class="addon-item">
+            <span>Números de WhatsApp Extras (vendas 2, suporte, financeiro):</span>
+            <span class="addon-price">R$ 29,00 /mês cada</span>
+          </div>
+          <div class="addon-item">
+            <span>APIs de IA Pagas (Google Gemini, OpenAI GPT-4o, Claude):</span>
+            <span class="addon-price">Opcional (conecta sua própria chave quando quiser)</span>
+          </div>
+          <div class="addon-item">
+            <span>Desenvolvimento de Personalizações e Integrações Exclusivas:</span>
+            <span class="addon-price">Sob demanda (orçado à parte)</span>
+          </div>
+        </div>
+
+        <div style="text-align: center;">
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20Vinicius%20aqui%20da%20Assis%20Sat.%20Achei%20a%20proposta%20excelente%20e%20quero%20iniciar%20a%20implanta%C3%A7%C3%A3o!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px; border-radius: var(--radius-md);">
+            Confirmar e Iniciar Configuração da Assis Sat
+          </a>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 12px;">
+            Sem fidelidade abusiva · Configuração assistida pela equipe DRYOS
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cronograma de Ativação Rápida -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Implementação & Homologação
+        </div>
+        <h2 class="section-title font-display">Implantação e Homologação Completa em 72 horas</h2>
+        <p class="section-desc">
+          Nosso time executa toda a configuração técnica, calibração do cérebro da IA e treinamento da equipe em um ciclo estruturado de 72 horas úteis para garantir máxima precisão no atendimento.
+        </p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-step">
+          <span class="step-number">ETAPA 01 · 24 HORAS</span>
+          <h4 class="step-title">Setup & Identidade</h4>
+          <p class="step-desc">
+            Aplicação do logo da Assis Sat, cadastro dos 5 usuários e conexão do WhatsApp via QR Code com validação de webhook.
+          </p>
+        </div>
+
+        <div class="timeline-step">
+          <span class="step-number">ETAPA 02 · 48 HORAS</span>
+          <h4 class="step-title">Treinamento do Cérebro IA</h4>
+          <p class="step-desc">
+            Alimentação da Base de Conhecimento com planos de rastreamento da Assis Sat, regras de follow-up e simulações de atendimento.
+          </p>
+        </div>
+
+        <div class="timeline-step">
+          <span class="step-number">ETAPA 03 · 72 HORAS</span>
+          <h4 class="step-title">Homologação & Go-Live</h4>
+          <p class="step-desc">
+            Testes assistidos com a equipe comercial, treinamento prático dos atendentes e liberação oficial para o tráfego 24/7.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section>
+      <div class="cta-banner">
+        <h2 class="cta-title font-display">Pronto para transformar conversas em contratos fechados?</h2>
+        <p class="cta-desc">
+          Enquanto a concorrência cobra mensalidades engessadas com limites ocultos, a Assis Sat terá uma máquina própria de atendimento, follow-up e fechamento com inteligência artificial.
+        </p>
+        <div class="cta-buttons">
+          <button onclick="window.print()" class="btn btn-outline" style="color: #FAF9F5; border-color: rgba(255,255,255,0.3);">
+            Salvar Proposta (PDF)
+          </button>
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20Vinicius%20aqui%20da%20Assis%20Sat.%20Achei%20a%20proposta%20excelente%20e%20quero%20iniciar%20a%20implanta%C3%A7%C3%A3o!" target="_blank" rel="noopener noreferrer" class="btn btn-light">
+            Fechar Proposta Agora via WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <img src="dryos-logo.svg" alt="DRYOS" style="height: 22px; width: auto; opacity: 0.85; margin-bottom: 2px;" />
+        <p style="font-weight: 700; font-size: 15px; color: var(--primary); letter-spacing: 0.02em;">
+          DRYOS - Sistemas de Crescimento
+        </p>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">
+          Todos os direitos reservados para Assis Sat · 2026
+        </p>
+        <p style="font-size: 11px; color: var(--muted); margin-top: 2px;">
+          Esta proposta comercial é confidencial e destinada exclusivamente a Vinicius (Assis Sat).
+        </p>
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    function updateROI() {
+      const leads = parseInt(document.getElementById('leads-slider').value);
+      const ticket = parseInt(document.getElementById('ticket-slider').value);
+
+      document.getElementById('leads-val').innerText = leads + (leads === 1 ? ' veículo' : ' veículos');
+      document.getElementById('ticket-val').innerText = 'R$ ' + ticket.toLocaleString('pt-BR') + ',00';
+
+      const monthlyExtra = leads * ticket;
+      const annualExtra = monthlyExtra * 12;
+
+      document.getElementById('roi-monthly').innerText = 'R$ ' + monthlyExtra.toLocaleString('pt-BR') + '/mês';
+      document.getElementById('roi-annual').innerText = 'R$ ' + annualExtra.toLocaleString('pt-BR');
+    }
+    updateROI();
+  </script>
+</body>
+</html>
