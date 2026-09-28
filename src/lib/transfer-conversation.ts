@@ -3,10 +3,15 @@ import { transferConversationErrorMessage } from "@/lib/transfer-conversation-er
 
 export { transferConversationErrorMessage } from "@/lib/transfer-conversation-errors";
 
-export async function transferConversation(conversationId: string, toUserId: string) {
+export async function transferConversation(
+  conversationId: string,
+  toUserId: string,
+  stageId?: string | null,
+) {
   const { data, error } = await supabase.rpc("transfer_conversation", {
     p_conversation_id: conversationId,
     p_to_user: toUserId,
+    p_stage_id: stageId ?? null,
   });
   if (error) {
     throw new Error(transferConversationErrorMessage(error.message));

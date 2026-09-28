@@ -1509,6 +1509,7 @@ export default function Conversas() {
         onOpenChange={setTransferOpen}
         conversationId={active?.id ?? null}
         ownerUserId={active?.user_id ?? null}
+        sourceStageName={active?.stage_id ? stages.find((s) => s.id === active.stage_id)?.name : null}
         leadLabel={active ? leadTitle(active) : undefined}
         members={orgMembers}
         currentUserId={user?.id}

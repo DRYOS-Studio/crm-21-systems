@@ -5,6 +5,8 @@ const ERROR_PT: Record<string, string> = {
   conversation_not_found: "Conversa não encontrada.",
   forbidden: "Sem permissão para transferir esta conversa.",
   duplicate_contact: "Quem você escolheu já tem este contato no inbox.",
+  invalid_stage: "Escolha uma etapa válida do funil de quem vai receber.",
+  stage_required: "Escolha em qual etapa do funil a conversa deve ficar.",
 };
 
 export function transferConversationErrorMessage(raw: string | undefined): string {

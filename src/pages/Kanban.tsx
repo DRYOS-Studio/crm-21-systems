@@ -651,6 +651,9 @@ export default function Kanban() {
         onOpenChange={(o) => !o && setTransferConv(null)}
         conversationId={transferConv?.id ?? null}
         ownerUserId={transferConv?.user_id ?? null}
+        sourceStageName={
+          transferConv?.stage_id ? stages.find((s) => s.id === transferConv.stage_id)?.name : null
+        }
         leadLabel={transferConv ? leadTitle(transferConv) : undefined}
         members={kanbanMembers}
         currentUserId={user?.id}
