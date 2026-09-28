@@ -33,6 +33,8 @@ import { useOrgWhatsappInstances } from "@/hooks/useOrgWhatsappInstances";
 import { coerceInstanceFilter, conversationMatchesInstanceFilter } from "@/lib/view-filters";
 import { ehPerdido } from "@/lib/inbox";
 import { conversationMatchesTagFilter } from "@/lib/tag-filter";
+import { conversationHasFollowup } from "@/lib/followup-filter";
+import { usePendingFollowupConversationIds } from "@/hooks/usePendingFollowupConversationIds";
 import type { LeadTag } from "@/lib/lead-tags";
 import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
 import { useLossReasons } from "@/hooks/useLossReasons";
@@ -233,7 +235,8 @@ export default function Kanban() {
   const [newStageName, setNewStageName] = useState("");
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { tagFilters, userFilter, instanceFilter } = filters;
+  const { tagFilters, userFilter, instanceFilter, followupOnly } = filters;
+  const pendingFollowupConvIds = usePendingFollowupConversationIds();
   const orgMembers = useOrgMembers();
   const whatsappInstances = useOrgWhatsappInstances();
   useEffect(() => {
@@ -260,6 +263,7 @@ export default function Kanban() {
     }
     if (userFilter !== "all" && c.user_id !== userFilter) return false;
     if (!conversationMatchesInstanceFilter(c.instance_id, instanceFilter, c.user_id, whatsappInstances)) return false;
+    if (followupOnly && !conversationHasFollowup(c, pendingFollowupConvIds)) return false;
     return true;
   });
   const kanbanMembers = (() => {
@@ -545,6 +549,15 @@ export default function Kanban() {
           onChange={(next) => updateFilters({ userFilter: next })}
         />
         <TagFilterSelect catalog={tagCatalog} value={tagFilters} onChange={(next) => updateFilters({ tagFilters: next })} />
+        <Button
+          variant={followupOnly ? "default" : "outline"}
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => updateFilters({ followupOnly: !followupOnly })}
+        >
+          <Clock className="w-3.5 h-3.5 mr-1.5" />
+          Follow-up
+        </Button>
         <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setFunnelOpen(true)}>
           <Columns3 className="w-3.5 h-3.5 mr-1.5" />
           Etapas do funil

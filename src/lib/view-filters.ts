@@ -19,6 +19,7 @@ export type ViewFilters = {
   tagFilters: string[];
   userFilter: string;
   instanceFilter: string;
+  followupOnly: boolean;
 };
 
 export const DEFAULT_VIEW_FILTERS: ViewFilters = {
@@ -26,6 +27,7 @@ export const DEFAULT_VIEW_FILTERS: ViewFilters = {
   tagFilters: [],
   userFilter: "all",
   instanceFilter: "all",
+  followupOnly: false,
 };
 
 export type InstanceFilterRow = { id: string; user_id: string };
@@ -80,7 +82,8 @@ export function parseViewFilters(raw: string | null | undefined): ViewFilters {
       typeof v.instanceFilter === "string" && v.instanceFilter
         ? v.instanceFilter
         : DEFAULT_VIEW_FILTERS.instanceFilter;
-    return { inboxFilter, tagFilters, userFilter, instanceFilter };
+    const followupOnly = v.followupOnly === true;
+    return { inboxFilter, tagFilters, userFilter, instanceFilter, followupOnly };
   } catch {
     return { ...DEFAULT_VIEW_FILTERS };
   }
@@ -92,6 +95,7 @@ export function serializeViewFilters(filters: ViewFilters): string {
     tagFilters: filters.tagFilters,
     userFilter: filters.userFilter,
     instanceFilter: filters.instanceFilter,
+    followupOnly: filters.followupOnly,
   });
 }
 

@@ -29,6 +29,7 @@ test("parseViewFilters: round-trip preserva escolha válida", () => {
     tagFilters: ["tag-1"],
     userFilter: "user-9",
     instanceFilter: "inst-42",
+    followupOnly: true,
   };
   assert.deepEqual(parseViewFilters(serializeViewFilters(saved)), saved);
 });

@@ -19,6 +19,8 @@ import {
   waMeUrl,
 } from "@/lib/inbox";
 import { conversationMatchesTagFilter } from "@/lib/tag-filter";
+import { conversationHasFollowup } from "@/lib/followup-filter";
+import { usePendingFollowupConversationIds } from "@/hooks/usePendingFollowupConversationIds";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { MainHeader } from "@/components/layout/MainHeader";
@@ -94,6 +96,7 @@ type Conversation = {
   loss_reason_id: string | null;
   loss_reason_note: string | null;
   contact_avatar_url: string | null;
+  inactivity_followup_at: string | null;
 };
 
 function destPhone(c: Conversation): string | null {
@@ -187,7 +190,8 @@ export default function Conversas() {
   const [lastByConv, setLastByConv] = useState<Record<string, LastSnap>>({});
   const [inboxQuery, setInboxQuery] = useState("");
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { inboxFilter, tagFilters, userFilter, instanceFilter } = filters;
+  const { inboxFilter, tagFilters, userFilter, instanceFilter, followupOnly } = filters;
+  const pendingFollowupConvIds = usePendingFollowupConversationIds();
   const orgMembers = useOrgMembers();
   const whatsappInstances = useOrgWhatsappInstances();
   useEffect(() => {
@@ -274,8 +278,22 @@ export default function Conversas() {
         (tagsByConv[c.id] ?? []).map((t) => t.id),
         tagFilters,
       );
-    return scopedConversations.filter((c) => passaBusca(c) && passaFiltro(c) && passaTag(c));
-  }, [scopedConversations, inboxQuery, inboxFilter, lastByConv, tagFilters, tagsByConv, perdidoStageIds]);
+    const passaFollowup = (c: Conversation) =>
+      !followupOnly || conversationHasFollowup(c, pendingFollowupConvIds);
+    return scopedConversations.filter(
+      (c) => passaBusca(c) && passaFiltro(c) && passaTag(c) && passaFollowup(c),
+    );
+  }, [
+    scopedConversations,
+    inboxQuery,
+    inboxFilter,
+    lastByConv,
+    tagFilters,
+    tagsByConv,
+    perdidoStageIds,
+    followupOnly,
+    pendingFollowupConvIds,
+  ]);
 
   const filteredPriority = useMemo(
     () => visibleConversations.filter((c) => priorityConversations.some((p) => p.id === c.id)),
@@ -290,7 +308,8 @@ export default function Conversas() {
     !!inboxQuery.trim() ||
     tagFilters.length > 0 ||
     userFilter !== "all" ||
-    instanceFilter !== "all";
+    instanceFilter !== "all" ||
+    followupOnly;
 
   const abertos = useMemo(
     () => scopedConversations.filter((c) => !encerrado(c)),
@@ -304,6 +323,11 @@ export default function Conversas() {
   const needsReplyCount = useMemo(
     () => abertos.filter((c) => precisaResponder(lastByConv[c.id])).length,
     [abertos, lastByConv],
+  );
+
+  const followupCount = useMemo(
+    () => abertos.filter((c) => conversationHasFollowup(c, pendingFollowupConvIds)).length,
+    [abertos, pendingFollowupConvIds],
   );
 
   const active = useMemo(
@@ -1057,6 +1081,18 @@ export default function Conversas() {
                   <span className="tabular-nums opacity-80"> {count}</span>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => updateFilters({ followupOnly: !followupOnly })}
+                className={`px-2 py-1 rounded-md text-[11px] transition ${
+                  followupOnly
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Follow-up
+                <span className="tabular-nums opacity-80"> {followupCount}</span>
+              </button>
             </div>
             <InstanceFilterSelect
               instances={whatsappInstances}
