@@ -1549,7 +1549,7 @@ export default function Conversas() {
           )}
         </div>
         {active && (
-          <aside className="hidden xl:flex w-[300px] shrink-0 flex-col border-l bg-card overflow-y-auto p-4">
+          <aside className="hidden xl:flex w-[340px] shrink-0 flex-col border-l bg-card overflow-y-auto p-4">
             <LeadContextBody
               conversation={active}
               lossLabel={activeLossLabel}
