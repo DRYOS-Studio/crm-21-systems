@@ -30,7 +30,7 @@ import { useViewFilters } from "@/hooks/useViewFilters";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import { InstanceFilterSelect } from "@/components/inbox/InstanceFilterSelect";
 import { useOrgWhatsappInstances } from "@/hooks/useOrgWhatsappInstances";
-import { conversationMatchesInstanceFilter } from "@/lib/view-filters";
+import { coerceInstanceFilter, conversationMatchesInstanceFilter } from "@/lib/view-filters";
 import { ehPerdido } from "@/lib/inbox";
 import type { LeadTag } from "@/lib/lead-tags";
 import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
@@ -235,17 +235,23 @@ export default function Kanban() {
   const { tagFilter, userFilter, instanceFilter } = filters;
   const orgMembers = useOrgMembers();
   const whatsappInstances = useOrgWhatsappInstances();
+  useEffect(() => {
+    const next = coerceInstanceFilter(instanceFilter, userFilter, whatsappInstances);
+    if (next !== instanceFilter) updateFilters({ instanceFilter: next });
+  }, [instanceFilter, userFilter, whatsappInstances, updateFilters]);
   const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
   const { activeReasons } = useLossReasons();
   const [pendingLoss, setPendingLoss] = useState<{ convId: string; stageId: string } | null>(null);
   const [savingLoss, setSavingLoss] = useState(false);
   const [transferConv, setTransferConv] = useState<Conversation | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const hasUnassignedInstance = conversations.some((c) => !c.instance_id);
+  const hasUnassignedInstance = conversations.some(
+    (c) => !c.instance_id && (userFilter === "all" || c.user_id === userFilter),
+  );
   const visibleConversations = conversations.filter((c) => {
     if (tagFilter !== "all" && !(tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter)) return false;
     if (userFilter !== "all" && c.user_id !== userFilter) return false;
-    if (!conversationMatchesInstanceFilter(c.instance_id, instanceFilter)) return false;
+    if (!conversationMatchesInstanceFilter(c.instance_id, instanceFilter, c.user_id, whatsappInstances)) return false;
     return true;
   });
   const kanbanMembers = (() => {
@@ -522,6 +528,7 @@ export default function Kanban() {
           value={instanceFilter}
           onChange={(next) => updateFilters({ instanceFilter: next })}
           showUnassigned={hasUnassignedInstance}
+          userFilter={userFilter}
         />
         <UserFilterSelect
           members={kanbanMembers}

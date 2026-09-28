@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { INSTANCE_FILTER_NONE } from "@/lib/view-filters";
+import { INSTANCE_FILTER_NONE, instancesForUserFilter } from "@/lib/view-filters";
 import { whatsappInstanceLabel, type WhatsappInstanceRow } from "@/lib/whatsapp-instance-label";
 import type { OrgMember } from "@/hooks/useOrgMembers";
 
@@ -16,6 +16,7 @@ export function InstanceFilterSelect({
   value,
   onChange,
   showUnassigned,
+  userFilter = "all",
   className,
 }: {
   instances: WhatsappInstanceRow[];
@@ -24,9 +25,11 @@ export function InstanceFilterSelect({
   value: string;
   onChange: (instanceId: string) => void;
   showUnassigned?: boolean;
+  userFilter?: string;
   className?: string;
 }) {
-  const multiDevice = instances.length > 1 || (instances.length === 1 && showUnassigned);
+  const scopedInstances = instancesForUserFilter(instances, userFilter);
+  const multiDevice = scopedInstances.length > 1 || (scopedInstances.length === 1 && showUnassigned);
   if (!multiDevice) return null;
 
   const ownerName = (userId: string) => {
@@ -44,7 +47,7 @@ export function InstanceFilterSelect({
       <SelectContent>
         <SelectItem value="all">Todos os dispositivos</SelectItem>
         {showUnassigned && <SelectItem value={INSTANCE_FILTER_NONE}>Sem dispositivo</SelectItem>}
-        {instances.map((inst) => (
+        {scopedInstances.map((inst) => (
           <SelectItem key={inst.id} value={inst.id}>
             {whatsappInstanceLabel(inst, members.length > 1 ? ownerName(inst.user_id) : null)}
           </SelectItem>

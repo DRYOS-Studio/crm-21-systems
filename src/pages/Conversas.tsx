@@ -68,7 +68,7 @@ import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
 import { InstanceFilterSelect } from "@/components/inbox/InstanceFilterSelect";
 import { useOrgWhatsappInstances } from "@/hooks/useOrgWhatsappInstances";
-import { conversationMatchesInstanceFilter } from "@/lib/view-filters";
+import { coerceInstanceFilter, conversationMatchesInstanceFilter } from "@/lib/view-filters";
 import { TransferConversationDialog } from "@/components/org/TransferConversationDialog";
 import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
 import { MessageMedia } from "@/components/inbox/MessageMedia";
@@ -189,6 +189,10 @@ export default function Conversas() {
   const { inboxFilter, tagFilter, userFilter, instanceFilter } = filters;
   const orgMembers = useOrgMembers();
   const whatsappInstances = useOrgWhatsappInstances();
+  useEffect(() => {
+    const next = coerceInstanceFilter(instanceFilter, userFilter, whatsappInstances);
+    if (next !== instanceFilter) updateFilters({ instanceFilter: next });
+  }, [instanceFilter, userFilter, whatsappInstances, updateFilters]);
   const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
     useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -217,8 +221,11 @@ export default function Conversas() {
   useContactAvatarEnrichment(conversations);
 
   const hasUnassignedInstance = useMemo(
-    () => orderedConversations.some((c) => !c.instance_id),
-    [orderedConversations],
+    () =>
+      orderedConversations.some(
+        (c) => !c.instance_id && (userFilter === "all" || c.user_id === userFilter),
+      ),
+    [orderedConversations, userFilter],
   );
 
   const scopedConversations = useMemo(
@@ -226,9 +233,9 @@ export default function Conversas() {
       orderedConversations.filter(
         (c) =>
           (userFilter === "all" || c.user_id === userFilter) &&
-          conversationMatchesInstanceFilter(c.instance_id, instanceFilter),
+          conversationMatchesInstanceFilter(c.instance_id, instanceFilter, c.user_id, whatsappInstances),
       ),
-    [orderedConversations, userFilter, instanceFilter],
+    [orderedConversations, userFilter, instanceFilter, whatsappInstances],
   );
 
   const priorityConversations = useMemo(
@@ -1054,6 +1061,7 @@ export default function Conversas() {
               value={instanceFilter}
               onChange={(next) => updateFilters({ instanceFilter: next })}
               showUnassigned={hasUnassignedInstance}
+              userFilter={userFilter}
               className="h-8 w-full text-xs"
             />
             <UserFilterSelect

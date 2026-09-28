@@ -18,13 +18,38 @@ export const DEFAULT_VIEW_FILTERS: ViewFilters = {
   instanceFilter: "all",
 };
 
+export type InstanceFilterRow = { id: string; user_id: string };
+
+export function instancesForUserFilter(instances: InstanceFilterRow[], userFilter: string) {
+  if (userFilter === "all") return instances;
+  return instances.filter((i) => i.user_id === userFilter);
+}
+
+/** Evita dispositivo de outro usuário quando o inbox está filtrado por responsável. */
+export function coerceInstanceFilter(
+  instanceFilter: string,
+  userFilter: string,
+  instances: InstanceFilterRow[],
+): string {
+  if (instanceFilter === "all" || instanceFilter === INSTANCE_FILTER_NONE) return instanceFilter;
+  const inst = instances.find((i) => i.id === instanceFilter);
+  if (!inst) return "all";
+  if (userFilter !== "all" && inst.user_id !== userFilter) return "all";
+  return instanceFilter;
+}
+
 export function conversationMatchesInstanceFilter(
   instanceId: string | null | undefined,
   filter: string,
+  conversationUserId: string,
+  instances: InstanceFilterRow[],
 ) {
   if (filter === "all") return true;
   if (filter === INSTANCE_FILTER_NONE) return !instanceId;
-  return instanceId === filter;
+  if (instanceId) return instanceId === filter;
+  const picked = instances.find((i) => i.id === filter);
+  if (!picked) return false;
+  return picked.user_id === conversationUserId;
 }
 
 export function viewFiltersKey(userId: string) {

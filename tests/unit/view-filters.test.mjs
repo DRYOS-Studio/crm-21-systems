@@ -37,11 +37,17 @@ test("parseViewFilters: instanceFilter inválido cai em all", () => {
 });
 
 test("conversationMatchesInstanceFilter", () => {
-  assert.equal(conversationMatchesInstanceFilter("a", "all"), true);
-  assert.equal(conversationMatchesInstanceFilter("a", "a"), true);
-  assert.equal(conversationMatchesInstanceFilter("b", "a"), false);
-  assert.equal(conversationMatchesInstanceFilter(null, INSTANCE_FILTER_NONE), true);
-  assert.equal(conversationMatchesInstanceFilter("a", INSTANCE_FILTER_NONE), false);
+  const inst = [
+    { id: "dev-a", user_id: "u1" },
+    { id: "dev-b", user_id: "u2" },
+  ];
+  assert.equal(conversationMatchesInstanceFilter("dev-a", "all", "u1", inst), true);
+  assert.equal(conversationMatchesInstanceFilter("dev-a", "dev-a", "u1", inst), true);
+  assert.equal(conversationMatchesInstanceFilter("dev-b", "dev-a", "u1", inst), false);
+  assert.equal(conversationMatchesInstanceFilter(null, INSTANCE_FILTER_NONE, "u1", inst), true);
+  assert.equal(conversationMatchesInstanceFilter("dev-a", INSTANCE_FILTER_NONE, "u1", inst), false);
+  assert.equal(conversationMatchesInstanceFilter(null, "dev-a", "u1", inst), true);
+  assert.equal(conversationMatchesInstanceFilter(null, "dev-a", "u2", inst), false);
 });
 
 test("viewFiltersKey isola por login", () => {
