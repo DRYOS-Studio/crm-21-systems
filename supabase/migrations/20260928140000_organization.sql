@@ -88,42 +88,49 @@ create policy org_select_members on public.organization_members
 
 -- RLS do time (não mexe em WhatsApp / agent_configs / openers / outreach_sends).
 drop policy if exists own_conversations on public.conversations;
+drop policy if exists org_conversations on public.conversations;
 create policy org_conversations on public.conversations
   for all to authenticated
   using (public.same_org(user_id))
   with check (public.same_org(user_id));
 
 drop policy if exists own_messages on public.messages;
+drop policy if exists org_messages on public.messages;
 create policy org_messages on public.messages
   for all to authenticated
   using (public.same_org(user_id))
   with check (public.same_org(user_id));
 
 drop policy if exists "Users manage their own stages" on public.pipeline_stages;
+drop policy if exists org_pipeline_stages on public.pipeline_stages;
 create policy org_pipeline_stages on public.pipeline_stages
   for all to authenticated
   using (public.same_org(user_id))
   with check (public.same_org(user_id));
 
 drop policy if exists own_prospects on public.prospects;
+drop policy if exists org_prospects on public.prospects;
 create policy org_prospects on public.prospects
   for all to authenticated
   using (public.same_org(user_id))
   with check (public.same_org(user_id));
 
 drop policy if exists "Users manage their own followups" on public.followups;
+drop policy if exists org_followups on public.followups;
 create policy org_followups on public.followups
   for all to authenticated
   using (public.same_org(user_id))
   with check (public.same_org(user_id));
 
 drop policy if exists own_knowledge_base on public.knowledge_base;
+drop policy if exists org_knowledge_base on public.knowledge_base;
 create policy org_knowledge_base on public.knowledge_base
   for all to authenticated
   using (public.same_org(user_id))
   with check (public.same_org(user_id));
 
 drop policy if exists own_lead_tags on public.lead_tags;
+drop policy if exists org_lead_tags on public.lead_tags;
 create policy org_lead_tags on public.lead_tags
   for all to authenticated
   using (public.same_org(user_id))
@@ -155,6 +162,7 @@ create policy org_conversation_tags on public.conversation_tags
   );
 
 drop policy if exists own_outreach_sends on public.outreach_sends;
+drop policy if exists org_outreach_sends on public.outreach_sends;
 create policy org_outreach_sends on public.outreach_sends
   for select to authenticated
   using (public.same_org(user_id));
