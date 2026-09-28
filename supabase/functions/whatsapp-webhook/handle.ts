@@ -7,6 +7,10 @@ import { pediuParaSair } from "../_shared/brain.ts";
 import { aindaDigitando, debounceInboundMs, pareceRespostaAutomatica } from "../_shared/inbound-guarda.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
 import { contactAvatarFromUazapiChat } from "../_shared/contact-avatar.ts";
+import {
+  extractUazapiMessageId,
+  parseMessagesUpdate,
+} from "../_shared/wa-message-status.ts";
 
 type Admin = ReturnType<typeof createClient>;
 
@@ -444,6 +448,19 @@ export async function handle(req: Request): Promise<Response> {
     if (event === "connection" || event === "connection.update") return ok();
     if (event === "dry_run") return await runDryRun(body, instRow);
 
+    if (event === "messages_update" || event === "messages.update") {
+      if (!autenticado) return unauthorized();
+      const upd = parseMessagesUpdate(body as Record<string, unknown>);
+      if (upd) {
+        const { error: stErr } = await supabase.rpc("message_set_wa_status", {
+          p_external_id: upd.messageId,
+          p_status: upd.status,
+        });
+        if (stErr) console.error("[webhook] wa_status falhou", stErr.message, upd);
+      }
+      return ok();
+    }
+
     // confirmed_at só em `messages` real com s válido — dry_run/test/connection nunca confirmam.
     if (autenticado && event === "messages") {
       await supabase.rpc("webhook_confirm", { p_instance: instRow.id });
@@ -636,6 +653,7 @@ export async function handle(req: Request): Promise<Response> {
         sender: "human",
         content: text,
         external_id: externalId,
+        wa_status: externalId ? "sent" : null,
         media_type: mediaType,
         media_url: playableUrl,
         media_name: mediaName,
@@ -825,9 +843,17 @@ async function caminhoLegado(params: {
     headers: { "Content-Type": "application/json", token },
     body: JSON.stringify({ number: phone, text: groq.reply }),
   });
+  const sendBodyText = await sendRes.text();
   if (!sendRes.ok) {
-    console.error("[webhook] uazapi send failed", await sendRes.text());
+    console.error("[webhook] uazapi send failed", sendBodyText);
     return ok();
+  }
+
+  let aiExternalId: string | null = null;
+  try {
+    aiExternalId = extractUazapiMessageId(JSON.parse(sendBodyText));
+  } catch {
+    aiExternalId = null;
   }
 
   await supabase.from("messages").insert({
@@ -836,6 +862,8 @@ async function caminhoLegado(params: {
     direction: "outbound",
     sender: "ai",
     content: groq.reply,
+    external_id: aiExternalId,
+    wa_status: aiExternalId ? "sent" : null,
   });
   await supabase
     .from("conversations")

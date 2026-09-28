@@ -75,6 +75,9 @@ import { coerceInstanceFilter, conversationMatchesInstanceFilter } from "@/lib/v
 import { TransferConversationDialog } from "@/components/org/TransferConversationDialog";
 import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
 import { MessageMedia } from "@/components/inbox/MessageMedia";
+import { MessageWaTicks } from "@/components/inbox/MessageWaTicks";
+import { extractUazapiMessageId } from "@/lib/message-wa-status";
+import type { WaMessageStatus } from "@/lib/message-wa-status";
 import { InboxContactAvatar } from "@/components/inbox/InboxContactAvatar";
 import { useContactAvatarEnrichment } from "@/hooks/useContactAvatarEnrichment";
 import { assertMediaSize, mediaLabel, uploadChatFile } from "@/lib/chat-media";
@@ -135,6 +138,8 @@ type Message = {
   media_type?: string | null;
   media_url?: string | null;
   media_name?: string | null;
+  external_id?: string | null;
+  wa_status?: WaMessageStatus | null;
 };
 
 type Stage = { id: string; name: string; position: number; color: string | null };
@@ -573,6 +578,14 @@ export default function Conversas() {
           });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${activeId}` },
+        (payload) => {
+          const row = payload.new as Message;
+          setMessages((prev) => prev.map((m) => (m.id === row.id ? { ...m, ...row } : m)));
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -863,6 +876,7 @@ export default function Conversas() {
       media_type: payload.kind === "media" ? payload.type : null,
       media_url: null,
       media_name: payload.kind === "media" ? payload.name || payload.file.name : null,
+      wa_status: "sent",
     };
 
     setMessages((prev) => [...prev, optimistic]);
@@ -883,6 +897,7 @@ export default function Conversas() {
       let mediaType: string | null = null;
       let mediaName: string | null = null;
 
+      let sendExternalId: string | null = null;
       if (payload.kind === "text") {
         const { data, error } = await supabase.functions.invoke("manage-instance", {
           body: {
@@ -893,6 +908,7 @@ export default function Conversas() {
           },
         });
         if (error || !data?.ok) throw new Error(data?.error || error?.message || "Falha ao enviar");
+        sendExternalId = extractUazapiMessageId(data?.data ?? data);
       } else {
         assertMediaSize(payload.file, payload.type);
         const uploaded = await uploadChatFile(user!.id, payload.file);
@@ -911,6 +927,7 @@ export default function Conversas() {
           },
         });
         if (error || !data?.ok) throw new Error(data?.error || error?.message || "Falha ao enviar mídia");
+        sendExternalId = extractUazapiMessageId(data?.data ?? data);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === tempId ? { ...m, media_url: mediaUrl, media_type: mediaType, media_name: mediaName } : m,
@@ -929,6 +946,8 @@ export default function Conversas() {
           media_type: mediaType,
           media_url: mediaUrl,
           media_name: mediaName,
+          external_id: sendExternalId,
+          wa_status: "sent",
         })
         .select()
         .single();
@@ -1468,11 +1487,16 @@ export default function Conversas() {
                           ) : (
                             <div className="whitespace-pre-wrap">{m.content}</div>
                           )}
-                          <div className={`text-[10px] mt-1 text-right tabular-nums ${outbound ? "text-bubble-foreground/55" : "text-muted-foreground"}`}>
+                          <div
+                            className={`text-[10px] mt-1 flex items-center justify-end gap-1 tabular-nums ${
+                              outbound ? "text-bubble-foreground/55" : "text-muted-foreground"
+                            }`}
+                          >
                             {new Date(m.created_at).toLocaleTimeString("pt-BR", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
+                            {outbound && <MessageWaTicks status={m.wa_status} />}
                           </div>
                         </div>
                       </div>

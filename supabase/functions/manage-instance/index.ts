@@ -104,7 +104,7 @@ async function handleWebhookAction(req: Request, body: any) {
   const webhookBody = {
     enabled: true,
     url,
-    events: ["messages"],
+    events: ["messages", "messages_update"],
     excludeMessages: ["wasSentByApi"],
     addUrlEvents: false,
   };

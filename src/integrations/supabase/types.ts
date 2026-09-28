@@ -502,6 +502,7 @@ export type Database = {
           processed_at: string | null
           sender: string
           user_id: string
+          wa_status: string | null
         }
         Insert: {
           content: string
@@ -516,6 +517,7 @@ export type Database = {
           processed_at?: string | null
           sender: string
           user_id: string
+          wa_status?: string | null
         }
         Update: {
           content?: string
@@ -530,6 +532,7 @@ export type Database = {
           processed_at?: string | null
           sender?: string
           user_id?: string
+          wa_status?: string | null
         }
         Relationships: [
           {
