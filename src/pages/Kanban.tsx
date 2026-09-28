@@ -28,6 +28,9 @@ import { useLeadTags } from "@/hooks/useLeadTags";
 import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { useViewFilters } from "@/hooks/useViewFilters";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
+import { InstanceFilterSelect } from "@/components/inbox/InstanceFilterSelect";
+import { useOrgWhatsappInstances } from "@/hooks/useOrgWhatsappInstances";
+import { conversationMatchesInstanceFilter } from "@/lib/view-filters";
 import { ehPerdido } from "@/lib/inbox";
 import type { LeadTag } from "@/lib/lead-tags";
 import { LossReasonDialog } from "@/components/crm/LossReasonDialog";
@@ -63,6 +66,7 @@ type Conversation = {
   last_message_at: string;
   inactivity_followup_at: string | null;
   user_id: string;
+  instance_id: string | null;
   loss_reason_id: string | null;
   loss_reason_note: string | null;
 };
@@ -228,17 +232,20 @@ export default function Kanban() {
   const [newStageName, setNewStageName] = useState("");
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { tagFilter, userFilter } = filters;
+  const { tagFilter, userFilter, instanceFilter } = filters;
   const orgMembers = useOrgMembers();
+  const whatsappInstances = useOrgWhatsappInstances();
   const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
   const { activeReasons } = useLossReasons();
   const [pendingLoss, setPendingLoss] = useState<{ convId: string; stageId: string } | null>(null);
   const [savingLoss, setSavingLoss] = useState(false);
   const [transferConv, setTransferConv] = useState<Conversation | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const hasUnassignedInstance = conversations.some((c) => !c.instance_id);
   const visibleConversations = conversations.filter((c) => {
     if (tagFilter !== "all" && !(tagsByConv[c.id] ?? []).some((t) => t.id === tagFilter)) return false;
     if (userFilter !== "all" && c.user_id !== userFilter) return false;
+    if (!conversationMatchesInstanceFilter(c.instance_id, instanceFilter)) return false;
     return true;
   });
   const kanbanMembers = (() => {
@@ -290,7 +297,7 @@ export default function Kanban() {
   const loadConvs = async () => {
     const { data } = await supabase
       .from("conversations")
-      .select("id, contact_name, contact_company, contact_city, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at, user_id, loss_reason_id, loss_reason_note")
+      .select("id, contact_name, contact_company, contact_city, contact_phone, contact_email, stage_id, ai_enabled, last_message_at, inactivity_followup_at, user_id, instance_id, loss_reason_id, loss_reason_note")
       .order("last_message_at", { ascending: false });
     setConversations((data as Conversation[]) || []);
   };
@@ -508,6 +515,14 @@ export default function Kanban() {
       />
 
       <div className="border-b border-border px-4 py-2 flex flex-wrap items-center gap-2 shrink-0 sticky top-0 z-10 bg-card">
+        <InstanceFilterSelect
+          instances={whatsappInstances}
+          members={kanbanMembers}
+          currentUserId={user?.id}
+          value={instanceFilter}
+          onChange={(next) => updateFilters({ instanceFilter: next })}
+          showUnassigned={hasUnassignedInstance}
+        />
         <UserFilterSelect
           members={kanbanMembers}
           currentUserId={user?.id}

@@ -66,6 +66,9 @@ import { useLossReasons } from "@/hooks/useLossReasons";
 import { lossReasonLabel } from "@/lib/loss-reasons";
 import { useOrgMembers } from "@/hooks/useOrgMembers";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
+import { InstanceFilterSelect } from "@/components/inbox/InstanceFilterSelect";
+import { useOrgWhatsappInstances } from "@/hooks/useOrgWhatsappInstances";
+import { conversationMatchesInstanceFilter } from "@/lib/view-filters";
 import { TransferConversationDialog } from "@/components/org/TransferConversationDialog";
 import { ChatComposer, type ComposerPayload } from "@/components/inbox/ChatComposer";
 import { MessageMedia } from "@/components/inbox/MessageMedia";
@@ -183,8 +186,9 @@ export default function Conversas() {
   const [lastByConv, setLastByConv] = useState<Record<string, LastSnap>>({});
   const [inboxQuery, setInboxQuery] = useState("");
   const { filters, update: updateFilters } = useViewFilters(user?.id);
-  const { inboxFilter, tagFilter, userFilter } = filters;
+  const { inboxFilter, tagFilter, userFilter, instanceFilter } = filters;
   const orgMembers = useOrgMembers();
+  const whatsappInstances = useOrgWhatsappInstances();
   const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
     useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -212,12 +216,19 @@ export default function Conversas() {
 
   useContactAvatarEnrichment(conversations);
 
+  const hasUnassignedInstance = useMemo(
+    () => orderedConversations.some((c) => !c.instance_id),
+    [orderedConversations],
+  );
+
   const scopedConversations = useMemo(
     () =>
-      userFilter === "all"
-        ? orderedConversations
-        : orderedConversations.filter((c) => c.user_id === userFilter),
-    [orderedConversations, userFilter],
+      orderedConversations.filter(
+        (c) =>
+          (userFilter === "all" || c.user_id === userFilter) &&
+          conversationMatchesInstanceFilter(c.instance_id, instanceFilter),
+      ),
+    [orderedConversations, userFilter, instanceFilter],
   );
 
   const priorityConversations = useMemo(
@@ -267,7 +278,8 @@ export default function Conversas() {
     inboxFilter !== "todas" ||
     !!inboxQuery.trim() ||
     tagFilter !== "all" ||
-    userFilter !== "all";
+    userFilter !== "all" ||
+    instanceFilter !== "all";
 
   const abertos = useMemo(
     () => scopedConversations.filter((c) => !encerrado(c)),
@@ -1035,6 +1047,15 @@ export default function Conversas() {
                 </button>
               ))}
             </div>
+            <InstanceFilterSelect
+              instances={whatsappInstances}
+              members={orgMembers}
+              currentUserId={user?.id}
+              value={instanceFilter}
+              onChange={(next) => updateFilters({ instanceFilter: next })}
+              showUnassigned={hasUnassignedInstance}
+              className="h-8 w-full text-xs"
+            />
             <UserFilterSelect
               members={orgMembers}
               currentUserId={user?.id}

@@ -2,17 +2,30 @@ import type { InboxFilter } from "./inbox";
 
 const INBOX_FILTERS = new Set<InboxFilter>(["todas", "responder", "aguardando", "humano", "encerrados"]);
 
+export const INSTANCE_FILTER_NONE = "none";
+
 export type ViewFilters = {
   inboxFilter: InboxFilter;
   tagFilter: string;
   userFilter: string;
+  instanceFilter: string;
 };
 
 export const DEFAULT_VIEW_FILTERS: ViewFilters = {
   inboxFilter: "todas",
   tagFilter: "all",
   userFilter: "all",
+  instanceFilter: "all",
 };
+
+export function conversationMatchesInstanceFilter(
+  instanceId: string | null | undefined,
+  filter: string,
+) {
+  if (filter === "all") return true;
+  if (filter === INSTANCE_FILTER_NONE) return !instanceId;
+  return instanceId === filter;
+}
 
 export function viewFiltersKey(userId: string) {
   return `q7:view-filters:${userId}`;
@@ -28,7 +41,11 @@ export function parseViewFilters(raw: string | null | undefined): ViewFilters {
     const tagFilter = typeof v.tagFilter === "string" && v.tagFilter ? v.tagFilter : DEFAULT_VIEW_FILTERS.tagFilter;
     const userFilter =
       typeof v.userFilter === "string" && v.userFilter ? v.userFilter : DEFAULT_VIEW_FILTERS.userFilter;
-    return { inboxFilter, tagFilter, userFilter };
+    const instanceFilter =
+      typeof v.instanceFilter === "string" && v.instanceFilter
+        ? v.instanceFilter
+        : DEFAULT_VIEW_FILTERS.instanceFilter;
+    return { inboxFilter, tagFilter, userFilter, instanceFilter };
   } catch {
     return { ...DEFAULT_VIEW_FILTERS };
   }
@@ -39,6 +56,7 @@ export function serializeViewFilters(filters: ViewFilters): string {
     inboxFilter: filters.inboxFilter,
     tagFilter: filters.tagFilter,
     userFilter: filters.userFilter,
+    instanceFilter: filters.instanceFilter,
   });
 }
 
