@@ -13,6 +13,7 @@ import {
   formatInboxTime,
   matchesInboxQuery,
   precisaResponder,
+  conversationSemContato,
   previewText,
   lastSnapFromMessage,
   threadDateLabel,
@@ -274,6 +275,9 @@ export default function Conversas() {
       if (inboxFilter === "encerrados") return closed;
       if (closed) return false;
       if (inboxFilter === "humano") return !c.ai_enabled;
+      if (inboxFilter === "sem_contato") {
+        return conversationSemContato(c.id, c.stage_id, lastInboundAt, emContatoStageIds);
+      }
       if (inboxFilter === "responder") return precisaResponder(lastByConv[c.id]);
       if (inboxFilter === "aguardando") return !precisaResponder(lastByConv[c.id]);
       return true;
@@ -298,6 +302,8 @@ export default function Conversas() {
     perdidoStageIds,
     followupOnly,
     pendingFollowupConvIds,
+    lastInboundAt,
+    emContatoStageIds,
   ]);
 
   const filteredPriority = useMemo(
@@ -333,6 +339,13 @@ export default function Conversas() {
   const followupCount = useMemo(
     () => abertos.filter((c) => conversationHasFollowup(c, pendingFollowupConvIds)).length,
     [abertos, pendingFollowupConvIds],
+  );
+
+  const semContatoCount = useMemo(
+    () =>
+      abertos.filter((c) => conversationSemContato(c.id, c.stage_id, lastInboundAt, emContatoStageIds))
+        .length,
+    [abertos, lastInboundAt, emContatoStageIds],
   );
 
   const active = useMemo(
@@ -1082,6 +1095,7 @@ export default function Conversas() {
                   ["todas", "Todas", abertos.length],
                   ["responder", "Sua vez", needsReplyCount],
                   ["aguardando", "Aguardando", Math.max(0, abertos.length - needsReplyCount)],
+                  ["sem_contato", "Sem contato", semContatoCount],
                   ["humano", "Com você", abertos.filter((c) => !c.ai_enabled).length],
                   ["encerrados", "Encerrados", encerradosCount],
                 ] as const

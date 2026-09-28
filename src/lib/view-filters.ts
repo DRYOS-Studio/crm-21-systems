@@ -10,7 +10,14 @@ function parseStoredTagFilters(raw: unknown, legacyTagFilter?: unknown): string[
   return [];
 }
 
-const INBOX_FILTERS = new Set<InboxFilter>(["todas", "responder", "aguardando", "humano", "encerrados"]);
+const INBOX_FILTERS = new Set<InboxFilter>([
+  "todas",
+  "responder",
+  "aguardando",
+  "sem_contato",
+  "humano",
+  "encerrados",
+]);
 
 export const INSTANCE_FILTER_NONE = "none";
 

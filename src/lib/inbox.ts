@@ -1,4 +1,10 @@
-export type InboxFilter = "todas" | "responder" | "aguardando" | "humano" | "encerrados";
+export type InboxFilter =
+  | "todas"
+  | "responder"
+  | "aguardando"
+  | "sem_contato"
+  | "humano"
+  | "encerrados";
 
 export type LastSnap = {
   content: string;
@@ -52,6 +58,18 @@ export function ehEmContato(nome: string | null | undefined) {
 
 export function ehPerdido(nome: string | null | undefined) {
   return /perdid/i.test(String(nome || ""));
+}
+
+/** Lead aberto que ainda não entrou em “Em contato” e nunca respondeu — prioridade para ligar/chamar. */
+export function conversationSemContato(
+  conversationId: string,
+  stageId: string | null | undefined,
+  lastInboundAt: Record<string, string>,
+  emContatoStageIds: ReadonlySet<string>,
+) {
+  if (lastInboundAt[conversationId]) return false;
+  if (stageId && emContatoStageIds.has(stageId)) return false;
+  return true;
 }
 
 export function precisaResponder(last: LastSnap | undefined) {
