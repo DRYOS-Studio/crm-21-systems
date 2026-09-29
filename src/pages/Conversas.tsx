@@ -1133,25 +1133,30 @@ export default function Conversas() {
                 Follow-up
                 <span className="tabular-nums opacity-80"> {followupCount}</span>
               </button>
+              <InstanceFilterSelect
+                instances={whatsappInstances}
+                members={orgMembers}
+                currentUserId={user?.id}
+                value={instanceFilter}
+                onChange={(next) => updateFilters({ instanceFilter: next })}
+                showUnassigned={hasUnassignedInstance}
+                userFilter={userFilter}
+                className="h-8 w-[160px] text-xs"
+              />
+              <UserFilterSelect
+                members={orgMembers}
+                currentUserId={user?.id}
+                value={userFilter}
+                onChange={(next) => updateFilters({ userFilter: next })}
+                className="h-8 w-[160px] text-xs"
+              />
+              <TagFilterSelect
+                catalog={tagCatalog}
+                value={tagFilters}
+                onChange={(next) => updateFilters({ tagFilters: next })}
+                className="h-8 w-[160px] text-xs"
+              />
             </div>
-            <InstanceFilterSelect
-              instances={whatsappInstances}
-              members={orgMembers}
-              currentUserId={user?.id}
-              value={instanceFilter}
-              onChange={(next) => updateFilters({ instanceFilter: next })}
-              showUnassigned={hasUnassignedInstance}
-              userFilter={userFilter}
-              className="h-8 w-full text-xs"
-            />
-            <UserFilterSelect
-              members={orgMembers}
-              currentUserId={user?.id}
-              value={userFilter}
-              onChange={(next) => updateFilters({ userFilter: next })}
-              className="h-8 w-full text-xs"
-            />
-            <TagFilterSelect catalog={tagCatalog} value={tagFilters} onChange={(next) => updateFilters({ tagFilters: next })} className="h-8 w-full text-xs" />
           </div>
           <div className="flex-1 overflow-y-auto">
             {needsSetup && (
