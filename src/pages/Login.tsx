@@ -91,7 +91,7 @@ const Login = () => {
               ) : (
                 <span className="inline-flex items-center">
                   <LogIn className="mr-2 h-4 w-4" />
-                  {mode === "signin" ? "Entrar" : "Criar conta"}
+                  Entrar
                 </span>
               )}
             </Button>
