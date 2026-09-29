@@ -340,6 +340,68 @@
       line-height: 1.55;
     }
 
+    /* Performance & Metrics Cards */
+    .perf-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      box-shadow: var(--shadow-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .perf-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .perf-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--accent);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .perf-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 10px;
+    }
+
+    .perf-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .perf-list li {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .perf-list li strong {
+      color: var(--fg);
+    }
+
+    .perf-list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: 800;
+    }
+
     /* Automações Categories Grid */
     .cat-box {
       background: var(--card);
@@ -957,7 +1019,7 @@
     @media print {
       body { background: #FFF; padding: 0; }
       header, .header-actions, .cta-banner button, .btn { display: none !important; }
-      .card, .pricing-card-highlight, .comparison-container, .cockpit-preview-card, .arch-flow-box, .roles-box, .cat-box {
+      .card, .pricing-card-highlight, .comparison-container, .cockpit-preview-card, .arch-flow-box, .roles-box, .cat-box, .perf-card {
         box-shadow: none !important;
         border: 1px solid #CCC !important;
         break-inside: avoid;
@@ -997,7 +1059,7 @@
         Infraestrutura, Visibilidade de Dados & <span>Automações de Operação</span>
       </h1>
       <p class="hero-subtitle">
-        Muito além do lançamento: integramos sua esteira inteira, construímos seu banco de dados próprio e entregamos visibilidade total da operação em tempo real com suporte contínuo.
+        Muito além do lançamento: integramos sua esteira inteira, construímos seu banco de dados próprio e entregamos dashboards de performance e métricas de negócio em tempo real.
       </p>
 
       <div class="target-card">
@@ -1058,16 +1120,87 @@
       </div>
     </section>
 
-    <!-- O Pilar Central: Visibilidade de Dados & Cockpit Executivo Live -->
+    <!-- SEÇÃO NOVA EXCLUSIVA: DASHBOARDS DE PERFORMANCE E MÉTRICAS -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-          Visibilidade de Dados & Informação
+          Inteligência de Decisão
         </div>
-        <h2 class="section-title font-display">Cockpit Executivo Live: A Pulsação do Negócio em Tempo Real</h2>
+        <h2 class="section-title font-display">Dashboards de Performance & Métricas de Negócio</h2>
         <p class="section-desc">
-          Entregamos um painel executivo moderno e veloz, centralizando tráfego, vendas, captação, presença em lives e saúde financeira sem depender de planilhas.
+          Chega de planilhas desatualizadas. Construímos e mantemos três camadas analíticas para você saber exatamente o retorno de cada centavo investido na operação:
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <!-- Card 1: Performance de Tráfego -->
+        <div class="perf-card">
+          <div class="perf-card-header">
+            <span class="perf-badge">AQUISIÇÃO & TRÁFEGO</span>
+            <span style="font-size: 11px; color: var(--success); font-weight: 700;">Live Feed</span>
+          </div>
+          <h3 class="perf-title">Dashboards de Performance</h3>
+          <p style="font-size: 13px; color: var(--muted); line-height: 1.45;">
+            Visão sem delay do investimento em mídia cruzado com vendas reais aprovadas no banco:
+          </p>
+          <ul class="perf-list">
+            <li><strong>ROAS Real Consolidado:</strong> Retorno sobre gastos de anúncios sem janela inflada das redes</li>
+            <li><strong>CPA & CPL Diário:</strong> Custo por aquisição de aluno e custo por lead por campanha</li>
+            <li><strong>Performance de Criativos:</strong> Identificação exata de quais anúncios e copys mais geram vendas</li>
+            <li><strong>Atribuição Server-Side (Meta CAPI):</strong> Ingestão via servidor que contorna bloqueios de iOS</li>
+          </ul>
+        </div>
+
+        <!-- Card 2: Métricas de Negócio & Unit Economics -->
+        <div class="perf-card">
+          <div class="perf-card-header">
+            <span class="perf-badge">UNIT ECONOMICS</span>
+            <span style="font-size: 11px; color: var(--primary); font-weight: 700;">Financeiro</span>
+          </div>
+          <h3 class="perf-title">Métricas Executivas de Negócio</h3>
+          <p style="font-size: 13px; color: var(--muted); line-height: 1.45;">
+            Os números fundamentais que determinam a lucratividade e o crescimento sustentável:
+          </p>
+          <ul class="perf-list">
+            <li><strong>LTV Histórico da Base:</strong> Valor de vida útil acumulado gerado por cada aluno na esteira</li>
+            <li><strong>CAC Real da Operação:</strong> Custo real de aquisição cruzando mídia, ferramentas e vendas</li>
+            <li><strong>Payback do Tráfego:</strong> Em quantos dias o investimento em anúncios retorna no caixa</li>
+            <li><strong>Taxa de Aprovação por Método:</strong> Aprovação de Cartão, compensação PIX e Boletos</li>
+            <li><strong>Taxa de Reembolso & Chargeback:</strong> Alertas imediatos de retenção e cancelamento</li>
+          </ul>
+        </div>
+
+        <!-- Card 3: Performance da Esteira -->
+        <div class="perf-card">
+          <div class="perf-card-header">
+            <span class="perf-badge">ESTEIRA & LIVE</span>
+            <span style="font-size: 11px; color: var(--warning); font-weight: 700;">Operação</span>
+          </div>
+          <h3 class="perf-title">Performance da Esteira</h3>
+          <p style="font-size: 13px; color: var(--muted); line-height: 1.45;">
+            O pulso operacional dos funis, eventos ao vivo e canais de comunicação:
+          </p>
+          <ul class="perf-list">
+            <li><strong>Taxa de Presença nas Lives:</strong> Relação entre leads inscritos e participantes simultâneos</li>
+            <li><strong>Entregabilidade WhatsApp:</strong> Taxa de entrega, abertura e cliques nos links disparados</li>
+            <li><strong>Conversão por Etapa do Funil:</strong> Onde os leads estão esfriando na jornada de compra</li>
+            <li><strong>Latência & Saúde da Infra:</strong> Monitoramento de webhooks e tempo de resposta (< 100ms)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cockpit Executivo Live (Simulação Visual) -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Visão Executiva em Tempo Real
+        </div>
+        <h2 class="section-title font-display">Cockpit Live: O Painel de Controle da sua Diretoria</h2>
+        <p class="section-desc">
+          Um painel responsivo onde a liderança acompanha todos os indicadores de performance e métricas de negócio consolidadas.
         </p>
       </div>
 
@@ -1078,11 +1211,11 @@
             <span class="window-dot" style="background: #FFBD2E;"></span>
             <span class="window-dot" style="background: #27C93F;"></span>
           </div>
-          <span class="window-title">DRYOS Studio · Cockpit de Inteligência & Operações [TEMPO REAL]</span>
+          <span class="window-title">DRYOS Studio · Cockpit de Performance & Métricas [TEMPO REAL]</span>
           <div style="margin-left: auto;">
             <span class="badge badge-success" style="font-size: 11px; text-transform: none;">
               <span style="width: 6px; height: 6px; border-radius: 50%; background: #1E6B3E; display: inline-block; margin-right: 4px;"></span>
-              Pipeline Ativo · Ingestão 100% Uptime
+              Pipeline Ativo · ROAS 5.4x
             </span>
           </div>
         </div>
@@ -1091,7 +1224,7 @@
           <!-- KPIs Top -->
           <div class="cockpit-kpis">
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Faturamento Líquido (Mês/Ciclo)</div>
+              <div class="cockpit-kpi-label">Faturamento Líquido (Ciclo)</div>
               <div class="cockpit-kpi-value font-display">R$ 284.900</div>
               <div class="cockpit-kpi-tag" style="color: var(--success);">
                 ▲ +22.8% vs ciclo anterior
@@ -1099,18 +1232,18 @@
             </div>
 
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Transações Aprovadas</div>
-              <div class="cockpit-kpi-value font-display">612</div>
+              <div class="cockpit-kpi-label">ROAS Consolidado</div>
+              <div class="cockpit-kpi-value font-display">5.4x</div>
               <div class="cockpit-kpi-tag" style="color: var(--primary);">
-                Taxa de Aprovação: 95.4%
+                Gasto: R$ 52.700 · Vendas OK
               </div>
             </div>
 
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Leads Únicos Higienizados</div>
-              <div class="cockpit-kpi-value font-display">18.450</div>
+              <div class="cockpit-kpi-label">LTV Médio Histórico</div>
+              <div class="cockpit-kpi-value font-display">R$ 1.420</div>
               <div class="cockpit-kpi-tag" style="color: var(--success);">
-                100% E.164 · Deduplicados
+                CAC Médio: R$ 265,00
               </div>
             </div>
 
@@ -1118,7 +1251,7 @@
               <div class="cockpit-kpi-label">Receita Recuperada (PIX/Cartão)</div>
               <div class="cockpit-kpi-value font-display">R$ 52.800</div>
               <div class="cockpit-kpi-tag" style="color: #92400E;">
-                Régua automática ativa
+                Taxa de Aprovação: 95.4%
               </div>
             </div>
           </div>
@@ -1164,27 +1297,27 @@
 
               <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 12px; color: var(--muted);">
                 <span>CPL Médio da Esteira: <strong>R$ 2,85</strong></span>
-                <span>ROAS Consolidado: <strong>5.4x</strong></span>
+                <span>Payback de Tráfego: <strong>4 dias</strong></span>
               </div>
             </div>
 
             <div class="cockpit-logs-card">
               <div class="cockpit-card-title">
-                <span>Eventos de Automação em Tempo Real</span>
+                <span>Eventos de Performance em Tempo Real</span>
                 <span class="badge" style="background: #E8EFE9; color: var(--primary); font-size: 10px;">Ativo</span>
               </div>
 
               <div class="log-item">
                 <div>
-                  <strong style="color: var(--primary);">Checkout Aprovado</strong>
-                  <div style="font-size: 10.5px; color: var(--muted);">Acesso liberado + Tag Comprador aplicada</div>
+                  <strong style="color: var(--primary);">Checkout Aprovado (Cartão)</strong>
+                  <div style="font-size: 10.5px; color: var(--muted);">Meta CAPI: Atribuição Server-Side OK</div>
                 </div>
                 <span class="badge badge-success" style="font-size: 10px;">200 OK</span>
               </div>
 
               <div class="log-item">
                 <div>
-                  <strong style="color: var(--primary);">Deduplicação Inteligente</strong>
+                  <strong style="color: var(--primary);">Deduplicação de Base</strong>
                   <div style="font-size: 10.5px; color: var(--muted);">Aluno de edição anterior reengajado</div>
                 </div>
                 <span class="badge badge-primary" style="font-size: 10px;">LTV +1</span>
@@ -1201,7 +1334,7 @@
               <div class="log-item">
                 <div>
                   <strong style="color: var(--primary);">Alerta no WhatsApp da Diretoria</strong>
-                  <div style="font-size: 10.5px; color: var(--muted);">Relatório diário de vendas enviado 19h00</div>
+                  <div style="font-size: 10.5px; color: var(--muted);">Relatório de ROAS enviado 19h00</div>
                 </div>
                 <span class="badge badge-success" style="font-size: 10px;">Entregue</span>
               </div>
@@ -1374,7 +1507,7 @@
 
         <div class="roles-row">
           <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Atendimento Comercial Humano de Vendas</div>
-          <div><span class="status-check">✓</span> Cockpit Executivo Live (Faturamento, CPL, LTV e Conversão)</div>
+          <div><span class="status-check">✓</span> Dashboards de Performance (ROAS, CPA, CPL) & Métricas Live</div>
         </div>
 
         <div class="roles-row">
@@ -1429,8 +1562,8 @@
               <td><span class="status-cross">+70% a 100% em encargos</span> e rescisão</td>
             </tr>
             <tr>
-              <td><strong>Visibilidade de Dados & Cockpit</strong></td>
-              <td class="highlight-col"><span class="status-check">Pronto & Live</span> com visão executiva em tempo real</td>
+              <td><strong>Dashboards de Performance & Métricas</strong></td>
+              <td class="highlight-col"><span class="status-check">Pronto & Live</span> (ROAS, CPA, CPL, LTV e Unit Economics)</td>
               <td>Exige meses de desenvolvimento interno do zero</td>
             </tr>
             <tr>
@@ -1475,7 +1608,7 @@
               Infraestrutura, Visibilidade de Dados & Automações de Operação
             </h3>
             <p style="color: var(--muted); font-size: 14px; margin-top: 6px;">
-              Sustentação técnica contínua para seus lançamentos, rotinas diárias, checkouts e painel executivo de inteligência.
+              Sustentação contínua para seus lançamentos, esteiras de venda, dashboards de performance e métricas de negócio.
             </p>
 
             <div class="pricing-hero-val-box">
@@ -1496,12 +1629,17 @@
           <div class="pricing-features-grid">
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Visibilidade de Dados & Cockpit Live</strong><br><span style="font-size: 11.5px; color: var(--muted);">Dashboard executivo em tempo real com faturamento, conversão, CPL, CAC e LTV.</span></div>
+              <div><strong>Dashboards de Performance (ROAS, CPA, CPL)</strong><br><span style="font-size: 11.5px; color: var(--muted);">Painel de tráfego, conversão por anúncio/criativo e atribuição via servidor Meta CAPI.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Repertório Completo de Automações</strong><br><span style="font-size: 11.5px; color: var(--muted);">Esteiras ativas de Marketing & Lançamento, Vendas, Financeiro e WhatsApp.</span></div>
+              <div><strong>Métricas Executivas de Negócio (LTV & Unit Economics)</strong><br><span style="font-size: 11.5px; color: var(--muted);">Acompanhamento de LTV histórico, CAC real, Payback em dias e taxa de aprovação.</span></div>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <div><strong>Repertório Completo de Automações DRYOS</strong><br><span style="font-size: 11.5px; color: var(--muted);">Esteiras ativas de Marketing & Lançamento, Vendas, Financeiro e WhatsApp.</span></div>
             </div>
 
             <div class="feature-item">
@@ -1521,22 +1659,17 @@
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Recuperação Ativa de Vendas</strong><br><span style="font-size: 11.5px; color: var(--muted);">Disparos imediatos para PIX não pago, cartão recusado e abandono de carrinho.</span></div>
+              <div><strong>Recuperação Ativa de Vendas (PIX & Carrinho)</strong><br><span style="font-size: 11.5px; color: var(--muted);">Disparos imediatos para PIX não pago, cartão recusado e abandono de checkout.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>War Room Técnico em Picos</strong><br><span style="font-size: 11.5px; color: var(--muted);">Monitoramento ativo da equipe DRYOS durante aulas ao vivo e abertura de carrinho.</span></div>
-            </div>
-
-            <div class="feature-item">
-              <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Suporte Técnico Contínuo via WhatsApp</strong><br><span style="font-size: 11.5px; color: var(--muted);">Canal direto com nossos engenheiros para ajustes rápidos e novas automações.</span></div>
+              <div><strong>War Room Técnico em Picos & Suporte Contínuo</strong><br><span style="font-size: 11.5px; color: var(--muted);">Monitoramento ativo nos dias de live/carrinho e canal direto com nossos engenheiros.</span></div>
             </div>
           </div>
 
           <div style="padding-top: 20px; border-top: 1px solid var(--card-border); text-align: center;">
-            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20quero%20ativar%20a%20Parceria%20de%20Infra%20e%20Dados%20da%20DRYOS%20(R%24%203.000%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
+            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20quero%20ativar%20a%20Parceria%20de%20Infra%2C%20Dados%20e%20Performance%20da%20DRYOS%20(R%24%203.000%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
               Ativar Parceria Contínua (R$ 3.000/mês)
             </a>
             <p style="font-size: 11.5px; color: var(--muted); margin-top: 10px;">
@@ -1556,7 +1689,7 @@
         </p>
 
         <div class="addon-item">
-          <span><strong>Fase Inicial (Atual):</strong> Estruturação da esteira, visibilidade de dados, Cockpit Live, automações e banco PostgreSQL</span>
+          <span><strong>Fase Inicial (Atual):</strong> Estruturação da esteira, visibilidade de dados, Dashboards de Performance, automações e banco PostgreSQL</span>
           <span class="addon-price">R$ 3.000,00 / mês</span>
         </div>
         <div class="addon-item">
@@ -1581,7 +1714,7 @@
           <button onclick="window.print()" class="btn btn-outline" style="color: #FAF9F5; border-color: rgba(255,255,255,0.3);">
             Salvar Proposta (PDF)
           </button>
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20analisei%20a%20Proposta%20de%20Infra%2C%20Dados%20e%20Automa%C3%A7%C3%B5es%20da%20DRYOS%20e%20quero%20iniciar%20a%20parceria%20(R%24%203k%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-light">
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20analisei%20a%20Proposta%20de%20Infra%2C%20Dados%20e%20Performance%20da%20DRYOS%20e%20quero%20iniciar%20a%20parceria%20(R%24%203k%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-light">
             Falar com a DRYOS via WhatsApp
           </a>
         </div>
@@ -1596,7 +1729,7 @@
           DRYOS — Sistemas de Crescimento & Engenharia Sob Medida
         </p>
         <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">
-          Visibilidade de Dados · Automações de Processos · Infraestrutura de Lançamento · Inteligência Artificial
+          Visibilidade de Dados · Dashboards de Performance · Automações de Processos · Infraestrutura de Lançamento
         </p>
         <p style="font-size: 11px; color: var(--muted); margin-top: 2px;">
           Esta proposta técnica e comercial é confidencial e válida por 7 dias a partir da data de envio.
