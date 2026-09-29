@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, CircleSlash, Phone, Tag, Tags, User } from "lucide-react";
+import { Building2, CircleSlash, Phone, StickyNote, Tag, Tags, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadTagEditor } from "@/components/lead/LeadTagEditor";
 import type { LeadTag } from "@/lib/lead-tags";
 import { ConversationOwnerActions } from "@/components/org/ConversationOwnerActions";
@@ -20,6 +22,7 @@ export type LeadConversation = {
   contact_city: string | null;
   contact_phone: string | null;
   contact_email: string | null;
+  lead_context?: string | null;
   wa_phone?: string | null;
 };
 
@@ -36,6 +39,7 @@ export type LeadEditableFields = {
   contact_company: string | null;
   contact_city: string | null;
   contact_email: string | null;
+  lead_context?: string | null;
 };
 
 export function leadTitle(c: LeadConversation) {
@@ -98,6 +102,7 @@ export function LeadContextBody({
   const { user } = useAuth();
   const [prospect, setProspect] = useState<ProspectRow | null>(null);
   const [form, setForm] = useState({ name: "", company: "", city: "", email: "" });
+  const [leadContext, setLeadContext] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -151,7 +156,8 @@ export function LeadContextBody({
       city: conversation.contact_city || prospect?.city || "",
       email: conversation.contact_email || "",
     });
-  }, [conversation.id, conversation.contact_name, conversation.contact_company, conversation.contact_city, conversation.contact_email, prospect?.name, prospect?.company, prospect?.city]);
+    setLeadContext(conversation.lead_context || "");
+  }, [conversation.id, conversation.contact_name, conversation.contact_company, conversation.contact_city, conversation.contact_email, conversation.lead_context, prospect?.name, prospect?.company, prospect?.city]);
 
   const saveLead = async () => {
     setSaving(true);
@@ -171,8 +177,30 @@ export function LeadContextBody({
     toast({ title: "Dados do lead salvos" });
   };
 
+  const saveLeadContext = async () => {
+    setSaving(true);
+    const value = leadContext.trim() || null;
+    const { error } = await supabase
+      .from("conversations")
+      .update({ lead_context: value })
+      .eq("id", conversation.id);
+    setSaving(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro ao salvar anotações", description: error.message });
+      return;
+    }
+    onSaved?.({ lead_context: value });
+    toast({ title: "Anotações salvas" });
+  };
+
   return (
-    <div className="space-y-4">
+    <Tabs defaultValue="informacoes" className="space-y-4">
+      <TabsList className="grid h-9 w-full grid-cols-2">
+        <TabsTrigger value="informacoes" className="text-xs">Informações</TabsTrigger>
+        <TabsTrigger value="anotacoes" className="text-xs">Anotações</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="informacoes" className="space-y-4">
       <div>
         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Lead</div>
         <div className="font-semibold text-sm mt-0.5">{company || importedName || person || leadTitle(conversation)}</div>
@@ -273,11 +301,33 @@ export function LeadContextBody({
         </>
       )}
 
-      {!company && !importedName && !city && extraEntries.length === 0 && (
+        {!company && !importedName && !city && extraEntries.length === 0 && (
         <p className="text-xs text-muted-foreground">
           Sem ficha importada. Empresa e cidade entram pelo CSV ou pelo Extrator.
         </p>
-      )}
-    </div>
+        )}
+      </TabsContent>
+
+      <TabsContent value="anotacoes" className="space-y-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <StickyNote className="w-3 h-3" />
+            Contexto do lead
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Registre dores, objetivos, cenário e informações importantes para uma futura proposta.
+          </p>
+        </div>
+        <Textarea
+          value={leadContext}
+          onChange={(e) => setLeadContext(e.target.value)}
+          placeholder="Ex.: principal desafio, objetivo, prazo, orçamento, decisores…"
+          className="min-h-[220px] resize-y text-sm"
+        />
+        <Button className="w-full" onClick={() => void saveLeadContext()} disabled={saving}>
+          {saving ? "Salvando…" : "Salvar anotações"}
+        </Button>
+      </TabsContent>
+    </Tabs>
   );
 }

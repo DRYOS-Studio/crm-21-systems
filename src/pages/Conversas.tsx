@@ -91,6 +91,7 @@ type Conversation = {
   contact_name: string | null;
   contact_company: string | null;
   contact_city: string | null;
+  lead_context: string | null;
   ai_enabled: boolean;
   last_message_at: string;
   instance_id: string | null;

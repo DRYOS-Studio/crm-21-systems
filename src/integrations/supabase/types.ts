@@ -159,6 +159,7 @@ export type Database = {
           last_message_at: string
           loss_reason_id: string | null
           loss_reason_note: string | null
+          lead_context: string | null
           optout: boolean
           optout_motivo: string | null
           qualification: Json
@@ -187,6 +188,7 @@ export type Database = {
           last_message_at?: string
           loss_reason_id?: string | null
           loss_reason_note?: string | null
+          lead_context?: string | null
           optout?: boolean
           optout_motivo?: string | null
           qualification?: Json
@@ -215,6 +217,7 @@ export type Database = {
           last_message_at?: string
           loss_reason_id?: string | null
           loss_reason_note?: string | null
+          lead_context?: string | null
           optout?: boolean
           optout_motivo?: string | null
           qualification?: Json
@@ -1200,4 +1203,3 @@ export const Constants = {
     },
   },
 } as const
-
