@@ -533,6 +533,13 @@ export default function Kanban() {
       />
 
       <div className="border-b border-border px-4 py-2 flex flex-wrap items-center gap-2 shrink-0 sticky top-0 z-10 bg-card">
+        <UserFilterSelect
+          members={kanbanMembers}
+          currentUserId={user?.id}
+          value={userFilter}
+          onChange={(next) => updateFilters({ userFilter: next })}
+        />
+        <TagFilterSelect catalog={tagCatalog} value={tagFilters} onChange={(next) => updateFilters({ tagFilters: next })} />
         <InstanceFilterSelect
           instances={whatsappInstances}
           members={kanbanMembers}
@@ -541,14 +548,8 @@ export default function Kanban() {
           onChange={(next) => updateFilters({ instanceFilter: next })}
           showUnassigned={hasUnassignedInstance}
           userFilter={userFilter}
+          className="h-8 w-[160px] text-xs"
         />
-        <UserFilterSelect
-          members={kanbanMembers}
-          currentUserId={user?.id}
-          value={userFilter}
-          onChange={(next) => updateFilters({ userFilter: next })}
-        />
-        <TagFilterSelect catalog={tagCatalog} value={tagFilters} onChange={(next) => updateFilters({ tagFilters: next })} />
         <Button
           variant={followupOnly ? "default" : "outline"}
           size="sm"
