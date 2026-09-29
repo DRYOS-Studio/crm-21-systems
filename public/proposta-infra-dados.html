@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proposta Técnica & Comercial · DRYOS Studio — Infraestrutura de Lançamento & Dados</title>
+  <title>Proposta Técnica & Comercial · DRYOS Studio — Infraestrutura, Visibilidade de Dados & Automações</title>
   <link rel="icon" type="image/svg+xml" href="dryos-symbol.svg">
   
   <!-- Fontes Oficiais DRYOS -->
@@ -190,7 +190,7 @@
       color: var(--primary);
       line-height: 1.15;
       margin-bottom: 16px;
-      max-width: 900px;
+      max-width: 920px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -203,7 +203,7 @@
     .hero-subtitle {
       font-size: 17.5px;
       color: var(--muted);
-      max-width: 740px;
+      max-width: 760px;
       margin: 0 auto 32px;
       font-weight: 400;
       line-height: 1.5;
@@ -214,7 +214,7 @@
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
       padding: 20px 28px;
-      max-width: 720px;
+      max-width: 740px;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -287,6 +287,12 @@
       gap: 20px;
     }
 
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
     .card {
       background: var(--card);
       border: 1px solid var(--card-border);
@@ -334,60 +340,58 @@
       line-height: 1.55;
     }
 
-    /* Responsibility Split Table */
-    .roles-box {
-      background: #FFFFFF;
+    /* Automações Categories Grid */
+    .cat-box {
+      background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
-      overflow: hidden;
-      box-shadow: var(--shadow-card);
-      margin-top: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow-subtle);
     }
 
-    .roles-header {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: var(--secondary);
-      border-bottom: 1px solid var(--card-border);
+    .cat-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
       font-weight: 700;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .roles-header > div {
-      padding: 16px 20px;
-    }
-
-    .roles-header > div:last-child {
-      background: var(--accent);
       color: var(--primary);
-      border-left: 1px solid var(--card-border);
+      background: var(--accent);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 10px;
     }
 
-    .roles-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      border-bottom: 1px solid var(--card-border);
-      font-size: 13.5px;
-    }
-
-    .roles-row:last-child {
-      border-bottom: none;
-    }
-
-    .roles-row > div {
-      padding: 14px 20px;
+    .cat-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
+      gap: 8px;
+    }
+
+    .cat-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
       gap: 10px;
     }
 
-    .roles-row > div:last-child {
-      background: rgba(232, 239, 233, 0.35);
-      border-left: 1px solid var(--card-border);
-      font-weight: 600;
+    .cat-list li {
+      font-size: 13px;
+      color: var(--fg);
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .cat-list li::before {
+      content: "•";
       color: var(--primary);
+      font-weight: 800;
+      font-size: 14px;
     }
 
     /* Architecture Flow Box */
@@ -438,7 +442,7 @@
       line-height: 1.45;
     }
 
-    /* Dashboard Real Time Simulation (Cockpit do Lançamento) */
+    /* Dashboard Real Time Simulation (Cockpit de Dados) */
     .cockpit-preview-card {
       background: var(--card);
       border: 1px solid var(--card-border);
@@ -591,6 +595,62 @@
 
     .log-item:last-child {
       border-bottom: none;
+    }
+
+    /* Responsibility Split Table */
+    .roles-box {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      margin-top: 24px;
+    }
+
+    .roles-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--secondary);
+      border-bottom: 1px solid var(--card-border);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .roles-header > div {
+      padding: 16px 20px;
+    }
+
+    .roles-header > div:last-child {
+      background: var(--accent);
+      color: var(--primary);
+      border-left: 1px solid var(--card-border);
+    }
+
+    .roles-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 13.5px;
+    }
+
+    .roles-row:last-child {
+      border-bottom: none;
+    }
+
+    .roles-row > div {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .roles-row > div:last-child {
+      background: rgba(232, 239, 233, 0.35);
+      border-left: 1px solid var(--card-border);
+      font-weight: 600;
+      color: var(--primary);
     }
 
     /* Comparison Table */
@@ -773,46 +833,6 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Timeline */
-    .timeline {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-top: 24px;
-    }
-
-    .timeline-step {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-md);
-      padding: 20px;
-    }
-
-    .step-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--primary);
-      background: var(--accent);
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      margin-bottom: 12px;
-    }
-
-    .step-title {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: var(--fg);
-    }
-
-    .step-desc {
-      font-size: 12.5px;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
     /* CTA Banner */
     .cta-banner {
       background: var(--primary);
@@ -867,7 +887,10 @@
     }
 
     /* Responsive Media Queries */
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
+      .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
       .cockpit-main-grid {
         grid-template-columns: 1fr;
       }
@@ -899,7 +922,7 @@
       section { padding: 28px 0; }
       .card { padding: 20px 16px; }
 
-      .grid-2, .grid-3 {
+      .grid-2, .grid-3, .grid-4 {
         grid-template-columns: 1fr;
       }
 
@@ -908,7 +931,6 @@
       .comparison-table th, .comparison-table td { padding: 12px; font-size: 12.5px; }
 
       .arch-flow-steps { grid-template-columns: 1fr; }
-      .timeline { grid-template-columns: 1fr; gap: 14px; }
 
       .pricing-card-highlight { padding: 32px 18px 24px; }
       .addon-item { flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 0; }
@@ -935,7 +957,7 @@
     @media print {
       body { background: #FFF; padding: 0; }
       header, .header-actions, .cta-banner button, .btn { display: none !important; }
-      .card, .pricing-card-highlight, .comparison-container, .cockpit-preview-card, .arch-flow-box, .roles-box {
+      .card, .pricing-card-highlight, .comparison-container, .cockpit-preview-card, .arch-flow-box, .roles-box, .cat-box {
         box-shadow: none !important;
         border: 1px solid #CCC !important;
         break-inside: avoid;
@@ -953,7 +975,7 @@
         <img src="dryos-logo.svg" alt="DRYOS" style="height: 28px; width: auto; display: block;" />
       </a>
       <div class="header-actions">
-        <span class="badge badge-primary">DRYOS Studio · Infra de Lançamento & Dados</span>
+        <span class="badge badge-primary">DRYOS Studio · Infra & Dados</span>
         <button onclick="window.print()" class="btn btn-outline" title="Exportar ou Imprimir em PDF">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           PDF
@@ -969,19 +991,19 @@
     <section class="hero">
       <div class="hero-meta">
         <span class="badge badge-success">Tech as a Service · Parceria Recorrente</span>
-        <span class="font-mono" style="font-size: 13px; color: var(--muted);">REF: STUDIO-LAUNCH-DATA-RETAINER</span>
+        <span class="font-mono" style="font-size: 13px; color: var(--muted);">REF: STUDIO-DATA-INFRA-OPS</span>
       </div>
       <h1 class="hero-title font-display">
-        Infraestrutura Técnica para Lançamentos & <span>Engenharia de Dados Contínua</span>
+        Infraestrutura, Visibilidade de Dados & <span>Automações de Operação</span>
       </h1>
       <p class="hero-subtitle">
-        Seu braço de tecnologia e dados dedicado. Cuidamos de 100% das plataformas, checkouts, automações de campanha e Cockpit em tempo real, evoluindo junto com a escala da sua operação.
+        Muito além do lançamento: integramos sua esteira inteira, construímos seu banco de dados próprio e entregamos visibilidade total da operação em tempo real com suporte contínuo.
       </p>
 
       <div class="target-card">
         <div class="target-info">
           <h4>Modelo de Contratação</h4>
-          <p>DRYOS Studio — Parceria Contínua (Infra de Lançamento & Dados)</p>
+          <p>DRYOS Studio — Parceria Contínua (Infraestrutura, Dados & Automações)</p>
         </div>
         <div class="target-validity" style="text-align: right;">
           <h4 style="font-size: 12px; color: var(--muted); text-transform: uppercase;">Validade da Proposta</h4>
@@ -990,16 +1012,16 @@
       </div>
     </section>
 
-    <!-- O Diagnóstico: Por que lançar com infra amadora custa caro? -->
+    <!-- O Diagnóstico: Os Pontos Cegos da Operação -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           O Diagnóstico Operacional
         </div>
-        <h2 class="section-title font-display">Os 3 grandes gargalos que drenam o lucro dos lançamentos</h2>
+        <h2 class="section-title font-display">Quando a empresa cresce no escuro, o lucro escapa pelos silos</h2>
         <p class="section-desc">
-          Lançamentos digitais movimentam picos intensos de tráfego e receita em janelas de poucos dias. Quando a parte técnica fica improvisada na mão da agência ou em planilhas, a conta chega no bolso.
+          Um negócio digital não para quando o carrinho fecha. Se as plataformas não se conversam, se o financeiro depende de planilhas manuais e se a liderança não tem indicadores ao vivo, a operação sangra tempo e receita.
         </p>
       </div>
 
@@ -1008,9 +1030,9 @@
           <div class="card-icon" style="background: var(--destructive-bg); color: var(--destructive);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
           </div>
-          <h3 class="card-title">Falhas na Janela Crítica</h3>
+          <h3 class="card-title">Pontos Cegos & Ilhas de Dados</h3>
           <p class="card-text">
-            Links que caem, webhooks que quebram no pico de abertura do carrinho e PIX gerados sem régua de recuperação imediata fazem até 30% das vendas se perderem silenciosamente.
+            Checkouts, CRM, WhatsApp, gateways e tráfego operam isolados. Para saber o faturamento líquido ou a taxa de conversão real, alguém precisa gastar horas copiando dados para o Excel.
           </p>
         </div>
 
@@ -1018,9 +1040,9 @@
           <div class="card-icon" style="background: var(--destructive-bg); color: var(--destructive);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>
           </div>
-          <h3 class="card-title">Dados Perdidos entre Edições</h3>
+          <h3 class="card-title">Vulnerabilidade em Momentos de Pico</h3>
           <p class="card-text">
-            A cada novo lançamento a operação começa do zero no Excel. A empresa não cruza histórico, não sabe o LTV dos alunos e gasta fortuna pagando anúncio para quem já comprou no passado.
+            No dia do lançamento ou pico de campanha, links quebram, webhooks atrasam e PIX não pagos ficam sem cobrança imediata, jogando fora o investimento pesado feito em anúncios.
           </p>
         </div>
 
@@ -1028,75 +1050,24 @@
           <div class="card-icon" style="background: var(--destructive-bg); color: var(--destructive);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           </div>
-          <h3 class="card-title">Custo Alto de Time Interno</h3>
+          <h3 class="card-title">Falta de Rastreabilidade e LTV</h3>
           <p class="card-text">
-            Contratar um Tech Lead + Engenheiro de Dados CLT custa entre R$ 12k e R$ 20k/mês + encargos. Terceirizar a engenharia com a DRYOS entrega nível sênior por uma fração desse investimento.
+            Sem um banco centralizado, você não sabe quem é aluno novo, quem já comprou outros produtos ou quanto cada cliente gerou ao longo da vida útil (LTV), pagando tráfego repetido à toa.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- Divisão de Responsabilidades -->
-    <section>
-      <div class="section-header">
-        <div class="section-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Sinergia Operacional
-        </div>
-        <h2 class="section-title font-display">Divisão de Papéis: Cada um no seu ponto mais forte</h2>
-        <p class="section-desc">
-          Trabalhamos em conjunto com o seu time de marketing ou sua agência parceira. Eles focam no criativo e na persuasão; a DRYOS garante a engenharia e os dados.
-        </p>
-      </div>
-
-      <div class="roles-box">
-        <div class="roles-header">
-          <div>Com o seu Time / Agência (Criativo & Estratégia)</div>
-          <div>Com a DRYOS Studio (Engenharia, Infra & Dados)</div>
-        </div>
-
-        <div class="roles-row">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Estratégia de Conteúdo e Posicionamento do Especialista</div>
-          <div><span class="status-check">✓</span> 100% da Infraestrutura Técnica de Lançamento</div>
-        </div>
-
-        <div class="roles-row">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Copywriting (textos de páginas, e-mails e anúncios)</div>
-          <div><span class="status-check">✓</span> Gestão e Configuração de Checkouts & Plataformas</div>
-        </div>
-
-        <div class="roles-row">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Gestão de Tráfego Pago & Criativos de Anúncio</div>
-          <div><span class="status-check">✓</span> Automações de Campanha, Lembretes de Lives & Recuperação</div>
-        </div>
-
-        <div class="roles-row">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Produção de Aulas, Vídeos e Design Gráfico</div>
-          <div><span class="status-check">✓</span> Banco de Dados Relacional Próprio (PostgreSQL Dedicado)</div>
-        </div>
-
-        <div class="roles-row">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Atendimento Comercial Humano de Vendas</div>
-          <div><span class="status-check">✓</span> Cockpit do Lançamento em Tempo Real (Analytics Unificado)</div>
-        </div>
-
-        <div class="roles-row">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Definição de Oferta e Precificação do Produto</div>
-          <div><span class="status-check">✓</span> War Room Técnico (Monitoramento ao vivo durante lives e carrinho)</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Cockpit do Lançamento (Demonstração Visual) -->
+    <!-- O Pilar Central: Visibilidade de Dados & Cockpit Executivo Live -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-          Diferencial Exclusivo DRYOS
+          Visibilidade de Dados & Informação
         </div>
-        <h2 class="section-title font-display">Cockpit do Lançamento: Dados ao Vivo em Uma Só Tela</h2>
+        <h2 class="section-title font-display">Cockpit Executivo Live: A Pulsação do Negócio em Tempo Real</h2>
         <p class="section-desc">
-          Enquanto a maioria se perde em 5 abas abertas e planilhas com delay, nossa liderança acompanha captação, tráfego, presença nas lives e conversão de checkout no mesmo painel.
+          Entregamos um painel executivo moderno e veloz, centralizando tráfego, vendas, captação, presença em lives e saúde financeira sem depender de planilhas.
         </p>
       </div>
 
@@ -1107,11 +1078,11 @@
             <span class="window-dot" style="background: #FFBD2E;"></span>
             <span class="window-dot" style="background: #27C93F;"></span>
           </div>
-          <span class="window-title">DRYOS Studio · Cockpit do Lançamento [Abertura de Carrinho]</span>
+          <span class="window-title">DRYOS Studio · Cockpit de Inteligência & Operações [TEMPO REAL]</span>
           <div style="margin-left: auto;">
             <span class="badge badge-success" style="font-size: 11px; text-transform: none;">
               <span style="width: 6px; height: 6px; border-radius: 50%; background: #1E6B3E; display: inline-block; margin-right: 4px;"></span>
-              War Room Ativo · Carrinho Aberto
+              Pipeline Ativo · Ingestão 100% Uptime
             </span>
           </div>
         </div>
@@ -1120,34 +1091,34 @@
           <!-- KPIs Top -->
           <div class="cockpit-kpis">
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Faturamento Líquido (Live)</div>
-              <div class="cockpit-kpi-value font-display">R$ 218.400</div>
+              <div class="cockpit-kpi-label">Faturamento Líquido (Mês/Ciclo)</div>
+              <div class="cockpit-kpi-value font-display">R$ 284.900</div>
               <div class="cockpit-kpi-tag" style="color: var(--success);">
-                ▲ Meta 1 Batida (109%)
+                ▲ +22.8% vs ciclo anterior
               </div>
             </div>
 
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Alunos Matriculados</div>
-              <div class="cockpit-kpi-value font-display">438</div>
+              <div class="cockpit-kpi-label">Transações Aprovadas</div>
+              <div class="cockpit-kpi-value font-display">612</div>
               <div class="cockpit-kpi-tag" style="color: var(--primary);">
-                Ticket Médio: R$ 497,00
+                Taxa de Aprovação: 95.4%
               </div>
             </div>
 
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Leads Captados (Edição)</div>
-              <div class="cockpit-kpi-value font-display">14.280</div>
+              <div class="cockpit-kpi-label">Leads Únicos Higienizados</div>
+              <div class="cockpit-kpi-value font-display">18.450</div>
               <div class="cockpit-kpi-tag" style="color: var(--success);">
-                CPL Médio: R$ 3,12 · E.164 OK
+                100% E.164 · Deduplicados
               </div>
             </div>
 
             <div class="cockpit-kpi-card">
-              <div class="cockpit-kpi-label">Recuperação de Checkout</div>
-              <div class="cockpit-kpi-value font-display">R$ 41.250</div>
+              <div class="cockpit-kpi-label">Receita Recuperada (PIX/Cartão)</div>
+              <div class="cockpit-kpi-value font-display">R$ 52.800</div>
               <div class="cockpit-kpi-tag" style="color: #92400E;">
-                83 PIX recuperados via régua
+                Régua automática ativa
               </div>
             </div>
           </div>
@@ -1156,83 +1127,83 @@
           <div class="cockpit-main-grid">
             <div class="cockpit-chart-card">
               <div class="cockpit-card-title">
-                <span>Picos de Venda por Hora (Abertura de Carrinho)</span>
-                <span style="font-size: 11.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace;">Hoje · Dia 1</span>
+                <span>Receita & Conversão por Canal de Entrada</span>
+                <span style="font-size: 11.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace;">Live Stream + Perpétuo</span>
               </div>
               
               <div class="bar-chart-mock">
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 15%;"></div>
-                  <span class="bar-label">08h</span>
+                  <div class="bar-fill" style="height: 35%;"></div>
+                  <span class="bar-label">Google</span>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 95%;"></div>
-                  <span class="bar-label">09h</span>
+                  <div class="bar-fill" style="height: 88%;"></div>
+                  <span class="bar-label">Meta Ads</span>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 75%;"></div>
-                  <span class="bar-label">10h</span>
+                  <div class="bar-fill" style="height: 65%;"></div>
+                  <span class="bar-label">Orgânico</span>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 50%;"></div>
-                  <span class="bar-label">11h</span>
+                  <div class="bar-fill" style="height: 92%;"></div>
+                  <span class="bar-label">Live CPL</span>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 42%;"></div>
-                  <span class="bar-label">12h</span>
+                  <div class="bar-fill" style="height: 52%;"></div>
+                  <span class="bar-label">E-mail</span>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 60%;"></div>
-                  <span class="bar-label">14h</span>
+                  <div class="bar-fill" style="height: 74%;"></div>
+                  <span class="bar-label">WhatsApp</span>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-fill" style="height: 85%;"></div>
-                  <span class="bar-label">Agora</span>
+                  <div class="bar-fill" style="height: 98%;"></div>
+                  <span class="bar-label">Recup.</span>
                 </div>
               </div>
 
               <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 12px; color: var(--muted);">
-                <span>Taxa de Conversão da Live: <strong>6.8%</strong></span>
-                <span>Checkout Uptime: <strong>100%</strong></span>
+                <span>CPL Médio da Esteira: <strong>R$ 2,85</strong></span>
+                <span>ROAS Consolidado: <strong>5.4x</strong></span>
               </div>
             </div>
 
             <div class="cockpit-logs-card">
               <div class="cockpit-card-title">
-                <span>Régua de Automação & Webhooks</span>
-                <span class="badge" style="background: #E8EFE9; color: var(--primary); font-size: 10px;">Tempo Real</span>
+                <span>Eventos de Automação em Tempo Real</span>
+                <span class="badge" style="background: #E8EFE9; color: var(--primary); font-size: 10px;">Ativo</span>
               </div>
 
               <div class="log-item">
                 <div>
-                  <strong style="color: var(--primary);">Venda Cartão Aprovada</strong>
-                  <div style="font-size: 10.5px; color: var(--muted);">Aluno adicionado na área de membros</div>
+                  <strong style="color: var(--primary);">Checkout Aprovado</strong>
+                  <div style="font-size: 10.5px; color: var(--muted);">Acesso liberado + Tag Comprador aplicada</div>
                 </div>
-                <span class="badge badge-success" style="font-size: 10px;">Kiwify OK</span>
+                <span class="badge badge-success" style="font-size: 10px;">200 OK</span>
               </div>
 
               <div class="log-item">
                 <div>
-                  <strong style="color: var(--primary);">Disparo WhatsApp (Carrinho)</strong>
-                  <div style="font-size: 10.5px; color: var(--muted);">Lote 14 enviado para 3.200 leads VIP</div>
+                  <strong style="color: var(--primary);">Deduplicação Inteligente</strong>
+                  <div style="font-size: 10.5px; color: var(--muted);">Aluno de edição anterior reengajado</div>
                 </div>
-                <span class="badge badge-success" style="font-size: 10px;">Entregue</span>
+                <span class="badge badge-primary" style="font-size: 10px;">LTV +1</span>
               </div>
 
               <div class="log-item">
                 <div>
                   <strong style="color: #92400E;">Recuperação PIX Gerado</strong>
-                  <div style="font-size: 10.5px; color: var(--muted);">Disparo automático em 15 minutos</div>
+                  <div style="font-size: 10.5px; color: var(--muted);">Notificação amigável disparada via WA</div>
                 </div>
-                <span class="badge badge-warning" style="font-size: 10px;">Fila</span>
+                <span class="badge badge-warning" style="font-size: 10px;">Enviado</span>
               </div>
 
               <div class="log-item">
                 <div>
-                  <strong style="color: var(--primary);">Deduplicação de Base</strong>
-                  <div style="font-size: 10.5px; color: var(--muted);">Lead de 2025 reengajado e convertido</div>
+                  <strong style="color: var(--primary);">Alerta no WhatsApp da Diretoria</strong>
+                  <div style="font-size: 10.5px; color: var(--muted);">Relatório diário de vendas enviado 19h00</div>
                 </div>
-                <span class="badge badge-primary" style="font-size: 10px;">LTV +1</span>
+                <span class="badge badge-success" style="font-size: 10px;">Entregue</span>
               </div>
             </div>
           </div>
@@ -1240,16 +1211,189 @@
       </div>
     </section>
 
-    <!-- Tabela Comparativa de Modelos -->
+    <!-- Nosso Repertório de Automações -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Repertório DRYOS
+        </div>
+        <h2 class="section-title font-display">Automações de ponta a ponta: O que colocamos para rodar</h2>
+        <p class="section-desc">
+          Isso não é lista genérica de promessas. É o repertório de esteiras comprovadas que já construímos e sustentamos para nossos clientes:
+        </p>
+      </div>
+
+      <div class="grid-4">
+        <!-- Cat 1 -->
+        <div class="cat-box">
+          <span class="cat-badge">01 · MARKETING & LANÇAMENTO</span>
+          <h3 class="cat-title">Captação & Carrinho</h3>
+          <ul class="cat-list">
+            <li>Leads de anúncio (Meta, Google) caindo direto no banco e CRM</li>
+            <li>Sincronização bidirecional com ActiveCampaign, RD Station e Mailchimp</li>
+            <li>Formulário de captura → CRM + aviso no WhatsApp do time</li>
+            <li>Checkout aprovado (Kiwify, Hotmart, Eduzz) → liberação imediata</li>
+            <li>Tags e segmentação por comportamento do lead</li>
+            <li>Réguas de aquecimento, avisos de lives e recuperação ativa de carrinho</li>
+          </ul>
+        </div>
+
+        <!-- Cat 2 -->
+        <div class="cat-box">
+          <span class="cat-badge">02 · VENDAS & COMERCIAL</span>
+          <h3 class="cat-title">Conversão & Follow-up</h3>
+          <ul class="cat-list">
+            <li>Distribuição automática de lead para o closer ou vendedor certo</li>
+            <li>Follow-up automático por etapa do funil (sem esquecimento)</li>
+            <li>Lead quente notificado no WhatsApp do vendedor no timing exato</li>
+            <li>Estágio do CRM atualizado por evento real (sem arrastar cards)</li>
+            <li>Régua de resgate para no-show de reunião ou formulário incompleto</li>
+            <li>Lembrete de retorno para propostas enviadas</li>
+          </ul>
+        </div>
+
+        <!-- Cat 3 -->
+        <div class="cat-box">
+          <span class="cat-badge">03 · FINANCEIRO & RECEITA</span>
+          <h3 class="cat-title">Cobrança & Faturamento</h3>
+          <ul class="cat-list">
+            <li>Régua de cobrança amigável no WhatsApp: antes, no dia e após vencimento</li>
+            <li>Geração automática de boletos e chave PIX Copia-e-Cola</li>
+            <li>Emissão automatizada de notas fiscais pós-compensação</li>
+            <li>Conciliação bancária dos pagamentos recebidos</li>
+            <li>Aviso de inadimplência e escalonamento para contato humano</li>
+            <li>Avisos de renovação e recorrência disparados com antecedência</li>
+          </ul>
+        </div>
+
+        <!-- Cat 4 -->
+        <div class="cat-box">
+          <span class="cat-badge">04 · DADOS & WHATSAPP</span>
+          <h3 class="cat-title">Inteligência & Grupos</h3>
+          <ul class="cat-list">
+            <li>Cockpit de KPIs ao vivo sem dependência de planilhas</li>
+            <li>Relatório automático no WhatsApp/e-mail da diretoria</li>
+            <li>Alertas proativos quando um indicador sai da faixa de segurança</li>
+            <li>Canonização E.164 e deduplicação inteligente de contatos</li>
+            <li>Gestão automatizada de entrada e avisos em Grupos VIP</li>
+            <li>Logs auditáveis de entrega e encaminhamento ao humano</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nossos Cuidados com a Infraestrutura de Dados -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Segurança & Engenharia
+        </div>
+        <h2 class="section-title font-display">Os cuidados rigorosos que tomamos com seus dados</h2>
+        <p class="section-desc">
+          Tratamos a infraestrutura da sua empresa com padrão corporativo. Seus dados nunca ficam expostos nem misturados.
+        </p>
+      </div>
+
+      <div class="arch-flow-box">
+        <div class="arch-flow-steps">
+          <div class="arch-step-item">
+            <span class="arch-step-badge">CUIDADO 01</span>
+            <h4 class="arch-step-title">Isolamento Absoluto</h4>
+            <p class="arch-step-desc">
+              Seus dados nunca se misturam com os de outros clientes. Cada operação possui sua própria instância PostgreSQL dedicada em nuvem.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">CUIDADO 02</span>
+            <h4 class="arch-step-title">Soberania do Cliente</h4>
+            <p class="arch-step-desc">
+              A base é 100% sua. Se amanhã você trocar de checkout ou CRM, seu histórico de clientes, transações e LTV permanece intacto.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">CUIDADO 03</span>
+            <h4 class="arch-step-title">Canonização E.164</h4>
+            <p class="arch-step-desc">
+              Algoritmo automático que limpa caracteres e formata todo telefone no padrão internacional, garantindo zero perdas no WhatsApp.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">CUIDADO 04</span>
+            <h4 class="arch-step-title">LGPD, RLS & Backups</h4>
+            <p class="arch-step-desc">
+              Row Level Security garantindo controle rigoroso de acesso, criptografia TLS 1.3 e backups diários com recuperação pontual.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divisão de Papéis -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Sinergia Operacional
+        </div>
+        <h2 class="section-title font-display">Divisão de Papéis: Cada um no seu ponto mais forte</h2>
+        <p class="section-desc">
+          Trabalhamos junto com o seu time de marketing ou agência parceira. Eles cuidam da persuasão e do criativo; a DRYOS garante a engenharia, os dados e a estabilidade.
+        </p>
+      </div>
+
+      <div class="roles-box">
+        <div class="roles-header">
+          <div>Com o seu Time / Agência (Criativo & Estratégia)</div>
+          <div>Com a DRYOS Studio (Engenharia, Dados & Automações)</div>
+        </div>
+
+        <div class="roles-row">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Estratégia de Conteúdo e Posicionamento do Especialista</div>
+          <div><span class="status-check">✓</span> Infraestrutura Técnica Completa da Esteira & Lançamentos</div>
+        </div>
+
+        <div class="roles-row">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Copywriting (textos de páginas, e-mails e criativos)</div>
+          <div><span class="status-check">✓</span> Gestão e Conexão de Checkouts, Plataformas & Webhooks</div>
+        </div>
+
+        <div class="roles-row">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Gestão de Tráfego Pago & Compra de Mídia</div>
+          <div><span class="status-check">✓</span> Automações de Campanha, Lembretes & Recuperação Ativa</div>
+        </div>
+
+        <div class="roles-row">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Produção de Aulas, Vídeos e Design Gráfico</div>
+          <div><span class="status-check">✓</span> Banco de Dados Relacional Próprio (PostgreSQL Dedicado)</div>
+        </div>
+
+        <div class="roles-row">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Atendimento Comercial Humano de Vendas</div>
+          <div><span class="status-check">✓</span> Cockpit Executivo Live (Faturamento, CPL, LTV e Conversão)</div>
+        </div>
+
+        <div class="roles-row">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg> Definição de Oferta e Precificação do Produto</div>
+          <div><span class="status-check">✓</span> War Room Técnico (Monitoramento ao vivo em janelas de pico)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabela Comparativa de Mercado -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
           Comparativo de Mercado
         </div>
-        <h2 class="section-title font-display">Por que terceirizar a engenharia com a DRYOS?</h2>
+        <h2 class="section-title font-display">DRYOS vs Time Interno vs Agência</h2>
         <p class="section-desc">
-          Compare os custos e riscos entre contratar time interno, sobrecarregar sua agência ou contar com a DRYOS como parceira técnica contínua.
+          Veja por que terceirizar a engenharia e os dados com a DRYOS é a decisão mais eficiente para empresas em crescimento.
         </p>
       </div>
 
@@ -1265,44 +1409,44 @@
             <tr>
               <th style="width: 34%;">Critérios de Avaliação</th>
               <th style="width: 33%;" class="highlight-col">DRYOS Studio (Infra & Dados)</th>
-              <th style="width: 33%;">Contratar Tech Lead Interno CLT</th>
+              <th style="width: 33%;">Contratar Tech Lead CLT</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><strong>Investimento Mensal Fixo</strong></td>
-              <td class="highlight-col"><span class="status-check">R$ 3.000,00 / mês</span> (previsível e ajustável à escala)</td>
-              <td><span class="status-cross">R$ 10.000 a R$ 15.000 / mês</span></td>
+              <td class="highlight-col"><span class="status-check">R$ 3.000,00 / mês</span> (ajustável à escala)</td>
+              <td><span class="status-cross">R$ 10.000 a R$ 16.000 / mês</span></td>
             </tr>
             <tr>
               <td><strong>Custo de Setup Inicial</strong></td>
-              <td class="highlight-col"><span class="status-check">R$ 0,00 (Isento)</span> incluso no ciclo da parceria</td>
-              <td>Custo de recrutamento, onboarding e maquinário</td>
+              <td class="highlight-col"><span class="status-check">R$ 0,00 (Isento)</span> incluso no ciclo</td>
+              <td>Processo seletivo demorado e caro</td>
             </tr>
             <tr>
               <td><strong>Encargos Trabalhistas & Férias</strong></td>
               <td class="highlight-col"><span class="status-check">Zero</span> (Contrato B2B direto de prestação)</td>
-              <td><span class="status-cross">+70% a 100% em encargos</span>, FGTS, 13º e rescisão</td>
+              <td><span class="status-cross">+70% a 100% em encargos</span> e rescisão</td>
             </tr>
             <tr>
-              <td><strong>Cockpit do Lançamento Integrado</strong></td>
-              <td class="highlight-col"><span class="status-check">Pronto & Ativo</span> com visão executiva em tempo real</td>
+              <td><strong>Visibilidade de Dados & Cockpit</strong></td>
+              <td class="highlight-col"><span class="status-check">Pronto & Live</span> com visão executiva em tempo real</td>
               <td>Exige meses de desenvolvimento interno do zero</td>
             </tr>
             <tr>
-              <td><strong>Monitoramento em Janela Crítica (War Room)</strong></td>
-              <td class="highlight-col"><span class="status-check">Incluso</span> nos dias de pico de live e carrinho</td>
-              <td>Depende da disponibilidade de 1 único funcionário</td>
+              <td><strong>Repertório de Automações</strong></td>
+              <td class="highlight-col"><span class="status-check">4 Frentes Ativas</span> (Marketing, Vendas, Financeiro e WA)</td>
+              <td>Focado apenas em tarefas pontuais do dia</td>
             </tr>
             <tr>
-              <td><strong>Banco de Dados Próprio (PostgreSQL)</strong></td>
-              <td class="highlight-col"><span class="status-check">Soberania Total</span> (dados pertencem 100% à sua empresa)</td>
-              <td>Estruturado apenas se o profissional tiver perfil sênior</td>
+              <td><strong>Estabilidade em Picos (War Room)</strong></td>
+              <td class="highlight-col"><span class="status-check">Equipe dedicada</span> monitorando carrinho e lives</td>
+              <td>Depende da disponibilidade de 1 única pessoa</td>
             </tr>
             <tr>
-              <td><strong>Canonização E.164 & Deduplicação</strong></td>
-              <td class="highlight-col"><span class="status-check">Algoritmo Ativo</span> para zero erros de WhatsApp e SMS</td>
-              <td>Geralmente negligenciado, gerando perdas de leads</td>
+              <td><strong>Banco PostgreSQL Corporativo</strong></td>
+              <td class="highlight-col"><span class="status-check">Soberania Total</span> (dados pertencem à sua empresa)</td>
+              <td>Depende do nível de maturidade do profissional</td>
             </tr>
           </tbody>
         </table>
@@ -1318,7 +1462,7 @@
         </div>
         <h2 class="section-title font-display">Modelo de Parceria: R$ 3.000 / mês</h2>
         <p class="section-desc" style="margin-left: auto; margin-right: auto;">
-          Um fee técnico recorrente acessível para sustentar seus lançamentos com padrão sênior, evoluindo de forma combinada conforme o faturamento da operação crescer.
+          Uma mensalidade técnica acessível para estruturar e sustentar sua operação com engenharia sênior, evoluindo progressivamente conforme seu faturamento escalar.
         </p>
       </div>
 
@@ -1328,10 +1472,10 @@
 
           <div class="pricing-hero-block">
             <h3 class="font-display" style="font-size: 24px; font-weight: 800; color: var(--primary);">
-              Infraestrutura de Lançamento & Engenharia de Dados
+              Infraestrutura, Visibilidade de Dados & Automações de Operação
             </h3>
             <p style="color: var(--muted); font-size: 14px; margin-top: 6px;">
-              Sustentação técnica contínua para seus lançamentos, checkouts, automações e painel de inteligência de dados.
+              Sustentação técnica contínua para seus lançamentos, rotinas diárias, checkouts e painel executivo de inteligência.
             </p>
 
             <div class="pricing-hero-val-box">
@@ -1341,7 +1485,7 @@
             </div>
 
             <div style="margin-top: 10px; font-size: 12px; color: var(--success); font-weight: 700;">
-              ✓ Taxa de Setup Inicial: R$ 0,00 (Inclusa na parceria) · Sem multas rescisórias abusivas
+              ✓ Taxa de Setup Inicial: R$ 0,00 (Inclusa na parceria) · Sem multas abusivas
             </div>
           </div>
 
@@ -1352,47 +1496,47 @@
           <div class="pricing-features-grid">
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Gestão Técnica de Plataformas & Checkouts</strong><br><span style="font-size: 11.5px; color: var(--muted);">Configuração de Kiwify, Hotmart, Eduzz, ActiveCampaign e webhooks de alta disponibilidade.</span></div>
+              <div><strong>Visibilidade de Dados & Cockpit Live</strong><br><span style="font-size: 11.5px; color: var(--muted);">Dashboard executivo em tempo real com faturamento, conversão, CPL, CAC e LTV.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Automações de Campanha & Lembretes</strong><br><span style="font-size: 11.5px; color: var(--muted);">Réguas automáticas de captação, confirmação, aquecimento e avisos de live ao vivo.</span></div>
+              <div><strong>Repertório Completo de Automações</strong><br><span style="font-size: 11.5px; color: var(--muted);">Esteiras ativas de Marketing & Lançamento, Vendas, Financeiro e WhatsApp.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Recuperação Ativa de Vendas</strong><br><span style="font-size: 11.5px; color: var(--muted);">Automações imediatas para PIX não pago, cartão recusado e abandono de carrinho.</span></div>
+              <div><strong>Banco PostgreSQL Próprio & Isolado</strong><br><span style="font-size: 11.5px; color: var(--muted);">Soberania total: dados nunca misturados com outros clientes e backups diários.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Cockpit do Lançamento em Tempo Real</strong><br><span style="font-size: 11.5px; color: var(--muted);">Painel exclusivo com CPL, presença nas lives, conversão no carrinho e histórico de edições.</span></div>
+              <div><strong>Higienização E.164 & Deduplicação</strong><br><span style="font-size: 11.5px; color: var(--muted);">Telefones formatados no padrão internacional e histórico unificado de clientes.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Banco PostgreSQL Próprio & Isolado</strong><br><span style="font-size: 11.5px; color: var(--muted);">Soberania total sobre os dados dos seus alunos e leads, com backups diários automáticos.</span></div>
+              <div><strong>Infraestrutura de Lançamento & Checkouts</strong><br><span style="font-size: 11.5px; color: var(--muted);">Configuração de Kiwify, Hotmart, Eduzz, ActiveCampaign e webhooks com SSL.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Higienização E.164 & Deduplicação de Base</strong><br><span style="font-size: 11.5px; color: var(--muted);">Telefones formatados com DDI/DDD e histórico unificado de compras entre lançamentos.</span></div>
+              <div><strong>Recuperação Ativa de Vendas</strong><br><span style="font-size: 11.5px; color: var(--muted);">Disparos imediatos para PIX não pago, cartão recusado e abandono de carrinho.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>War Room Técnico Dedicado</strong><br><span style="font-size: 11.5px; color: var(--muted);">Monitoramento ativo da equipe DRYOS durante os momentos mais críticos das lives e carrinho.</span></div>
+              <div><strong>War Room Técnico em Picos</strong><br><span style="font-size: 11.5px; color: var(--muted);">Monitoramento ativo da equipe DRYOS durante aulas ao vivo e abertura de carrinho.</span></div>
             </div>
 
             <div class="feature-item">
               <span class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-              <div><strong>Suporte Técnico Contínuo via WhatsApp</strong><br><span style="font-size: 11.5px; color: var(--muted);">Canal direto com os engenheiros da DRYOS para ajustes rápidos de esteira e novos fluxos.</span></div>
+              <div><strong>Suporte Técnico Contínuo via WhatsApp</strong><br><span style="font-size: 11.5px; color: var(--muted);">Canal direto com nossos engenheiros para ajustes rápidos e novas automações.</span></div>
             </div>
           </div>
 
           <div style="padding-top: 20px; border-top: 1px solid var(--card-border); text-align: center;">
-            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20quero%20ativar%20a%20Parceria%20de%20Infra%20para%20Lan%C3%A7amentos%20e%20Dados%20(R%24%203.000%2Fm%C3%AAs)%20com%20a%20DRYOS!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
+            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20quero%20ativar%20a%20Parceria%20de%20Infra%20e%20Dados%20da%20DRYOS%20(R%24%203.000%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
               Ativar Parceria Contínua (R$ 3.000/mês)
             </a>
             <p style="font-size: 11.5px; color: var(--muted); margin-top: 10px;">
@@ -1408,60 +1552,20 @@
           Cláusula de Evolução Progressiva da Parceria
         </h4>
         <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 12px;">
-          O valor de R$ 3.000/mês é desenhado para dar sustentação total nesta fase inicial. Conforme sua esteira de produtos e o faturamento escalarem, o modelo evolui proporcionalmente:
+          O valor de R$ 3.000/mês sustenta com folga esta fase inicial. Conforme sua esteira de produtos e faturamento escalarem, o modelo evolui proporcionalmente:
         </p>
 
         <div class="addon-item">
-          <span><strong>Fase Inicial (Atual):</strong> Estruturação da esteira, lançamentos de tração, Cockpit Live e banco PostgreSQL</span>
+          <span><strong>Fase Inicial (Atual):</strong> Estruturação da esteira, visibilidade de dados, Cockpit Live, automações e banco PostgreSQL</span>
           <span class="addon-price">R$ 3.000,00 / mês</span>
         </div>
         <div class="addon-item">
-          <span><strong>Fase de Escala Média:</strong> Múltiplos produtos simultâneos no perpétuo + lançamentos mensais contínuos</span>
+          <span><strong>Fase de Escala Média:</strong> Múltiplos produtos simultâneos no perpétuo + lançamentos mensais pesados</span>
           <span class="addon-price">Ajustado sob metas combinadas</span>
         </div>
         <div class="addon-item">
-          <span><strong>Expansão com IA:</strong> Integração de Agentes de Inteligência Artificial no WhatsApp com consulta ao banco</span>
+          <span><strong>Expansão com IA Especializada:</strong> Agentes de Inteligência Artificial no WhatsApp conectados ao banco de dados em tempo real</span>
           <span class="addon-price">Módulo opcional sob demanda</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Cronograma de Ativação -->
-    <section>
-      <div class="section-header">
-        <div class="section-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          Primeiros Passos
-        </div>
-        <h2 class="section-title font-display">Ciclo de Ativação da Parceria</h2>
-        <p class="section-desc">
-          Entramos em campo imediatamente após a aprovação para deixar tudo pronto antes da sua próxima data de lançamento.
-        </p>
-      </div>
-
-      <div class="timeline">
-        <div class="timeline-step">
-          <span class="step-number">SEMANA 01</span>
-          <h4 class="step-title">Auditoria & Setup</h4>
-          <p class="step-desc">
-            Mapeamento das plataformas, provisionamento do PostgreSQL em nuvem e configuração inicial dos webhooks.
-          </p>
-        </div>
-
-        <div class="timeline-step">
-          <span class="step-number">SEMANA 02</span>
-          <h4 class="step-title">Cockpit & Automações</h4>
-          <p class="step-desc">
-            Construção das réguas de captação e lembretes, higienização E.164 e montagem do Cockpit do Lançamento ao vivo.
-          </p>
-        </div>
-
-        <div class="timeline-step">
-          <span class="step-number">SEMANA 03 EM DIANTE</span>
-          <h4 class="step-title">Operação & War Room</h4>
-          <p class="step-desc">
-            Sustentação ativa durante as aulas, acompanhamento em tempo real do carrinho e otimização contínua entre lançamentos.
-          </p>
         </div>
       </div>
     </section>
@@ -1469,15 +1573,15 @@
     <!-- CTA Final -->
     <section>
       <div class="cta-banner">
-        <h2 class="cta-title font-display">Pronto para dar estabilidade e inteligência aos seus lançamentos?</h2>
+        <h2 class="cta-title font-display">Pronto para dar estabilidade e inteligência à sua operação?</h2>
         <p class="cta-desc">
-          Chega de perder vendas por checkout quebrado, webhook desconectado e planilhas confusas. Tenha um time de engenharia sênior sustentando sua operação.
+          Chega de operar no escuro com planilhas que atrasam e ferramentas desconectadas. Tenha um time sênior cuidando da sua engenharia, infraestrutura e dados.
         </p>
         <div class="cta-buttons">
           <button onclick="window.print()" class="btn btn-outline" style="color: #FAF9F5; border-color: rgba(255,255,255,0.3);">
             Salvar Proposta (PDF)
           </button>
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20analisei%20a%20Proposta%20de%20Infra%20de%20Lan%C3%A7amentos%20e%20Dados%20e%20quero%20iniciar%20a%20parceria%20(R%24%203k%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-light">
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%2C%20analisei%20a%20Proposta%20de%20Infra%2C%20Dados%20e%20Automa%C3%A7%C3%B5es%20da%20DRYOS%20e%20quero%20iniciar%20a%20parceria%20(R%24%203k%2Fm%C3%AAs)!" target="_blank" rel="noopener noreferrer" class="btn btn-light">
             Falar com a DRYOS via WhatsApp
           </a>
         </div>
@@ -1492,7 +1596,7 @@
           DRYOS — Sistemas de Crescimento & Engenharia Sob Medida
         </p>
         <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">
-          Studio Launch · Infraestrutura para Lançamentos · Engenharia de Dados · Inteligência Artificial
+          Visibilidade de Dados · Automações de Processos · Infraestrutura de Lançamento · Inteligência Artificial
         </p>
         <p style="font-size: 11px; color: var(--muted); margin-top: 2px;">
           Esta proposta técnica e comercial é confidencial e válida por 7 dias a partir da data de envio.
