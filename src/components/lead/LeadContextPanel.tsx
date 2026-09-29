@@ -72,6 +72,15 @@ function Field({
   );
 }
 
+function SectionHeading({ icon: Icon, label }: { icon: typeof Building2; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </div>
+  );
+}
+
 type TagTools = {
   catalog: LeadTag[];
   assigned: LeadTag[];
@@ -200,120 +209,106 @@ export function LeadContextBody({
         <TabsTrigger value="anotacoes" className="text-xs">Anotações</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="informacoes" className="space-y-4">
-      <div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Lead</div>
-        <div className="font-semibold text-sm mt-0.5">{company || importedName || person || leadTitle(conversation)}</div>
-        {prospect?.origem && (
-          <Badge variant="secondary" className="mt-2 text-[10px]">
-            {prospect.origem}
-          </Badge>
-        )}
-      </div>
-
-      {lossLabel && (
-        <>
-          <Separator />
-          <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />
-        </>
-      )}
-
-      {ownerUserId && orgMembers && orgMembers.length > 1 && onTransfer && (
-        <>
-          <Separator />
-          <ConversationOwnerActions
-            ownerUserId={ownerUserId}
-            members={orgMembers}
-            currentUserId={currentUserId}
-            onTransfer={onTransfer}
-          />
-        </>
-      )}
-
-      <Separator />
-
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor={`lead-name-${conversation.id}`}>Nome</Label>
-          <Input id={`lead-name-${conversation.id}`} value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`lead-company-${conversation.id}`}>Empresa</Label>
-          <Input id={`lead-company-${conversation.id}`} value={form.company} onChange={(e) => setForm((prev) => ({ ...prev, company: e.target.value }))} />
-        </div>
-        {importedName && importedName !== form.name && (
-          <Field icon={User} label="Nome importado" value={importedName} />
-        )}
-        <Field
-          icon={User}
-          label="Nome no WhatsApp"
-          value={person && person !== importedName ? person : null}
-        />
-        <div className="space-y-1.5">
-          <Label htmlFor={`lead-city-${conversation.id}`}>Cidade</Label>
-          <Input id={`lead-city-${conversation.id}`} value={form.city} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))} />
-        </div>
-        <Field icon={Phone} label="WhatsApp" value={phone} />
-        <div className="space-y-1.5">
-          <Label htmlFor={`lead-email-${conversation.id}`}>E-mail</Label>
-          <Input id={`lead-email-${conversation.id}`} type="email" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
-        </div>
-        <Button className="w-full" onClick={() => void saveLead()} disabled={saving}>
-          {saving ? "Salvando…" : "Salvar dados"}
-        </Button>
-      </div>
-
-      {tags && (
-        <>
-          <Separator />
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-              <Tags className="w-3 h-3" />
-              Tags
-            </div>
-            <LeadTagEditor
-              conversationId={conversation.id}
-              catalog={tags.catalog}
-              assigned={tags.assigned}
-              createTag={tags.createTag}
-              assign={tags.assign}
-              unassign={tags.unassign}
-            />
+      <TabsContent value="informacoes" className="space-y-5">
+        <div className="space-y-1">
+          <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Lead selecionado</div>
+          <div className="text-base font-semibold leading-tight">{company || importedName || person || leadTitle(conversation)}</div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {person && person !== company && <span>{person}</span>}
+            {city && <span>{person && person !== company ? "·" : ""} {city}</span>}
+            {prospect?.origem && <Badge variant="secondary" className="text-[10px]">{prospect.origem}</Badge>}
           </div>
-        </>
-      )}
+        </div>
 
-      {extraEntries.length > 0 && (
-        <>
-          <Separator />
+        <Separator />
+
+        <section className="space-y-3">
+          <SectionHeading icon={User} label="Perfil" />
           <div className="space-y-3">
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-              <Tag className="w-3 h-3" />
-              Dados da importação
+            <div className="space-y-1.5">
+              <Label htmlFor={`lead-name-${conversation.id}`}>Nome</Label>
+              <Input id={`lead-name-${conversation.id}`} value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
             </div>
-            {extraEntries.map(([k, v]) => (
-              <div key={k} className="space-y-0.5">
-                <div className="text-[11px] text-muted-foreground">{k}</div>
-                <div className="text-sm break-words">{String(v)}</div>
-              </div>
-            ))}
+            <div className="space-y-1.5">
+              <Label htmlFor={`lead-company-${conversation.id}`}>Empresa</Label>
+              <Input id={`lead-company-${conversation.id}`} value={form.company} onChange={(e) => setForm((prev) => ({ ...prev, company: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`lead-city-${conversation.id}`}>Cidade</Label>
+              <Input id={`lead-city-${conversation.id}`} value={form.city} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))} />
+            </div>
+            <Button className="w-full" onClick={() => void saveLead()} disabled={saving}>
+              {saving ? "Salvando…" : "Salvar perfil"}
+            </Button>
           </div>
-        </>
-      )}
+        </section>
+
+        <Separator />
+
+        <section className="space-y-3">
+          <SectionHeading icon={Phone} label="Contato" />
+          <div className="space-y-3">
+            <Field icon={Phone} label="WhatsApp" value={phone} />
+            <div className="space-y-1.5">
+              <Label htmlFor={`lead-email-${conversation.id}`}>E-mail</Label>
+              <Input id={`lead-email-${conversation.id}`} type="email" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
+            </div>
+            {importedName && importedName !== form.name && <Field icon={User} label="Nome importado" value={importedName} />}
+            <Field icon={User} label="Nome no WhatsApp" value={person && person !== importedName ? person : null} />
+          </div>
+        </section>
+
+        <Separator />
+
+        <section className="space-y-3">
+          <SectionHeading icon={Tags} label="Operação" />
+          {lossLabel && <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />}
+          {ownerUserId && orgMembers && orgMembers.length > 1 && onTransfer && (
+            <ConversationOwnerActions
+              ownerUserId={ownerUserId}
+              members={orgMembers}
+              currentUserId={currentUserId}
+              onTransfer={onTransfer}
+            />
+          )}
+          {tags && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Tags</div>
+              <LeadTagEditor
+                conversationId={conversation.id}
+                catalog={tags.catalog}
+                assigned={tags.assigned}
+                createTag={tags.createTag}
+                assign={tags.assign}
+                unassign={tags.unassign}
+              />
+            </div>
+          )}
+        </section>
+
+        {extraEntries.length > 0 && (
+          <>
+            <Separator />
+            <section className="space-y-3">
+              <SectionHeading icon={Tag} label="Importação" />
+              {extraEntries.map(([k, v]) => (
+                <div key={k} className="space-y-0.5">
+                  <div className="text-[11px] text-muted-foreground">{k}</div>
+                  <div className="text-sm break-words">{String(v)}</div>
+                </div>
+              ))}
+            </section>
+          </>
+        )}
 
         {!company && !importedName && !city && extraEntries.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          Sem ficha importada. Empresa e cidade entram pelo CSV ou pelo Extrator.
-        </p>
+          <p className="text-xs text-muted-foreground">Sem ficha importada. Empresa e cidade entram pelo CSV ou pelo Extrator.</p>
         )}
       </TabsContent>
 
       <TabsContent value="anotacoes" className="space-y-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-            <StickyNote className="w-3 h-3" />
-            Contexto do lead
-          </div>
+          <SectionHeading icon={StickyNote} label="Contexto do lead" />
           <p className="text-xs text-muted-foreground">
             Registre dores, objetivos, cenário e informações importantes para uma futura proposta.
           </p>
