@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LeadTagEditor } from "@/components/lead/LeadTagEditor";
 import type { LeadTag } from "@/lib/lead-tags";
 import { ConversationOwnerActions } from "@/components/org/ConversationOwnerActions";
@@ -222,9 +223,12 @@ export function LeadContextBody({
 
         <Separator />
 
-        <section className="space-y-3">
-          <SectionHeading icon={User} label="Perfil" />
-          <div className="space-y-3">
+        <Accordion type="multiple" defaultValue={["perfil", "operacao"]} className="w-full">
+          <AccordionItem value="perfil">
+            <AccordionTrigger className="py-3 hover:no-underline">
+              <SectionHeading icon={User} label="Perfil" />
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3 pb-4">
             <div className="space-y-1.5">
               <Label htmlFor={`lead-name-${conversation.id}`}>Nome</Label>
               <Input id={`lead-name-${conversation.id}`} value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
@@ -240,14 +244,14 @@ export function LeadContextBody({
             <Button className="w-full" onClick={() => void saveLead()} disabled={saving}>
               {saving ? "Salvando…" : "Salvar perfil"}
             </Button>
-          </div>
-        </section>
+            </AccordionContent>
+          </AccordionItem>
 
-        <Separator />
-
-        <section className="space-y-3">
-          <SectionHeading icon={Phone} label="Contato" />
-          <div className="space-y-3">
+          <AccordionItem value="contato">
+            <AccordionTrigger className="py-3 hover:no-underline">
+              <SectionHeading icon={Phone} label="Contato" />
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3 pb-4">
             <Field icon={Phone} label="WhatsApp" value={phone} />
             <div className="space-y-1.5">
               <Label htmlFor={`lead-email-${conversation.id}`}>E-mail</Label>
@@ -255,51 +259,55 @@ export function LeadContextBody({
             </div>
             {importedName && importedName !== form.name && <Field icon={User} label="Nome importado" value={importedName} />}
             <Field icon={User} label="Nome no WhatsApp" value={person && person !== importedName ? person : null} />
-          </div>
-        </section>
+            </AccordionContent>
+          </AccordionItem>
 
-        <Separator />
-
-        <section className="space-y-3">
-          <SectionHeading icon={Tags} label="Operação" />
-          {lossLabel && <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />}
-          {ownerUserId && orgMembers && orgMembers.length > 1 && onTransfer && (
-            <ConversationOwnerActions
-              ownerUserId={ownerUserId}
-              members={orgMembers}
-              currentUserId={currentUserId}
-              onTransfer={onTransfer}
-            />
-          )}
-          {tags && (
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">Tags</div>
-              <LeadTagEditor
-                conversationId={conversation.id}
-                catalog={tags.catalog}
-                assigned={tags.assigned}
-                createTag={tags.createTag}
-                assign={tags.assign}
-                unassign={tags.unassign}
-              />
-            </div>
-          )}
-        </section>
-
-        {extraEntries.length > 0 && (
-          <>
-            <Separator />
-            <section className="space-y-3">
-              <SectionHeading icon={Tag} label="Importação" />
-              {extraEntries.map(([k, v]) => (
-                <div key={k} className="space-y-0.5">
-                  <div className="text-[11px] text-muted-foreground">{k}</div>
-                  <div className="text-sm break-words">{String(v)}</div>
+          <AccordionItem value="operacao">
+            <AccordionTrigger className="py-3 hover:no-underline">
+              <SectionHeading icon={Tags} label="Operação" />
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3 pb-4">
+              {lossLabel && <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />}
+              {ownerUserId && orgMembers && orgMembers.length > 1 && onTransfer && (
+                <ConversationOwnerActions
+                  ownerUserId={ownerUserId}
+                  members={orgMembers}
+                  currentUserId={currentUserId}
+                  onTransfer={onTransfer}
+                />
+              )}
+              {tags && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">Tags</div>
+                  <LeadTagEditor
+                    conversationId={conversation.id}
+                    catalog={tags.catalog}
+                    assigned={tags.assigned}
+                    createTag={tags.createTag}
+                    assign={tags.assign}
+                    unassign={tags.unassign}
+                  />
                 </div>
-              ))}
-            </section>
-          </>
-        )}
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {extraEntries.length > 0 && (
+            <AccordionItem value="importacao">
+              <AccordionTrigger className="py-3 hover:no-underline">
+                <SectionHeading icon={Tag} label="Importação" />
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 pb-4">
+                {extraEntries.map(([k, v]) => (
+                  <div key={k} className="space-y-0.5">
+                    <div className="text-[11px] text-muted-foreground">{k}</div>
+                    <div className="text-sm break-words">{String(v)}</div>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
 
         {!company && !importedName && !city && extraEntries.length === 0 && (
           <p className="text-xs text-muted-foreground">Sem ficha importada. Empresa e cidade entram pelo CSV ou pelo Extrator.</p>
