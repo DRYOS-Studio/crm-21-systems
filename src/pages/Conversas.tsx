@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Bot, User, MessageSquare, Sparkles, Clock, Trello, X, PanelRight, Search, ArrowRightLeft } from "lucide-react";
+import { Bot, User, MessageSquare, Sparkles, Clock, Trello, X, PanelRight, Search, ArrowRightLeft, Filter } from "lucide-react";
 import {
   type LastSnap,
   ehEmContato,
@@ -317,6 +317,12 @@ export default function Conversas() {
   const flattenList =
     inboxFilter !== "todas" ||
     !!inboxQuery.trim() ||
+    tagFilters.length > 0 ||
+    userFilter !== "all" ||
+    instanceFilter !== "all" ||
+    followupOnly;
+  const hasActiveFilters =
+    inboxFilter !== "todas" ||
     tagFilters.length > 0 ||
     userFilter !== "all" ||
     instanceFilter !== "all" ||
@@ -1087,75 +1093,99 @@ export default function Conversas() {
                 <span className="text-[11px] tabular-nums text-primary font-medium">{needsReplyCount} na sua vez</span>
               )}
             </div>
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={inboxQuery}
-                onChange={(e) => setInboxQuery(e.target.value)}
-                placeholder="Buscar nome, escritório, telefone"
-                className="h-8 pl-8 text-xs"
-              />
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {(
-                [
-                  ["todas", "Todas", abertos.length],
-                  ["responder", "Sua vez", needsReplyCount],
-                  ["aguardando", "Aguardando", Math.max(0, abertos.length - needsReplyCount)],
-                  ["sem_contato", "Sem contato", semContatoCount],
-                  ["humano", "Com você", abertos.filter((c) => !c.ai_enabled).length],
-                  ["encerrados", "Encerrados", encerradosCount],
-                ] as const
-              ).map(([id, label, count]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => updateFilters({ inboxFilter: id })}
-                  className={`px-2 py-1 rounded-md text-[11px] transition ${
-                    inboxFilter === id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {label}
-                  <span className="tabular-nums opacity-80"> {count}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => updateFilters({ followupOnly: !followupOnly })}
-                className={`px-2 py-1 rounded-md text-[11px] transition ${
-                  followupOnly
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Follow-up
-                <span className="tabular-nums opacity-80"> {followupCount}</span>
-              </button>
-              <InstanceFilterSelect
-                instances={whatsappInstances}
-                members={orgMembers}
-                currentUserId={user?.id}
-                value={instanceFilter}
-                onChange={(next) => updateFilters({ instanceFilter: next })}
-                showUnassigned={hasUnassignedInstance}
-                userFilter={userFilter}
-                className="h-8 w-[160px] text-xs"
-              />
-              <UserFilterSelect
-                members={orgMembers}
-                currentUserId={user?.id}
-                value={userFilter}
-                onChange={(next) => updateFilters({ userFilter: next })}
-                className="h-8 w-[160px] text-xs"
-              />
-              <TagFilterSelect
-                catalog={tagCatalog}
-                value={tagFilters}
-                onChange={(next) => updateFilters({ tagFilters: next })}
-                className="h-8 w-[160px] text-xs"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={inboxQuery}
+                  onChange={(e) => setInboxQuery(e.target.value)}
+                  placeholder="Buscar nome, escritório, telefone"
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={hasActiveFilters ? "secondary" : "outline"}
+                    size="icon"
+                    className="relative h-8 w-8 shrink-0"
+                    title="Filtros"
+                    aria-label="Filtros"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    {hasActiveFilters && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-[310px] p-3">
+                  <div className="space-y-3">
+                    <div className="text-xs font-semibold">Filtros</div>
+                    <div className="flex flex-wrap gap-1">
+                      {(
+                        [
+                          ["todas", "Todas", abertos.length],
+                          ["responder", "Sua vez", needsReplyCount],
+                          ["aguardando", "Aguardando", Math.max(0, abertos.length - needsReplyCount)],
+                          ["sem_contato", "Sem contato", semContatoCount],
+                          ["humano", "Com você", abertos.filter((c) => !c.ai_enabled).length],
+                          ["encerrados", "Encerrados", encerradosCount],
+                        ] as const
+                      ).map(([id, label, count]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => updateFilters({ inboxFilter: id })}
+                          className={`px-2 py-1 rounded-md text-[11px] transition ${
+                            inboxFilter === id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {label}
+                          <span className="tabular-nums opacity-80"> {count}</span>
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => updateFilters({ followupOnly: !followupOnly })}
+                        className={`px-2 py-1 rounded-md text-[11px] transition ${
+                          followupOnly
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Follow-up
+                        <span className="tabular-nums opacity-80"> {followupCount}</span>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      <InstanceFilterSelect
+                        instances={whatsappInstances}
+                        members={orgMembers}
+                        currentUserId={user?.id}
+                        value={instanceFilter}
+                        onChange={(next) => updateFilters({ instanceFilter: next })}
+                        showUnassigned={hasUnassignedInstance}
+                        userFilter={userFilter}
+                        className="h-8 w-full text-xs"
+                      />
+                      <UserFilterSelect
+                        members={orgMembers}
+                        currentUserId={user?.id}
+                        value={userFilter}
+                        onChange={(next) => updateFilters({ userFilter: next })}
+                        className="h-8 w-full text-xs"
+                      />
+                      <TagFilterSelect
+                        catalog={tagCatalog}
+                        value={tagFilters}
+                        onChange={(next) => updateFilters({ tagFilters: next })}
+                        className="h-8 w-full text-xs"
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
