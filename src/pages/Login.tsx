@@ -14,39 +14,26 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const schema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter ao menos 6 caracteres"),
-  fullName: z.string().optional(),
 });
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      schema.parse({ email, password, fullName });
-      if (mode === "signup") {
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          toast({ variant: "destructive", title: "Erro no cadastro", description: translateError(error) });
-        } else {
-          toast({ title: "Conta criada!", description: "Entrando automaticamente..." });
-          navigate("/");
-        }
+      schema.parse({ email, password });
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({ variant: "destructive", title: "Erro ao entrar", description: translateError(error) });
       } else {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast({ variant: "destructive", title: "Erro ao entrar", description: translateError(error) });
-        } else {
-          navigate("/");
-        }
+        navigate("/");
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -70,24 +57,11 @@ const Login = () => {
         <div className="rounded-2xl border-2 border-primary/40 p-6 space-y-5 bg-card">
           <div className="text-center">
             <span className="text-sm font-bold text-primary uppercase tracking-wide">
-              {mode === "signin" ? "Entrar" : "Criar conta"}
+              Entrar
             </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="fullName">Nome completo</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Seu nome"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -123,16 +97,6 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            >
-              {mode === "signin" ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
-            </Button>
-          </div>
         </div>
 
         <p className="text-center text-xs text-muted-foreground">© 2026 DRYOS</p>
