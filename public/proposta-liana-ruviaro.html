@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proposta de Parceria & Sustentação Contínua · Liana Ruviaro | DRYOS Growth Systems</title>
+  <title>Proposta Técnica & Comercial · Liana Ruviaro | DRYOS Growth Systems</title>
   <link rel="icon" type="image/svg+xml" href="dryos-symbol.svg">
   
   <!-- Fontes Oficiais DRYOS -->
@@ -137,6 +137,12 @@
       border: 1px solid rgba(30, 107, 62, 0.2);
     }
 
+    .badge-warning {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(217, 119, 6, 0.2);
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -187,7 +193,7 @@
 
     /* Hero Section */
     .hero {
-      padding: 52px 0 32px;
+      padding: 50px 0 30px;
       text-align: center;
     }
 
@@ -201,10 +207,10 @@
     }
 
     .hero-title {
-      font-size: 40px;
+      font-size: 38px;
       font-weight: 800;
       color: var(--primary);
-      line-height: 1.15;
+      line-height: 1.18;
       margin-bottom: 16px;
       letter-spacing: -0.025em;
     }
@@ -217,10 +223,10 @@
     }
 
     .hero-subtitle {
-      font-size: 17px;
+      font-size: 16.5px;
       color: var(--muted);
       max-width: 780px;
-      margin: 0 auto 32px;
+      margin: 0 auto 30px;
       line-height: 1.55;
     }
 
@@ -234,7 +240,7 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: var(--shadow-card);
-      margin-bottom: 40px;
+      margin-bottom: 36px;
       position: relative;
       overflow: hidden;
     }
@@ -283,9 +289,42 @@
       color: var(--primary);
     }
 
+    /* Callout de Alinhamento Prévio */
+    .intro-callout {
+      background: #FFFFFF;
+      border: 1px solid rgba(30, 56, 43, 0.15);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 32px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .intro-icon {
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .intro-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .intro-text {
+      font-size: 13.5px;
+      color: var(--fg);
+      line-height: 1.5;
+    }
+
     /* Section Headers */
     section {
-      padding: 36px 0;
+      padding: 32px 0;
     }
 
     .section-header {
@@ -306,15 +345,15 @@
     }
 
     .section-title {
-      font-size: 26px;
+      font-size: 25px;
       font-weight: 800;
       color: var(--primary);
       line-height: 1.25;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .section-desc {
-      font-size: 15px;
+      font-size: 14.5px;
       color: var(--muted);
       max-width: 820px;
       line-height: 1.55;
@@ -325,7 +364,7 @@
       background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
-      padding: 26px;
+      padding: 24px;
       box-shadow: var(--shadow-card);
       transition: all 0.2s ease;
     }
@@ -347,50 +386,48 @@
       background: #FFFFFF;
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
-      padding: 28px 24px;
+      padding: 24px 20px;
       box-shadow: var(--shadow-card);
-      margin-top: 20px;
+      margin-top: 16px;
     }
 
     .arch-flow-steps {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      position: relative;
+      gap: 14px;
     }
 
     .arch-step-item {
       background: var(--bg);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-md);
-      padding: 18px 16px;
+      padding: 16px 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      position: relative;
+      gap: 6px;
     }
 
     .arch-step-badge {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--primary);
       background: var(--accent);
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 4px;
       width: fit-content;
     }
 
     .arch-step-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       color: var(--primary);
     }
 
     .arch-step-desc {
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--muted);
-      line-height: 1.45;
+      line-height: 1.4;
     }
 
     /* Module Box */
@@ -402,14 +439,14 @@
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
-      height: 100%;
+      position: relative;
     }
 
     .module-header {
       display: flex;
       align-items: flex-start;
       gap: 14px;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       padding-bottom: 16px;
       border-bottom: 1px solid var(--card-border);
     }
@@ -428,7 +465,7 @@
 
     .module-badge-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 700;
       color: var(--primary);
       text-transform: uppercase;
@@ -451,12 +488,12 @@
     }
 
     .feature-list li {
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--fg);
       line-height: 1.45;
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 9px;
     }
 
     .feature-list li svg {
@@ -469,12 +506,60 @@
       color: var(--primary);
     }
 
+    .module-price-tag {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .module-price-val {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* Warning Callout para Disparos Pontuais */
+    .warning-callout {
+      background: #FFFDF9;
+      border: 1px solid rgba(217, 119, 6, 0.25);
+      border-left: 4px solid var(--warning);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-top: 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .warning-icon {
+      color: var(--warning);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .warning-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 4px;
+    }
+
+    .warning-text {
+      font-size: 12.5px;
+      color: #78350F;
+      line-height: 1.5;
+    }
+
     /* Scope Comparison (Incluso vs Não Incluso) */
     .scope-box {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;
-      margin-top: 20px;
+      margin-top: 16px;
     }
 
     .scope-card-in {
@@ -482,7 +567,7 @@
       border: 1px solid rgba(30, 107, 62, 0.25);
       border-top: 4px solid var(--success);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: 22px;
       box-shadow: var(--shadow-card);
     }
 
@@ -491,17 +576,17 @@
       border: 1px solid var(--card-border);
       border-top: 4px solid var(--muted);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: 22px;
       box-shadow: var(--shadow-card);
     }
 
     .scope-header-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .scope-header-title.in { color: var(--success); }
@@ -511,189 +596,171 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 11px;
     }
 
     .scope-list li {
-      font-size: 13px;
+      font-size: 12.5px;
       line-height: 1.45;
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 9px;
       color: var(--fg);
     }
 
-    /* Commercial Investment Section */
-    .pricing-grid {
+    /* Pricing Options Grid (3 Cards) */
+    .pricing-cards-3 {
       display: grid;
-      grid-template-columns: 1fr 1.25fr;
-      gap: 24px;
-      align-items: stretch;
+      grid-template-columns: 1fr 1fr 1.25fr;
+      gap: 18px;
       margin-top: 24px;
+      align-items: stretch;
     }
 
-    .price-card-standard {
+    .plan-card {
       background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
-      padding: 32px 24px;
+      padding: 24px 20px;
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      opacity: 0.85;
     }
 
-    .price-card-special {
+    .plan-card.featured {
       background: #FFFFFF;
       border: 2px solid var(--gold);
-      border-radius: var(--radius-lg);
-      padding: 36px 28px;
-      box-shadow: 0 16px 40px -8px rgba(30, 56, 43, 0.15);
+      box-shadow: 0 14px 34px -6px rgba(30, 56, 43, 0.16);
       position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
     }
 
-    .special-badge-top {
+    .featured-badge {
       position: absolute;
-      top: -14px;
-      left: 28px;
+      top: -12px;
+      left: 20px;
       background: linear-gradient(135deg, var(--gold) 0%, #A88652 100%);
       color: #FFFFFF;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 9999px;
       letter-spacing: 0.05em;
-      box-shadow: 0 4px 10px rgba(168, 134, 82, 0.3);
     }
 
-    .price-title {
-      font-size: 18px;
+    .plan-name {
+      font-size: 17px;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
-    .price-desc {
-      font-size: 13px;
+    .plan-scope {
+      font-size: 12px;
       color: var(--muted);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      line-height: 1.4;
     }
 
-    .price-figures {
-      margin-bottom: 24px;
-      padding-bottom: 20px;
+    .plan-price-block {
+      margin-bottom: 18px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--card-border);
     }
 
-    .price-row-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 10px;
-    }
-
-    .price-row-label {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .price-row-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--fg);
-    }
-
-    .price-row-val.strike {
-      text-decoration: line-through;
-      color: #999;
-      font-weight: 500;
-    }
-
-    .price-row-val.free {
-      color: var(--success);
-      font-weight: 800;
-    }
-
-    .price-main-display {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px dashed var(--card-border);
+    .plan-price-amount {
       display: flex;
       align-items: baseline;
-      gap: 6px;
+      gap: 4px;
     }
 
-    .price-curr {
+    .plan-currency {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--primary);
     }
 
-    .price-num {
+    .plan-val-num {
       font-family: 'Funnel Display', sans-serif;
-      font-size: 52px;
+      font-size: 40px;
       font-weight: 800;
       color: var(--primary);
       line-height: 1;
     }
 
-    .price-period {
-      font-size: 15px;
+    .plan-val-period {
+      font-size: 12px;
       color: var(--muted);
       font-weight: 600;
     }
 
-    /* Savings Callout Box */
-    .savings-box {
-      background: var(--gold-light);
-      border: 1px solid rgba(200, 169, 126, 0.45);
-      border-radius: var(--radius-md);
-      padding: 16px;
+    .plan-check-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       margin-bottom: 20px;
+      flex: 1;
     }
 
-    .savings-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #7A5923;
+    .plan-check-list li {
+      font-size: 12px;
+      color: var(--fg);
       display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.35;
+    }
+
+    .plan-check-list li svg {
+      color: var(--success);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Optional Recurring Support Banner */
+    .recurring-addon-box {
+      background: linear-gradient(135deg, rgba(30, 56, 43, 0.03) 0%, rgba(200, 169, 126, 0.07) 100%);
+      border: 1px solid rgba(30, 56, 43, 0.16);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 6px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .recurring-content h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
       margin-bottom: 4px;
     }
 
-    .savings-desc {
+    .recurring-content p {
       font-size: 12.5px;
-      color: #5C431A;
+      color: var(--muted);
+      max-width: 620px;
       line-height: 1.45;
-    }
-
-    .savings-highlight {
-      font-weight: 800;
-      color: var(--primary);
     }
 
     /* Timeline Box */
     .timeline-steps {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-top: 20px;
+      gap: 14px;
+      margin-top: 16px;
     }
 
     .timeline-step {
       background: #FFFFFF;
       border: 1px solid var(--card-border);
       border-radius: var(--radius-md);
-      padding: 18px 16px;
+      padding: 16px 14px;
       position: relative;
     }
 
@@ -713,21 +780,21 @@
 
     .timeline-num {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .timeline-title {
-      font-size: 14.5px;
+      font-size: 13.5px;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .timeline-desc {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--muted);
       line-height: 1.4;
     }
@@ -737,7 +804,7 @@
       background: var(--primary);
       color: #FAF9F5;
       border-radius: var(--radius-lg);
-      padding: 44px 36px;
+      padding: 40px 32px;
       text-align: center;
       margin-top: 36px;
       box-shadow: var(--shadow-elevated);
@@ -758,30 +825,30 @@
     }
 
     .cta-title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       line-height: 1.25;
     }
 
     .cta-desc {
-      font-size: 15px;
+      font-size: 14.5px;
       color: #E8EFE9;
       max-width: 680px;
-      margin: 0 auto 28px;
-      line-height: 1.55;
+      margin: 0 auto 24px;
+      line-height: 1.5;
     }
 
     .cta-actions {
       display: flex;
       justify-content: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
     /* Footer */
     footer {
-      margin-top: 60px;
+      margin-top: 50px;
       padding-top: 24px;
       border-top: 1px solid var(--card-border);
       text-align: center;
@@ -791,9 +858,9 @@
 
     /* Responsive Mobile Styles */
     @media (max-width: 900px) {
-      .hero-title { font-size: 30px; }
-      .hero-subtitle { font-size: 15px; }
-      .grid-2, .grid-3, .scope-box, .pricing-grid, .arch-flow-steps, .timeline-steps {
+      .hero-title { font-size: 28px; }
+      .hero-subtitle { font-size: 14.5px; }
+      .grid-2, .grid-3, .scope-box, .pricing-cards-3, .arch-flow-steps, .timeline-steps {
         grid-template-columns: 1fr !important;
       }
       .target-card {
@@ -819,17 +886,11 @@
       }
     }
 
-    @media (max-width: 640px) {
-      .header-actions .badge { display: none; }
-      .header-actions .btn { padding: 7px 12px; font-size: 13px; }
-      .price-main-display .price-num { font-size: 44px; }
-    }
-
     /* Print styles for PDF export */
     @media print {
       body { background: #FFF; padding: 0; }
       header, .header-actions, .cta-banner button, .btn { display: none !important; }
-      .card, .module-card, .price-card-standard, .price-card-special, .target-card, .arch-container, .timeline-step, .scope-card-in, .scope-card-out {
+      .card, .module-card, .plan-card, .target-card, .arch-container, .timeline-step, .scope-card-in, .scope-card-out, .intro-callout, .warning-callout, .recurring-addon-box {
         box-shadow: none !important;
         border: 1px solid #CCC !important;
         break-inside: avoid;
@@ -855,8 +916,8 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           PDF
         </button>
-        <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20dar%20o%20aceite%20na%20Proposta%20de%20Parceria%20%26%20Sustenta%C3%A7%C3%A3o%20Cont%C3%ADnua%20da%20DRYOS%20(Condi%C3%A7%C3%A3o%20Especial%20Tahis%20-%20R%24%201.200%2Fm%C3%AAs)!%20Vamos%20agendar%20o%20Kick-off%20t%C3%A9cnico%3F" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-          Aceitar Proposta
+        <a href="#investimento" class="btn btn-primary">
+          Ver Opções de Contratação
         </a>
       </div>
     </div>
@@ -867,15 +928,15 @@
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero-meta">
-        <span class="badge badge-success">Sustentação Técnica Contínua</span>
-        <span class="badge badge-gold">Condição Especial · Indicação da Tahis</span>
+        <span class="badge badge-success">Automações Oficiais Meta</span>
+        <span class="badge badge-gold">Indicação Especial · Tahis</span>
         <span class="font-mono" style="font-size: 13px; color: var(--muted);">REF: DRYOS-META-LIANA-RUVIARO</span>
       </div>
       <h1 class="hero-title font-display">
-        Proposta de Parceria & <span>Sustentação Contínua</span>
+        Proposta Técnica & Comercial · <span>Automações Meta</span>
       </h1>
       <p class="hero-subtitle">
-        Automação de canais de atendimento e vendas não é um arquivo que se entrega e esquece: o negócio muda, novas campanhas entram no ar, posts precisam de gatilhos novos e a operação precisa de segurança técnica contínua.
+        Estruturação das esteiras de captação e atendimento oficial para Instagram e WhatsApp. Respostas instantâneas em segundos, triagem automática e transbordo qualificado para o atendimento humano.
       </p>
 
       <!-- Target Box -->
@@ -892,169 +953,179 @@
           <div class="val-date">30/09/2026 · Válida por 7 dias</div>
         </div>
       </div>
-    </section>
 
-    <!-- Seção 1: Visão Geral e Arquitetura -->
-    <section>
-      <div class="section-header">
-        <div class="section-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          Visão Geral da Parceria
+      <!-- Callout de Alinhamento com os Valores já Conversados -->
+      <div class="intro-callout">
+        <div class="intro-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
         </div>
-        <h2 class="section-title font-display">A Esteira de Conversão Oficial Meta</h2>
-        <p class="section-desc">
-          Este projeto foi desenhado sob o modelo de <strong>recorrência da DRYOS</strong>: nós cuidamos da implantação da infraestrutura oficial da Meta, criamos os fluxos de conversão e mantemos sua operação rodando, ajustando e escalando mês a mês.
-        </p>
-      </div>
-
-      <!-- Arquitetura Visual -->
-      <div class="arch-container">
-        <div class="arch-flow-steps">
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 01 · CAPTAÇÃO</span>
-            <h4 class="arch-step-title">Engajamento no Instagram</h4>
-            <p class="arch-step-desc">
-              Reels, posts de feed, respostas a Stories e menções ao perfil disparam gatilhos instantâneos com resposta em menos de 2 segundos.
-            </p>
-          </div>
-
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 02 · TRIAGEM</span>
-            <h4 class="arch-step-title">Direct Inteligente (DM)</h4>
-            <p class="arch-step-desc">
-              Entrega imediata do material prometido, triagem interativa do perfil do seguidor e captura ágil de Nome e WhatsApp.
-            </p>
-          </div>
-
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 03 · CONEXÃO</span>
-            <h4 class="arch-step-title">WhatsApp API Oficial</h4>
-            <p class="arch-step-desc">
-              Linha homologada na Meta Cloud API (zero risco de banimento), templates oficiais aprovados e acolhimento 24/7.
-            </p>
-          </div>
-
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 04 · FECHAMENTO</span>
-            <h4 class="arch-step-title">Transbordo Humano & CRM</h4>
-            <p class="arch-step-desc">
-              Encaminhamento limpo do lead quente para sua equipe com contexto da conversa + sincronização em CRM ou planilha.
-            </p>
+        <div style="text-align: left;">
+          <div class="intro-title">Estrutura Modular & Valores Alinhados</div>
+          <div class="intro-text">
+            Conforme conversamos previamente, os canais foram modelados de forma <strong>independente e modular</strong>. Você pode optar por ativar apenas o <strong>Instagram (2 automações por R$ 350)</strong>, apenas o <strong>WhatsApp com API Oficial (setup e automação por R$ 700)</strong>, ou o <strong>Combo Integrado (R$ 1.050)</strong> conectando os dois canais.
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Seção 2: O Que Está Coberto na Recorrência (Os 3 Módulos) -->
+    <!-- Seção 1: Escopo dos Módulos -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          Escopo Contínuo
+          Módulos Independentes
         </div>
-        <h2 class="section-title font-display">O Que Está Coberto na Recorrência</h2>
+        <h2 class="section-title font-display">O Que Cada Módulo Entrega</h2>
         <p class="section-desc">
-          Um pacote completo de engenharia e suporte contínuo para você não precisar se preocupar com aspectos técnicos, links quebrados ou instabilidade.
+          Tecnologia oficial homologada pela Meta, sem riscos de bloqueio e com entrega em até 10 dias úteis:
         </p>
       </div>
 
-      <div class="grid-3">
-        <!-- Módulo 1 -->
+      <div class="grid-2">
+        <!-- Módulo 1: Instagram -->
         <div class="module-card">
           <div class="module-header">
             <div class="module-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
             </div>
             <div>
-              <span class="module-badge-tag">MÓDULO 01</span>
-              <h3 class="module-title">Instagram Inteligente</h3>
+              <span class="module-badge-tag">MÓDULO 01 · INSTAGRAM</span>
+              <h3 class="module-title">Instagram Inteligente (2 Automações)</h3>
             </div>
           </div>
+
           <ul class="feature-list">
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Gatilhos em Reels e Posts de Feed:</strong> Respostas automáticas a comentários específicos com entrega imediata de link ou material no Direct.</span>
+              <span><strong>Automação 01 — Reels & Feed:</strong> Resposta automática e imediata nos comentários com entrega do link/material prometido via Direct (DM) em &lt; 2 segundos.</span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Automação de Stories & Menções:</strong> Captura automática de quem responde aos stories ou marca seu perfil em publicações.</span>
+              <span><strong>Automação 02 — Stories & Menções:</strong> Acolhimento automático de seguidores que respondem a stories ou marcam o seu perfil <code>@</code> em publicações.</span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Qualificação no Direct:</strong> Triagem interativa com captura de dados (Nome e WhatsApp) e redirecionamento rápido para o WhatsApp.</span>
+              <span><strong>Triagem Interativa no Direct:</strong> Coleta amigável de Nome e WhatsApp dentro da DM, direcionando o seguidor aquecido para o WhatsApp da operação.</span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Novas Campanhas Mensais:</strong> Criação e ativação contínua de novos fluxos para campanhas, lançamentos ou promoções ao longo do mês.</span>
+              <span><strong>Configuração & Homologação Oficial:</strong> Conexão 100% segura com a conta profissional do Instagram.</span>
             </li>
           </ul>
+
+          <div class="module-price-tag">
+            <span style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Setup das 2 automações:</span>
+            <span class="module-price-val">R$ 350,00</span>
+          </div>
         </div>
 
-        <!-- Módulo 2 -->
+        <!-- Módulo 2: WhatsApp API Oficial -->
         <div class="module-card">
           <div class="module-header">
             <div class="module-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
             </div>
             <div>
-              <span class="module-badge-tag">MÓDULO 02</span>
-              <h3 class="module-title">WhatsApp API Oficial</h3>
+              <span class="module-badge-tag">MÓDULO 02 · WHATSAPP OFICIAL</span>
+              <h3 class="module-title">WhatsApp API Oficial (Setup & Automação)</h3>
             </div>
           </div>
-          <ul class="feature-list">
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Homologação Meta Cloud API:</strong> Linha ativada na API Oficial da Meta, sem risco de banimento ou perda do número comercial.</span>
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Templates de Mensagem Aprovados:</strong> Submissão, aprovação e homologação técnica de mensagens ativas junto à Meta.</span>
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Triagem e Boas-Vindas 24/7:</strong> Acolhimento imediato, tirando dúvidas frequentes e acolhendo leads fora do horário comercial.</span>
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Transbordo Humano (Handoff):</strong> Encaminhamento limpo para o atendente com todo o contexto e histórico da conversa.</span>
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Integração de Contatos:</strong> Sincronização dos contatos e dados capturados em CRM ou planilha de controle.</span>
-            </li>
-          </ul>
-        </div>
 
-        <!-- Módulo 3 -->
-        <div class="module-card">
-          <div class="module-header">
-            <div class="module-icon-wrap">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </div>
-            <div>
-              <span class="module-badge-tag">MÓDULO 03</span>
-              <h3 class="module-title">Sustentação & Suporte</h3>
-            </div>
-          </div>
           <ul class="feature-list">
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Monitoramento Contínuo:</strong> Acompanhamento preventivo da saúde dos webhooks, conexões de API e estabilidade dos fluxos.</span>
+              <span><strong>Homologação Meta Cloud API:</strong> Ativação e verificação da linha na API Oficial da Meta. <strong>Risco zero de banimento ou bloqueio do número.</strong></span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Atualização Dinâmica:</strong> Ajustes de textos, novos horários de funcionamento, links e mensagens conforme a dinâmica do seu negócio.</span>
+              <span><strong>Templates de Mensagens Aprovados:</strong> Criação, redação técnica e submissão de mensagens oficiais aprovadas pela Meta.</span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Canal Direto com o Rafael:</strong> Suporte prioritário via WhatsApp para tirar dúvidas rápidas e orientar sua equipe de atendimento.</span>
+              <span><strong>Triagem e Boas-Vindas 24/7:</strong> Acolhimento automático de primeira camada com menu interativo e dúvidas frequentes mesmo fora de expediente.</span>
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Transbordo Humano (Handoff):</strong> Entrega do lead para o atendente com contexto e histórico completo salvo.</span>
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Integração de Contatos:</strong> Sincronização dos dados em CRM ou planilha de controle.</span>
             </li>
           </ul>
+
+          <div class="module-price-tag">
+            <span style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Setup & homologação oficial:</span>
+            <span class="module-price-val">R$ 700,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aviso Crítico e Transparente sobre Disparos Pontuais -->
+      <div class="warning-callout">
+        <div class="warning-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <div>
+          <div class="warning-title">Aviso de Escopo: Disparos Pontuais / Campanhas em Massa</div>
+          <div class="warning-text">
+            O valor de setup do WhatsApp (R$ 700) cobre a <strong>esteira receptiva inteligente</strong> (acolhimento de quem chama, triagem, templates oficiais e transbordo humano). <strong>Disparos pontuais ativos em massa para base de contatos (broadcasts/campanhas) não estão incluídos</strong> e são orçados separadamente caso a cliente queira realizar disparos promocionais para sua lista.
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Seção 3: Transparência (O Que Entra e O Que Não Entra) -->
+    <!-- Seção 2: Arquitetura Integrada (Como funciona junto) -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Esteira Completa
+        </div>
+        <h2 class="section-title font-display">A Sinergia do Combo Integrado</h2>
+        <p class="section-desc">
+          Quando os dois canais operam juntos, você cria uma esteira fluida onde o seguidor do Instagram vira um lead qualificado conversando no seu WhatsApp em segundos:
+        </p>
+      </div>
+
+      <div class="arch-container">
+        <div class="arch-flow-steps">
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 01 · INSTAGRAM</span>
+            <h4 class="arch-step-title">Comentário / Story</h4>
+            <p class="arch-step-desc">
+              Seguidor comenta palavra-chave no Reel ou responde Story.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 02 · DIRECT</span>
+            <h4 class="arch-step-title">DM em Menos de 2s</h4>
+            <p class="arch-step-desc">
+              Entrega imediata do material e coleta amigável de Nome e WhatsApp.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 03 · WHATSAPP</span>
+            <h4 class="arch-step-title">WhatsApp API Oficial</h4>
+            <p class="arch-step-desc">
+              Acolhimento automático 24/7 com templates homologados e seguros.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 04 · FECHAMENTO</span>
+            <h4 class="arch-step-title">Transbordo Humano</h4>
+            <p class="arch-step-desc">
+              Atendente recebe o lead pronto para compra com histórico salvo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção 3: Transparência de Custos e Serviços -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
@@ -1063,7 +1134,7 @@
         </div>
         <h2 class="section-title font-display">O Que Entra e O Que Não Entra</h2>
         <p class="section-desc">
-          Alinhamento claro e sem letras miúdas para garantir total confiança e fluidez na execução da nossa parceria:
+          Sem surpresas ou letras miúdas. Divisão clara de responsabilidades técnicas:
         </p>
       </div>
 
@@ -1072,28 +1143,28 @@
         <div class="scope-card-in">
           <div class="scope-header-title in">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Incluído na Parceria DRYOS
+            Incluído no Setup Técnico DRYOS
           </div>
           <ul class="scope-list">
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Implantação e setup técnico completo</strong> da infraestrutura oficial Meta.</span>
+              <span><strong>Setup das 2 automações no Instagram:</strong> Reels/Feed + Stories/Menções com captura de dados.</span>
             </li>
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Criação, testes e homologação</strong> de todos os fluxos de Instagram e WhatsApp.</span>
+              <span><strong>Homologação da linha na Meta Cloud API:</strong> Verificação oficial sem risco de banimento de número.</span>
             </li>
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Manutenção e criação de novas automações mensais</strong> para suas campanhas e ofertas.</span>
+              <span><strong>Criação e aprovação de templates oficiais:</strong> Submissão junto à Meta para mensagens ativas.</span>
             </li>
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Suporte técnico direto e treinamento</strong> da equipe de atendimento humano.</span>
+              <span><strong>Triagem 24/7 e transbordo humano:</strong> Entrega limpa do contato para sua equipe comercial.</span>
             </li>
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Ajustes contínuos</strong> de textos, links e horários durante todo o período da parceria.</span>
+              <span><strong>Treinamento da equipe de atendimento:</strong> Orientações práticas para o dia a dia.</span>
             </li>
           </ul>
         </div>
@@ -1107,116 +1178,174 @@
           <ul class="scope-list">
             <li>
               <span style="color: var(--muted); font-weight: 800;">•</span>
-              <span><strong>Consumo direto de conversas da Meta:</strong> Faturado diretamente no cartão de crédito cadastrado na conta Meta da cliente (centavos por conversa).</span>
+              <span><strong>Disparos Pontuais / Disparos Ativos em Massa:</strong> Campanhas sazonais de broadcast para base são orçadas à parte sob demanda.</span>
             </li>
             <li>
               <span style="color: var(--muted); font-weight: 800;">•</span>
-              <span><strong>Ferramenta terceira de disparo:</strong> Assinatura de plataforma como ManyChat ou similar, se utilizada no projeto.</span>
+              <span><strong>Consumo direto de conversas da Meta:</strong> Cobrado diretamente no cartão cadastrado na conta Meta da cliente (centavos por conversa).</span>
             </li>
             <li>
               <span style="color: var(--muted); font-weight: 800;">•</span>
-              <span><strong>Produção e design de criativos:</strong> Criação visual de artes, vídeos ou edição de Reels para redes sociais.</span>
+              <span><strong>Ferramenta terceira de disparo:</strong> Assinatura de plataforma como ManyChat, se utilizada.</span>
             </li>
             <li>
               <span style="color: var(--muted); font-weight: 800;">•</span>
-              <span><strong>Gestão de tráfego pago:</strong> Compra e otimização de anúncios de mídia paga no Gerenciador de Anúncios.</span>
+              <span><strong>Produção e design de criativos:</strong> Criação visual de artes, vídeos e gravação de Reels.</span>
+            </li>
+            <li>
+              <span style="color: var(--muted); font-weight: 800;">•</span>
+              <span><strong>Gestão de tráfego pago:</strong> Compra de anúncios no Meta Ads.</span>
             </li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- Seção 4: Condição Comercial & Investimento -->
+    <!-- Seção 4: Tabela de Investimento (Opções de Contratação) -->
     <section id="investimento">
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-          Condições Comerciais Exclusivas
+          Opções de Contratação
         </div>
-        <h2 class="section-title font-display">Investimento & Parceria Recorrente</h2>
+        <h2 class="section-title font-display">Tabela de Investimento</h2>
         <p class="section-desc">
-          Por se tratar de uma <strong>indicação especial da Tahis</strong>, aplicamos condições promocionais tanto no setup de implantação quanto na mensalidade contínua:
+          Escolha a modalidade que melhor se adapta à fase atual da sua operação:
         </p>
       </div>
 
-      <div class="pricing-grid">
-        <!-- Card Padrão de Tabela -->
-        <div class="price-card-standard">
+      <div class="pricing-cards-3">
+        <!-- Opção 1: Apenas Instagram -->
+        <div class="plan-card">
           <div>
-            <div class="price-title">Valor Padrão de Tabela</div>
-            <p class="price-desc">Condição de prateleira aplicada para novos clientes diretos da DRYOS.</p>
+            <div class="plan-name">Opção A · Instagram</div>
+            <div class="plan-scope">2 Automações estratégicas no Instagram (Reels/Feed + Stories/DM).</div>
 
-            <div class="price-figures">
-              <div class="price-row-item">
-                <span class="price-row-label">Setup de Implantação:</span>
-                <span class="price-row-val">R$ 1.500,00</span>
+            <div class="plan-price-block">
+              <div class="plan-price-amount">
+                <span class="plan-currency">R$</span>
+                <span class="plan-val-num">350</span>
               </div>
-              <div class="price-row-item">
-                <span class="price-row-label">Mensalidade de Operação:</span>
-                <span class="price-row-val">R$ 2.000,00 / mês</span>
-              </div>
+              <span class="plan-val-period">Pagamento único de setup</span>
             </div>
+
+            <ul class="plan-check-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>2 Automações no Instagram</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Gatilhos em Reels e Feed</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Captura em Stories e Menções</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Coleta de Nome e WhatsApp</span>
+              </li>
+            </ul>
           </div>
 
-          <div style="font-size: 12px; color: var(--muted); line-height: 1.45;">
-            *Valor de referência praticado no mercado para esteiras oficiais de Instagram + WhatsApp com suporte contínuo.
-          </div>
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20A%20(Apenas%20Instagram%20-%202%20automa%C3%A7%C3%B5es%20por%20R%24%20350)!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width: 100%; font-size: 13px;">
+            Contratar Instagram (R$ 350)
+          </a>
         </div>
 
-        <!-- Card Especial Indicação Tahis -->
-        <div class="price-card-special">
-          <span class="special-badge-top">★ CONDIÇÃO ESPECIAL · INDICAÇÃO TAHIS</span>
+        <!-- Opção 2: Apenas WhatsApp API Oficial -->
+        <div class="plan-card">
+          <div>
+            <div class="plan-name">Opção B · WhatsApp</div>
+            <div class="plan-scope">Setup completo e homologação da API Oficial Meta Cloud.</div>
+
+            <div class="plan-price-block">
+              <div class="plan-price-amount">
+                <span class="plan-currency">R$</span>
+                <span class="plan-val-num">700</span>
+              </div>
+              <span class="plan-val-period">Pagamento único de setup</span>
+            </div>
+
+            <ul class="plan-check-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Homologação Meta Cloud API</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Zero risco de banimento de número</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Templates oficiais homologados</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Triagem 24/7 e transbordo humano</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20B%20(Apenas%20WhatsApp%20API%20Oficial%20-%20R%24%20700)!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width: 100%; font-size: 13px;">
+            Contratar WhatsApp (R$ 700)
+          </a>
+        </div>
+
+        <!-- Opção 3: Combo Completo Integrado -->
+        <div class="plan-card featured">
+          <span class="featured-badge">★ RECOMENDADO · INTEGRADO</span>
 
           <div>
-            <div class="price-title font-display" style="font-size: 22px; color: var(--primary);">
-              Parceria Exclusiva Liana Ruviaro
-            </div>
-            <p class="price-desc">Condição sob medida com isenção total de setup e desconto recorrente.</p>
+            <div class="plan-name" style="color: var(--primary); font-size: 19px;">Opção C · Combo Integrado</div>
+            <div class="plan-scope">Instagram (2 automações) + WhatsApp API Oficial conectados.</div>
 
-            <!-- Box de Economia Real -->
-            <div class="savings-box">
-              <div class="savings-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Economia Real no seu Caixa:
+            <div class="plan-price-block">
+              <div class="plan-price-amount">
+                <span class="plan-currency">R$</span>
+                <span class="plan-val-num">1.050</span>
               </div>
-              <div class="savings-desc">
-                • <strong>R$ 1.500,00 de economia imediata</strong> na isenção do setup.<br>
-                • <strong>R$ 800,00/mês de economia recorrente</strong> na mensalidade.<br>
-                • Total de <span class="savings-highlight">R$ 11.100,00 poupados</span> ao longo do 1º ano de parceria!
-              </div>
+              <span class="plan-val-period" style="color: var(--success); font-weight: 700;">Setup completo dos dois canais</span>
             </div>
 
-            <div class="price-figures" style="margin-bottom: 16px; padding-bottom: 16px;">
-              <div class="price-row-item">
-                <span class="price-row-label">Setup de Implantação:</span>
-                <span class="price-row-val strike">R$ 1.500,00</span>
-                <span class="price-row-val free">ISENTO (R$ 0,00)</span>
-              </div>
-              <div class="price-row-item">
-                <span class="price-row-label">Mensalidade de Tabela:</span>
-                <span class="price-row-val strike">R$ 2.000,00 / mês</span>
-              </div>
-            </div>
-
-            <div class="price-main-display">
-              <span class="price-curr">R$</span>
-              <span class="price-num">1.200</span>
-              <span class="price-period">/mês</span>
-            </div>
-            <div style="font-size: 11.5px; color: var(--success); font-weight: 700; margin-top: 6px;">
-              ✓ Setup Incluso no Plano · Faturamento do 1º ciclo no aceite
-            </div>
+            <ul class="plan-check-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Tudo da Opção A + Opção B</strong></span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Integração direta Instagram ➔ WhatsApp</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Linha oficial Meta Cloud API com zero ban</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Sincronização de contatos em CRM/Planilha</span>
+              </li>
+            </ul>
           </div>
 
-          <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--card-border);">
-            <div style="font-size: 12.5px; color: var(--fg); margin-bottom: 14px; line-height: 1.45;">
-              <strong>Sem fidelidade:</strong> A parceria se mantém pelo resultado e valor gerado, sem contrato amarrado. Cancelamento livre a qualquer momento com aviso prévio simples de 30 dias.
-            </div>
-            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20dar%20o%20aceite%20na%20Proposta%20de%20Parceria%20%26%20Sustenta%C3%A7%C3%A3o%20Cont%C3%ADnua%20da%20DRYOS%20(Condi%C3%A7%C3%A3o%20Especial%20Tahis%20-%20R%24%201.200%2Fm%C3%AAs)!%20Vamos%20agendar%20o%20Kick-off%20t%C3%A9cnico%3F" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 15px;">
-              Ativar Parceria (R$ 1.200/mês)
-            </a>
-          </div>
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20C%20(Combo%20Integrado%20Instagram%20%2B%20WhatsApp%20por%20R%24%201.050)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; font-size: 13.5px; padding: 12px;">
+            Contratar Combo Integrado (R$ 1.050)
+          </a>
         </div>
+      </div>
+
+      <!-- Módulo Opcional de Sustentação Contínua -->
+      <div class="recurring-addon-box">
+        <div class="recurring-content">
+          <h4>💡 Precisa de novas automações e suporte contínuo todo mês?</h4>
+          <p>
+            Caso sua operação lance novos produtos e campanhas frequentemente, oferecemos nosso plano de <strong>Sustentação Contínua</strong> com monitoramento ativo, atualizações de textos/links e criação de novas automações mensais sem custos avulsos de setup.
+          </p>
+        </div>
+        <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20gostaria%20de%20entender%20mais%20sobre%20a%20op%C3%A7%C3%A3o%20de%20Sustenta%C3%A7%C3%A3o%20Cont%C3%ADnua%20mensal!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 12.5px;">
+          Conversar sobre Sustentação Mensal
+        </a>
       </div>
     </section>
 
@@ -1227,26 +1356,26 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           Velocidade de Execução
         </div>
-        <h2 class="section-title font-display">Cronograma de Início & Go-Live</h2>
+        <h2 class="section-title font-display">Cronograma de Início (7 a 10 Dias Úteis)</h2>
         <p class="section-desc">
-          Processo ágil e estruturado para colocar sua operação rodando com segurança técnica em até 10 dias úteis:
+          Processo ágil e homologado para colocar sua esteira rodando com segurança:
         </p>
       </div>
 
       <div class="timeline-steps">
         <div class="timeline-step active">
-          <div class="timeline-num">SEMANA 01 · ETAPA 1</div>
+          <div class="timeline-num">DIAS 1 A 3 · ETAPA 1</div>
           <div class="timeline-title">Onboarding & Acessos</div>
           <p class="timeline-desc">
-            Kick-off técnico de 30 minutos, liberação dos acessos à Meta e alinhamento dos roteiros de Instagram e WhatsApp.
+            Kick-off técnico de 30 minutos, liberação dos acessos à Meta e alinhamento dos roteiros de mensagens.
           </p>
         </div>
 
         <div class="timeline-step active">
-          <div class="timeline-num">SEMANA 02 · ETAPA 2</div>
+          <div class="timeline-num">DIAS 4 A 7 · ETAPA 2</div>
           <div class="timeline-title">Construção & Homologação</div>
           <p class="timeline-desc">
-            Desenho dos fluxos interativos no Direct, configuração da Meta Cloud API e submissão dos templates oficiais para aprovação.
+            Configuração da Meta Cloud API, criação dos fluxos e submissão dos templates oficiais para aprovação.
           </p>
         </div>
 
@@ -1254,67 +1383,15 @@
           <div class="timeline-num">DIAS 8 A 9 · ETAPA 3</div>
           <div class="timeline-title">Testes Conjuntos</div>
           <p class="timeline-desc">
-            Simulação completa da esteira: comentários, Direct, resposta do WhatsApp e teste do transbordo humano com a equipe.
+            Simulação completa: comentário no Instagram, Direct, resposta no WhatsApp e teste de transbordo humano.
           </p>
         </div>
 
         <div class="timeline-step active">
           <div class="timeline-num">DIA 10 · GO-LIVE</div>
-          <div class="timeline-title">Operação Contínua</div>
+          <div class="timeline-title">Operação Ativa</div>
           <p class="timeline-desc">
-            Sistema 100% no ar, com início imediato do monitoramento preventivo, suporte contínuo e criação de novos fluxos mensais.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Seção 6: Por que a API Oficial Meta Faz a Diferença -->
-    <section>
-      <div class="section-header">
-        <div class="section-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          Segurança Corporativa
-        </div>
-        <h2 class="section-title font-display">Por que a API Oficial Meta Faz Toda a Diferença?</h2>
-        <p class="section-desc">
-          Trabalhamos exclusivamente dentro das diretrizes e termos de serviço oficiais da Meta:
-        </p>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <h4 style="font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">
-            1. Risco Zero de Banimento ou Bloqueio
-          </h4>
-          <p style="font-size: 13.5px; color: var(--muted); line-height: 1.5;">
-            Sistemas amadores que utilizam leitura de QR Code conectam seu número como um dispositivo pirata, correndo risco diário de ter o chip banido pela Meta sem aviso prévio. Com a <strong>API Oficial Meta Cloud</strong>, a sua conta é homologada, auditada e 100% protegida.
-          </p>
-        </div>
-
-        <div class="card">
-          <h4 style="font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">
-            2. Resposta em Menos de 2 Segundos
-          </h4>
-          <p style="font-size: 13.5px; color: var(--muted); line-height: 1.5;">
-            A atenção na internet é efêmera. Se uma seguidora comenta em um Reel com a palavra-chave e precisa esperar 15 minutos para receber o material, o momento de conversão esfriou. Nossas esteiras respondem no Direct de forma imediata.
-          </p>
-        </div>
-
-        <div class="card">
-          <h4 style="font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">
-            3. Qualificação Antes do Atendimento Humano
-          </h4>
-          <p style="font-size: 13.5px; color: var(--muted); line-height: 1.5;">
-            Sua equipe não deve gastar tempo coletando nome, e-mail e perguntando se tem interesse. A automação faz essa triagem de forma leve e entrega no colo do atendente um lead quente, pré-qualificado e pronto para o fechamento.
-          </p>
-        </div>
-
-        <div class="card">
-          <h4 style="font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">
-            4. Soberania e Centralização dos Dados
-          </h4>
-          <p style="font-size: 13.5px; color: var(--muted); line-height: 1.5;">
-            Todos os contatos, telefones e históricos capturados são organizados e integrados diretamente com seu CRM ou base de planilhas. A base de clientes pertence 100% à sua empresa.
+            Esteira 100% no ar e funcionando oficialmente na sua operação.
           </p>
         </div>
       </div>
@@ -1323,16 +1400,16 @@
     <!-- CTA Final e Próximo Passo -->
     <section>
       <div class="cta-banner">
-        <h2 class="cta-title font-display">Pronta para transformar seu Instagram e WhatsApp em canais previsíveis de conversão?</h2>
+        <h2 class="cta-title font-display">Pronta para estruturar seus canais de atendimento com a DRYOS?</h2>
         <p class="cta-desc">
-          Para iniciarmos o setup e abrirmos a fila técnica de implantação com a condição especial da Tahis, basta sinalizar o seu aceite para agendarmos o Kick-off de 30 minutos.
+          Basta escolher a opção desejada e sinalizar o seu aceite no WhatsApp para agendarmos o Kick-off técnico de 30 minutos e iniciarmos a homologação.
         </p>
         <div class="cta-actions">
           <button onclick="window.print()" class="btn btn-outline" style="color: #FAF9F5; border-color: rgba(255,255,255,0.3);">
             Salvar Proposta (PDF)
           </button>
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20dar%20o%20aceite%20na%20Proposta%20de%20Parceria%20%26%20Sustenta%C3%A7%C3%A3o%20Cont%C3%ADnua%20da%20DRYOS%20(Condi%C3%A7%C3%A3o%20Especial%20Tahis%20-%20R%24%201.200%2Fm%C3%AAs)!%20Vamos%20agendar%20o%20Kick-off%20t%C3%A9cnico%3F" target="_blank" rel="noopener noreferrer" class="btn btn-light">
-            Aceitar Proposta & Agendar Kick-off
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20analisei%20a%20proposta%20e%20quero%20iniciar%20o%20projeto!%20Vamos%20agendar%20o%20Kick-off%20t%C3%A9cnico%3F" target="_blank" rel="noopener noreferrer" class="btn btn-light">
+            Sinalizar Aceite via WhatsApp
           </a>
         </div>
       </div>
