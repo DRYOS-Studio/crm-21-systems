@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
 export interface AIConfig {
+  provider: AIProvider;
   apiKey: string;
   model: string;
   systemPrompt: string;
@@ -8,6 +9,8 @@ export interface AIConfig {
   ownerNotifyPhone: string | null;
   enabled: boolean;
 }
+
+export type AIProvider = "groq" | "openai" | "gemini" | "claude";
 
 export const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 export const GROQ_MODELS_ENDPOINT = "https://api.groq.com/openai/v1/models";
@@ -47,14 +50,18 @@ export async function getAgentConfig(userId: string): Promise<AIConfig | null> {
   const admin = createClient(supabaseUrl, serviceKey);
   const { data } = await admin
     .from("agent_configs")
-    .select("groq_api_key, groq_model, system_prompt, business_context, owner_notify_phone, enabled")
+    .select("ai_provider, ai_api_key, ai_model, groq_api_key, groq_model, system_prompt, business_context, owner_notify_phone, enabled")
     .eq("user_id", userId)
     .maybeSingle();
-  const apiKey = data?.groq_api_key || Deno.env.get("GROQ_API_KEY") || null;
+  const provider = (data?.ai_provider || "groq") as AIProvider;
+  const apiKey = provider === "groq"
+    ? data?.groq_api_key || Deno.env.get("GROQ_API_KEY") || null
+    : data?.ai_api_key || null;
   if (!apiKey) return null;
   return {
+    provider,
     apiKey,
-    model: data?.groq_model || GROQ_DEFAULT_MODEL,
+    model: provider === "groq" ? data?.groq_model || GROQ_DEFAULT_MODEL : data?.ai_model || "",
     systemPrompt:
       data?.system_prompt ||
       "Você é um assistente de atendimento simpático e objetivo. Quando receber [áudio], [imagem], [vídeo] ou [documento], diga que ainda não consegue ouvir ou ver o conteúdo e peça para o cliente resumir por texto.",
@@ -135,6 +142,15 @@ export interface ToolDef {
   function: { name: string; description: string; parameters: Record<string, unknown> };
 }
 
+type GeminiPart = {
+  text?: string;
+  functionCall?: { name: string; args?: Record<string, unknown> };
+  functionResponse?: { name: string; response: { result: string } };
+};
+type GeminiContent = { role: "user" | "model"; parts: GeminiPart[] };
+type ClaudeBlock = { type: string; id?: string; name?: string; input?: unknown; text?: string; tool_use_id?: string; content?: string };
+type ClaudeMessage = { role: string; content: string | ClaudeBlock[] };
+
 export interface GroqCallOptions {
   tools?: ToolDef[];
   response_format?: { type: "json_object" };
@@ -144,6 +160,125 @@ export interface GroqCallOptions {
   maxModels?: number;
   /** Tira da cadeia todo modelo cujo id comece por um destes prefixos (ADR-02: `["groq/compound"]`). */
   exclude?: string[];
+}
+
+export async function callAI(
+  provider: AIProvider,
+  apiKey: string,
+  model: string,
+  messages: ChatMessage[],
+  options: GroqCallOptions = {},
+): Promise<GroqResult> {
+  if (!["groq", "openai", "gemini", "claude"].includes(provider)) return { ok: false, error: "Provedor de IA inválido." };
+  if (provider === "groq") return callGroq(apiKey, model, messages, options);
+  if (!model.trim()) return { ok: false, error: "Informe o modelo do provedor." };
+  try {
+    if (provider === "openai") return await callOpenAICompatible("https://api.openai.com/v1/chat/completions", apiKey, model, messages, options);
+    if (provider === "gemini") return await callGemini(apiKey, model, messages, options);
+    if (provider === "claude") return await callClaude(apiKey, model, messages, options);
+    return { ok: false, error: "Provedor de IA inválido." };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Falha ao chamar IA" };
+  }
+}
+
+async function callOpenAICompatible(endpoint: string, apiKey: string, model: string, messages: ChatMessage[], options: GroqCallOptions): Promise<GroqResult> {
+  const body: Record<string, unknown> = { model, messages };
+  if (options.tools) body.tools = options.tools;
+  if (options.response_format) body.response_format = options.response_format;
+  if (options.temperature !== undefined) body.temperature = options.temperature;
+  if (options.max_tokens !== undefined) body.max_tokens = options.max_tokens;
+  const response = await fetch(endpoint, { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(GROQ_TIMEOUT_MS) });
+  const raw = await response.text();
+  if (!response.ok) return providerError(response.status, raw);
+  const message = JSON.parse(raw).choices?.[0]?.message;
+  if (!message) return { ok: false, model, error: "Resposta vazia da IA" };
+  if (message.tool_calls?.length) return { ok: true, model, toolCalls: message.tool_calls, reply: message.content ?? undefined };
+  return message.content?.trim() ? { ok: true, model, reply: message.content } : { ok: false, model, error: "Resposta vazia da IA" };
+}
+
+async function callGemini(apiKey: string, model: string, messages: ChatMessage[], options: GroqCallOptions): Promise<GroqResult> {
+  const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+  const functionNames = new Map<string, string>();
+  const contents: GeminiContent[] = [];
+  for (const message of messages.filter((m) => m.role !== "system")) {
+    if (message.role === "tool") {
+      const name = functionNames.get(message.tool_call_id) || message.tool_call_id;
+      const resultPart = { functionResponse: { name, response: { result: message.content } } };
+      const previous = contents.at(-1);
+      if (previous?.role === "user" && previous.parts.every((part) => part.functionResponse)) previous.parts.push(resultPart);
+      else contents.push({ role: "user", parts: [resultPart] });
+      continue;
+    }
+    if (message.role === "assistant" && message.tool_calls?.length) {
+      contents.push({ role: "model", parts: message.tool_calls.map((tool) => {
+        functionNames.set(tool.id, tool.function.name);
+        let args: unknown = {};
+        try { args = JSON.parse(tool.function.arguments || "{}"); } catch { /* provider will return a usable error */ }
+        return { functionCall: { name: tool.function.name, args } };
+      }) });
+      continue;
+    }
+    contents.push({ role: message.role === "assistant" ? "model" : "user", parts: [{ text: message.content || "" }] });
+  }
+  const body: Record<string, unknown> = { contents };
+  if (system) body.systemInstruction = { parts: [{ text: system }] };
+  const generationConfig: Record<string, unknown> = {};
+  if (options.response_format) generationConfig.responseMimeType = "application/json";
+  if (options.temperature !== undefined) generationConfig.temperature = options.temperature;
+  if (options.max_tokens !== undefined) generationConfig.maxOutputTokens = options.max_tokens;
+  if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
+  if (options.tools) body.tools = [{ functionDeclarations: options.tools.map((tool) => ({ name: tool.function.name, description: tool.function.description, parameters: tool.function.parameters })) }];
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey }, body: JSON.stringify(body), signal: AbortSignal.timeout(GROQ_TIMEOUT_MS) });
+  const raw = await response.text();
+  if (!response.ok) return providerError(response.status, raw);
+  const data = JSON.parse(raw) as { candidates?: { content?: { parts?: GeminiPart[] } }[] };
+  const parts = data.candidates?.[0]?.content?.parts ?? [];
+  const toolCalls = parts.filter((part) => part.functionCall).map((part) => ({ id: crypto.randomUUID(), type: "function" as const, function: { name: part.functionCall!.name, arguments: JSON.stringify(part.functionCall!.args ?? {}) } }));
+  const reply = parts.map((part) => part.text).filter(Boolean).join("");
+  return toolCalls.length ? { ok: true, model, toolCalls, reply: reply || undefined } : reply.trim() ? { ok: true, model, reply } : { ok: false, model, error: "Resposta vazia da IA" };
+}
+
+async function callClaude(apiKey: string, model: string, messages: ChatMessage[], options: GroqCallOptions): Promise<GroqResult> {
+  const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+  const converted: ClaudeMessage[] = [];
+  for (const message of messages.filter((m) => m.role !== "system")) {
+    if (message.role === "tool") {
+      const resultBlock = { type: "tool_result", tool_use_id: message.tool_call_id, content: message.content };
+      const previous = converted.at(-1);
+      if (previous?.role === "user" && Array.isArray(previous.content) && previous.content.every((block) => block.type === "tool_result")) previous.content.push(resultBlock);
+      else converted.push({ role: "user", content: [resultBlock] });
+    } else if (message.role === "assistant" && message.tool_calls?.length) {
+      const content: ClaudeBlock[] = message.tool_calls.map((tool) => {
+        let input: unknown = {};
+        try { input = JSON.parse(tool.function.arguments || "{}"); } catch { /* provider will return a usable error */ }
+        return { type: "tool_use", id: tool.id, name: tool.function.name, input };
+      });
+      if (message.content) content.unshift({ type: "text", text: message.content });
+      converted.push({ role: "assistant", content });
+    } else {
+      converted.push({ role: message.role, content: message.content || "" });
+    }
+  }
+  const body: Record<string, unknown> = { model, messages: converted, max_tokens: options.max_tokens ?? 1024 };
+  if (system) body.system = system;
+  if (options.tools) body.tools = options.tools.map((tool) => ({ name: tool.function.name, description: tool.function.description, input_schema: tool.function.parameters }));
+  if (options.temperature !== undefined) body.temperature = options.temperature;
+  if (options.response_format) body.system = `${system}\n\nResponda apenas com um objeto JSON válido.`.trim();
+  const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(GROQ_TIMEOUT_MS) });
+  const raw = await response.text();
+  if (!response.ok) return providerError(response.status, raw);
+  const content = (JSON.parse(raw).content ?? []) as ClaudeBlock[];
+  const toolCalls = content.filter((part) => part.type === "tool_use").map((part) => ({ id: part.id!, type: "function" as const, function: { name: part.name!, arguments: JSON.stringify(part.input ?? {}) } }));
+  const reply = content.filter((part) => part.type === "text").map((part) => part.text).join("");
+  return toolCalls.length ? { ok: true, model, toolCalls, reply: reply || undefined } : reply.trim() ? { ok: true, model, reply } : { ok: false, model, error: "Resposta vazia da IA" };
+}
+
+function providerError(status: number, raw: string): GroqResult {
+  let code: string | undefined;
+  let message = raw;
+  try { const parsed = JSON.parse(raw); code = parsed?.error?.code ?? parsed?.error?.type; message = parsed?.error?.message ?? parsed?.message ?? raw; } catch { /* retain response text */ }
+  return { ok: false, status, code, error: `Erro do provedor (${status}): ${String(message).slice(0, 500)}`, rawBody: raw.slice(0, 500) };
 }
 
 export interface GroqResult {

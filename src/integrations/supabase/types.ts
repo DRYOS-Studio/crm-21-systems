@@ -36,6 +36,9 @@ export type Database = {
     Tables: {
       agent_configs: {
         Row: {
+          ai_api_key: string | null
+          ai_model: string | null
+          ai_provider: string
           business_context: string | null
           company_name: string | null
           created_at: string
@@ -52,6 +55,7 @@ export type Database = {
           outreach_paused_reason: string | null
           outreach_ramp_start: string | null
           outreach_saturday_morning: boolean
+          outreach_segment_id: string | null
           outreach_weekdays_only: boolean
           owner_notify_phone: string | null
           system_prompt: string
@@ -59,6 +63,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_api_key?: string | null
+          ai_model?: string | null
+          ai_provider?: string
           business_context?: string | null
           company_name?: string | null
           created_at?: string
@@ -75,6 +82,7 @@ export type Database = {
           outreach_paused_reason?: string | null
           outreach_ramp_start?: string | null
           outreach_saturday_morning?: boolean
+          outreach_segment_id?: string | null
           outreach_weekdays_only?: boolean
           owner_notify_phone?: string | null
           system_prompt?: string
@@ -82,6 +90,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_api_key?: string | null
+          ai_model?: string | null
+          ai_provider?: string
           business_context?: string | null
           company_name?: string | null
           created_at?: string
@@ -98,6 +109,7 @@ export type Database = {
           outreach_paused_reason?: string | null
           outreach_ramp_start?: string | null
           outreach_saturday_morning?: boolean
+          outreach_segment_id?: string | null
           outreach_weekdays_only?: boolean
           owner_notify_phone?: string | null
           system_prompt?: string
@@ -155,6 +167,8 @@ export type Database = {
           human_takeover_at: string | null
           id: string
           inactivity_followup_at: string | null
+          installation_at: string | null
+          custom_fields: Json
           instance_id: string | null
           last_message_at: string
           loss_reason_id: string | null
@@ -184,6 +198,8 @@ export type Database = {
           human_takeover_at?: string | null
           id?: string
           inactivity_followup_at?: string | null
+          installation_at?: string | null
+          custom_fields?: Json
           instance_id?: string | null
           last_message_at?: string
           loss_reason_id?: string | null
@@ -213,6 +229,8 @@ export type Database = {
           human_takeover_at?: string | null
           id?: string
           inactivity_followup_at?: string | null
+          installation_at?: string | null
+          custom_fields?: Json
           instance_id?: string | null
           last_message_at?: string
           loss_reason_id?: string | null
@@ -249,6 +267,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_custom_fields: {
+        Row: { id: string; user_id: string; label: string; field_key: string; created_at: string }
+        Insert: { id?: string; user_id: string; label: string; field_key: string; created_at?: string }
+        Update: { id?: string; user_id?: string; label?: string; field_key?: string; created_at?: string }
+        Relationships: []
       }
       conversation_tags: {
         Row: {
@@ -576,18 +600,57 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          extra_users: number
+          extra_whatsapp_channels: number
           id: string
+          logo_url: string | null
           name: string
         }
         Insert: {
           created_at?: string
+          extra_users?: number
+          extra_whatsapp_channels?: number
           id?: string
+          logo_url?: string | null
           name?: string
         }
         Update: {
           created_at?: string
+          extra_users?: number
+          extra_whatsapp_channels?: number
           id?: string
+          logo_url?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      q7_local_access: {
+        Row: {
+          singleton: boolean
+          is_control_plane: boolean
+          billing_status: string
+          grace_ends_at: string | null
+          payment_url: string | null
+          synchronized_at: string
+          updated_at: string
+        }
+        Insert: {
+          singleton?: boolean
+          is_control_plane?: boolean
+          billing_status?: string
+          grace_ends_at?: string | null
+          payment_url?: string | null
+          synchronized_at?: string
+          updated_at?: string
+        }
+        Update: {
+          singleton?: boolean
+          is_control_plane?: boolean
+          billing_status?: string
+          grace_ends_at?: string | null
+          payment_url?: string | null
+          synchronized_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

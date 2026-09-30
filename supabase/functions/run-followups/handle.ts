@@ -1,7 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { getAgentConfig, callGroq, type AIConfig } from "../_shared/get-ai-config.ts";
+import { getAgentConfig, callAI, type AIConfig } from "../_shared/get-ai-config.ts";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { runBrainTurn, type ConversaState } from "../_shared/brain.ts";
+import { getBillingAccess } from "../_shared/billing-access.ts";
 
 const BATCH = 20;
 
@@ -34,6 +35,8 @@ export async function handle(req: Request): Promise<Response> {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  if (!(await getBillingAccess(supabase)).allowed) return ok({ processed: 0, blocked: true });
 
   const { data: due, error } = await supabase
     .from("followups")
@@ -112,11 +115,11 @@ export async function handle(req: Request): Promise<Response> {
               content: "[sistema] O cliente não respondeu. Escreva agora a mensagem de reengajamento, só ela.",
             },
           ];
-          const groq = await callGroq(agent.apiKey, agent.model, chat);
-          if (groq.ok && groq.reply && groq.reply.trim()) {
-            text = groq.reply.trim();
+          const result = await callAI(agent.provider, agent.apiKey, agent.model, chat);
+          if (result.ok && result.reply && result.reply.trim()) {
+            text = result.reply.trim();
           } else {
-            console.warn("[run-followups] Groq vazio/erro, usando fallback:", groq.error);
+            console.warn("[run-followups] IA vazia/erro, usando fallback:", result.error);
             text = FALLBACK_REENGAJE;
           }
         }
@@ -132,6 +135,13 @@ export async function handle(req: Request): Promise<Response> {
       const serverUrl = (inst.server_url as string | null)?.replace(/\/$/, "") || uaz?.serverUrl;
       if (!token || !serverUrl) {
         await supabase.from("followups").update({ status: "failed", error: "no uazapi server/token" }).eq("id", f.id);
+        continue;
+      }
+      if (!(await getBillingAccess(supabase)).allowed) {
+        await supabase.from("followups").update({
+          send_at: new Date(Date.now() + 5 * 60_000).toISOString(),
+          error: "billing blocked; deferred",
+        }).eq("id", f.id);
         continue;
       }
       const numero = conv.wa_phone || conv.contact_phone;
@@ -177,9 +187,9 @@ export async function handle(req: Request): Promise<Response> {
           .eq("user_id", conv.user_id)
           .maybeSingle();
         const minutes = agentCfg?.followup_inactivity_minutes ?? 0;
-        const max = agentCfg?.followup_max_per_conversation ?? 1;
+        const max = Math.min(agentCfg?.followup_max_per_conversation ?? 1, 3);
         if (minutes > 0 && newCount < max) {
-          const nextAt = new Date(Date.now() + minutes * 60_000).toISOString();
+          const nextAt = new Date(Date.now() + Math.max(minutes * 60_000, 24 * 60 * 60_000)).toISOString();
           await supabase.from("followups").insert({
             user_id: conv.user_id,
             conversation_id: conv.id,

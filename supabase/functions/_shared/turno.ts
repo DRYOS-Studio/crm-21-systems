@@ -5,7 +5,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getAgentConfig, type AIConfig } from "./get-ai-config.ts";
 import { getUazapiConfig } from "./get-uazapi-config.ts";
 import { cancelPendingFollowups, scheduleInactivityFollowup } from "./followups.ts";
-import { runBrainTurn, deveEscalarPorConfirmacoes, ModeloSemToolsError, type ConversaState } from "./brain.ts";
+import { runBrainTurn, deveEscalarPorConfirmacoes, ModeloSemToolsError, pediuParaSair, type ConversaState } from "./brain.ts";
+import { getBillingAccess } from "./billing-access.ts";
 
 type Admin = ReturnType<typeof createClient>;
 
@@ -102,7 +103,8 @@ async function resolverInstancia(admin: Admin, instanceId: string | null) {
   return { serverUrl, token };
 }
 
-async function enviarTexto(serverUrl: string, token: string, numero: string, texto: string): Promise<boolean> {
+async function enviarTexto(admin: Admin, serverUrl: string, token: string, numero: string, texto: string): Promise<boolean> {
+  if (!(await getBillingAccess(admin)).allowed) return false;
   try {
     const res = await fetch(`${serverUrl}/send/text`, {
       method: "POST",
@@ -173,15 +175,15 @@ async function avisarDono(
   ]
     .filter(Boolean)
     .join("\n");
-  await enviarTexto(serverUrl, token, ownerNotifyPhone, texto);
+  await enviarTexto(admin, serverUrl, token, ownerNotifyPhone, texto);
 }
 
 /** Mesmo ramo optout de §4.2, sem passar pela IA — handle.ts passo 9 (IA desligada / agente off). */
-export async function aplicarOptout(params: TurnoParams): Promise<void> {
+export async function aplicarOptout(params: TurnoParams, responderContato = true): Promise<void> {
   const { admin, userId, conversationId } = params;
   const estado0 = await lerConversa(admin, userId, conversationId);
   if (!estado0) return;
-  await ramoOptout(admin, userId, conversationId, estado0);
+  await ramoOptout(admin, userId, conversationId, estado0, responderContato);
 }
 
 /** Roda um turno completo: monta o cérebro, decide o ramo (optout/escalar/legado/responder) e
@@ -193,6 +195,12 @@ export async function responderTurno(params: TurnoParams): Promise<void> {
 
   const estado0 = await lerConversa(admin, userId, conversationId);
   if (!estado0) return;
+  if (!(await getBillingAccess(admin)).allowed) {
+    if (claim.some((message) => pediuParaSair(message.content))) {
+      await ramoOptout(admin, userId, conversationId, estado0, false);
+    }
+    return;
+  }
   const optout0 = estado0.optout;
 
   const agent: AIConfig | null = await getAgentConfig(userId);
@@ -261,7 +269,7 @@ export async function responderTurno(params: TurnoParams): Promise<void> {
         break;
       }
       if (serverUrl && token) {
-        const enviado = await enviarTexto(serverUrl, token, numero, outcome.mensagens[i]);
+        const enviado = await enviarTexto(admin, serverUrl, token, numero, outcome.mensagens[i]);
         if (enviado) {
           await admin.from("messages").insert({
             conversation_id: conversationId,
@@ -302,14 +310,14 @@ export async function responderTurno(params: TurnoParams): Promise<void> {
   }
 }
 
-async function ramoOptout(admin: Admin, userId: string, conversationId: string, estado0: ConversaRow) {
+async function ramoOptout(admin: Admin, userId: string, conversationId: string, estado0: ConversaRow, responderContato = true) {
   const c = await commit(admin, userId, conversationId, { optout: true, desligar: false, motivo: "pedido de saída" });
   await cancelPendingFollowups(admin, conversationId);
-  if (c.flipped_optout || c.flipped_off) {
+  if (responderContato && (c.flipped_optout || c.flipped_off)) {
     const { serverUrl, token } = await resolverInstancia(admin, estado0.instance_id);
     const numero = estado0.wa_phone || estado0.contact_phone;
     if (serverUrl && token) {
-      const enviado = await enviarTexto(serverUrl, token, numero, DESPEDIDA_OPTOUT);
+      const enviado = await enviarTexto(admin, serverUrl, token, numero, DESPEDIDA_OPTOUT);
       if (enviado) {
         await admin.from("messages").insert({
           conversation_id: conversationId,

@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getAgentConfig, type AIConfig } from "../_shared/get-ai-config.ts";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
+import { getBillingAccess } from "../_shared/billing-access.ts";
 import { runBrainTurn, type ConversaState } from "../_shared/brain.ts";
 import {
   intervaloMs,
@@ -84,6 +85,7 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
 
   const provided = req.headers.get(CRON_HEADER) ?? "";
   if (!timingSafeEqual(provided, stored)) return json(401, { ok: false, enviados: 0 });
+  if (!(await getBillingAccess(supabase)).allowed) return json(402, { ok: false, enviados: 0, blocked: true });
 
   const inicio = Date.now();
   const { data: agents } = await supabase
@@ -231,6 +233,10 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
     }
 
     const numero = freshC?.wa_phone || freshC?.contact_phone;
+    if (!(await getBillingAccess(supabase)).allowed) {
+      await supabase.rpc("outreach_release", { p_user: agent.user_id, p_send: row.send_id, p_motivo: "billing blocked" });
+      break;
+    }
     let sendRes: Response;
     try {
       sendRes = await fetch(`${serverUrl}/send/text`, {

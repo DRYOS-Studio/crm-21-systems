@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { getBillingAccess } from "../_shared/billing-access.ts";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { montarWebhookUrl, redigirJson, redigirSecret } from "../_shared/webhook-url.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
@@ -540,6 +541,9 @@ export async function handle(req: Request): Promise<Response> {
 
     // === SEND TEXT ===
     if (action === "send_text") {
+      const billingAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const billing = await getBillingAccess(billingAdmin);
+      if (!billing.allowed) return json({ ok: false, error: "Envios bloqueados por cobrança", code: "BILLING_BLOCKED" }, 402);
       if (!instance_token) {
         return json({ ok: false, error: "Token da instância não informado" });
       }
@@ -572,6 +576,9 @@ export async function handle(req: Request): Promise<Response> {
 
     // === SEND MEDIA (imagem, vídeo, documento, áudio, ptt, sticker) ===
     if (action === "send_media") {
+      const billingAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const billing = await getBillingAccess(billingAdmin);
+      if (!billing.allowed) return json({ ok: false, error: "Envios bloqueados por cobrança", code: "BILLING_BLOCKED" }, 402);
       if (!instance_token) {
         return json({ ok: false, error: "Token da instância não informado" });
       }

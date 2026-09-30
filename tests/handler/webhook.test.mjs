@@ -598,3 +598,52 @@ test("T15: dois inbound em sequência viram um turno só", async () => {
     stop();
   }
 });
+
+test("cobrança bloqueada preserva inbound e não chama IA nem envia resposta", async () => {
+  const admin = adminClient();
+  const { data: existingInstance } = await admin.from("whatsapp_instances")
+    .select("user_id, instance_token, server_url")
+    .not("instance_token", "is", null)
+    .limit(1)
+    .maybeSingle();
+  const fixture = existingInstance
+    ? { user: { id: existingInstance.user_id }, instanceToken: existingInstance.instance_token, serverUrl: existingInstance.server_url }
+    : await seedTenant(admin, "billing-blocked-inbound", { businessContext: "Clínica de teste" });
+  const { user, instanceToken, serverUrl } = fixture;
+  const phone = uniquePhone();
+  let groqCalls = 0;
+  const sends = [];
+  const stop = installFetchStub([
+    {
+      match: (url, init) => url.includes("/rest/v1/q7_local_access") && init.method === "GET",
+      respond: () => new Response(JSON.stringify({
+        is_control_plane: false,
+        billing_status: "blocked",
+        grace_ends_at: null,
+        synchronized_at: new Date().toISOString(),
+      }), { status: 200, headers: { "Content-Type": "application/json", "Content-Range": "0-0/1" } }),
+    },
+    passthroughApi(),
+    stubGroqModels(),
+    stubGroqChat(() => groqCalls++),
+    {
+      match: (url) => url.startsWith(serverUrl),
+      respond: (_url, init) => {
+        if (init.body) sends.push(JSON.parse(init.body));
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+      },
+    },
+  ]);
+  try {
+    const res = await post(inboundBody({ token: instanceToken, phone, text: "Oi, preciso de ajuda" }));
+    assert.equal(res.status, 200);
+    assert.equal(groqCalls, 0);
+    assert.equal(sends.length, 0);
+    const { data: messages, error } = await admin.from("messages").select("direction, content")
+      .eq("user_id", user.id).eq("direction", "inbound");
+    assert.equal(error, null);
+    assert.ok(messages.some((message) => message.content === "Oi, preciso de ajuda"));
+  } finally {
+    stop();
+  }
+});

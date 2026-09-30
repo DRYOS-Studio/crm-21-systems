@@ -1,11 +1,12 @@
 import type { LucideIcon } from "lucide-react";
-import { Bot, Building2, BookOpen, CircleSlash, Smartphone } from "lucide-react";
+import { Bot, Building2, BookOpen, CircleSlash, CreditCard, Server, Smartphone, Tags } from "lucide-react";
 
 export type SettingsNavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
   description?: string;
+  adminOnly?: boolean;
 };
 
 export type SettingsNavGroup = {
@@ -14,6 +15,17 @@ export type SettingsNavGroup = {
 };
 
 export const SETTINGS_NAV: SettingsNavGroup[] = [
+  {
+    title: "Conta",
+    items: [
+      {
+        to: "/configuracoes/faturamento",
+        label: "Faturamento",
+        icon: CreditCard,
+        description: "Status da assinatura, prazo de regularização e cobranças.",
+      },
+    ],
+  },
   {
     title: "Canais",
     items: [
@@ -36,7 +48,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
       },
       {
         to: "/configuracoes/agente",
-        label: "Agente Groq",
+        label: "Agente IA",
         icon: Bot,
         description: "Chave, prompt, follow-up automático e ativação.",
       },
@@ -56,6 +68,26 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         label: "Motivos de perda",
         icon: CircleSlash,
         description: "Lista usada ao mover leads para Perdido.",
+      },
+      {
+        to: "/configuracoes/campos",
+        label: "Campos personalizados",
+        icon: Tags,
+        description: "Campos adicionais para a ficha do lead.",
+      },
+      {
+        to: "/configuracoes/marca",
+        label: "Marca",
+        icon: Tags,
+        description: "Logo exibida nesta instalação.",
+        adminOnly: true,
+      },
+      {
+        to: "/configuracoes/instalacoes",
+        label: "Instalações",
+        icon: Server,
+        description: "Empresas, projetos dedicados, releases e faturamento.",
+        adminOnly: true,
       },
     ],
   },

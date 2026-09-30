@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/", label: "Conversas", match: (p: string) => p === "/" || p.startsWith("/?") },
+  { to: "/conversas", label: "Conversas", match: (p: string) => p.startsWith("/conversas") },
+  { to: "/", label: "Dashboard", match: (p: string) => p === "/" || p.startsWith("/dashboard") },
   { to: "/crm", label: "CRM", match: (p: string) => p === "/crm" || p.startsWith("/kanban") },
+  { to: "/agenda", label: "Agenda", match: (p: string) => p.startsWith("/agenda") },
   { to: "/prospeccao", label: "Prospecção", match: (p: string) => p.startsWith("/prospeccao") },
   {
     to: "/configuracoes",
@@ -29,7 +31,9 @@ export function MainHeader({ onLogout, configNeedsAttention, trailing }: Props) 
   return (
     <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0 bg-background">
       <div className="flex items-center gap-3 min-w-0">
-        <Logo horizontal width={26} height={26} />
+        <Link to="/" aria-label="Ir para o Dashboard" className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Logo horizontal width={26} height={26} />
+        </Link>
         <nav className="hidden sm:flex items-center gap-1 ml-2">
           {NAV.map((item) => {
             const active = item.match(pathname);

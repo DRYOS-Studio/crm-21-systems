@@ -16,3 +16,18 @@ verify_jwt = false
 
 [functions.run-outreach]
 verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.process-asaas-events]
+verify_jwt = false
+
+[functions.billing-snapshot]
+verify_jwt = false
+
+[functions.sync-billing-state]
+verify_jwt = false
+
+[functions.manage-installation]
+verify_jwt = false

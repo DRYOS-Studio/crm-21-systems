@@ -5,14 +5,20 @@ import { AgentConfigProvider, useAgentConfig } from "@/contexts/AgentConfigConte
 import { useAuth } from "@/contexts/AuthContext";
 import { SETTINGS_NAV } from "@/lib/settings-nav";
 import { cn } from "@/lib/utils";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 function SettingsChrome() {
   const { pathname } = useLocation();
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { needsGroqSetup } = useAgentConfig();
+  const { isAdmin } = useAdminRole();
+  const visibleNav = SETTINGS_NAV.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.adminOnly || isAdmin),
+  })).filter((group) => group.items.length > 0);
 
-  const activeItem = SETTINGS_NAV.flatMap((g) => g.items).find((item) => pathname.startsWith(item.to));
+  const activeItem = visibleNav.flatMap((g) => g.items).find((item) => pathname.startsWith(item.to));
 
   return (
     <div className="dryos h-screen flex flex-col bg-background text-foreground">
@@ -30,7 +36,7 @@ function SettingsChrome() {
 
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
             <nav aria-label="Configurações" className="flex flex-col gap-4 md:border-r md:border-border md:pr-3">
-              {SETTINGS_NAV.map((group) => (
+              {visibleNav.map((group) => (
                 <div key={group.title}>
                   <h2 className="px-3 pb-1 font-mono text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                     {group.title}

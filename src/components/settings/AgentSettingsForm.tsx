@@ -6,11 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAgentConfig } from "@/contexts/AgentConfigContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function AgentSettingsForm() {
   const {
     apiKey,
     setApiKey,
+    provider,
+    setProvider,
+    model,
+    setModel,
     hasKey,
     prompt,
     setPrompt,
@@ -32,6 +37,24 @@ export function AgentSettingsForm() {
     <div className="space-y-8 max-w-xl">
       <section className="space-y-4">
         <div className="space-y-1.5">
+          <Label>Provedor de IA</Label>
+          <Select value={provider} onValueChange={(value) => setProvider(value as typeof provider)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="groq">Groq</SelectItem>
+              <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="gemini">Gemini</SelectItem>
+              <SelectItem value="claude">Claude</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {provider !== "groq" && (
+          <div className="space-y-1.5">
+            <Label>Modelo</Label>
+            <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Identificador do modelo" />
+          </div>
+        )}
+        <div className="space-y-1.5">
           <Label>
             Chave da API {hasKey && <span className="text-muted-foreground font-normal">(configurada)</span>}
           </Label>
@@ -39,15 +62,15 @@ export function AgentSettingsForm() {
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={hasKey ? "•••••••• (deixe vazio para manter)" : "gsk_..."}
+            placeholder={hasKey ? "•••••••• (deixe vazio para manter)" : provider === "groq" ? "gsk_..." : "Cole a chave do provedor"}
           />
           <a
-            href="https://console.groq.com/keys"
+            href={provider === "groq" ? "https://console.groq.com/keys" : provider === "openai" ? "https://platform.openai.com/api-keys" : provider === "gemini" ? "https://aistudio.google.com/apikey" : "https://console.anthropic.com/settings/keys"}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
           >
-            Obter chave gratuita <ExternalLink className="w-3 h-3" />
+            Obter chave <ExternalLink className="w-3 h-3" />
           </a>
         </div>
         <div className="space-y-1.5">
@@ -107,15 +130,15 @@ export function AgentSettingsForm() {
               <Input
                 type="number"
                 min={1}
-                max={5}
+                max={3}
                 value={followupMax}
-                onChange={(e) => setFollowupMax(Number(e.target.value) || 1)}
+                onChange={(e) => setFollowupMax(Math.min(3, Number(e.target.value) || 1))}
               />
             </div>
           </div>
         )}
         <p className="text-[11px] text-muted-foreground">
-          Use &quot;Salvar e testar&quot; acima para aplicar follow-up. O contador zera quando o cliente responde.
+          Até três envios, em dias distintos. O contador zera quando o cliente responde.
         </p>
       </section>
     </div>

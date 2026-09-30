@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,11 @@ type Conversation = {
   loss_reason_note: string | null;
   contact_avatar_url: string | null;
   inactivity_followup_at: string | null;
+  installation_at: string | null;
+  custom_fields: Json;
+  qualification: Json;
+  confirmacoes: number;
+  ai_stage: string;
 };
 
 function destPhone(c: Conversation): string | null {
@@ -622,10 +628,10 @@ export default function Conversas() {
     const check = async () => {
       const { data: agent } = await supabase
         .from("agent_configs")
-        .select("groq_api_key")
+        .select("ai_provider, ai_api_key, groq_api_key")
         .eq("user_id", user.id)
         .maybeSingle();
-      setNeedsSetup(!agent?.groq_api_key);
+      setNeedsSetup(agent?.ai_provider === "groq" ? !agent.groq_api_key : !agent?.ai_api_key);
     };
     check();
   }, [user]);
@@ -1192,7 +1198,7 @@ export default function Conversas() {
           <div className="flex-1 overflow-y-auto">
             {needsSetup && (
               <button
-                onClick={() => setConfigOpen(true)}
+                onClick={() => navigate("/configuracoes/agente")}
                 className="w-full text-left p-4 border-b bg-primary/5 hover:bg-primary/10 transition"
               >
                 <div className="flex items-center gap-2 font-medium text-sm">

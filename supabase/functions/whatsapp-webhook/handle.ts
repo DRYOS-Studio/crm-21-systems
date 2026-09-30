@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { getAgentConfig, callGroq, type AIConfig } from "../_shared/get-ai-config.ts";
+import { getAgentConfig, callAI, type AIConfig } from "../_shared/get-ai-config.ts";
 import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { cancelPendingFollowups, scheduleInactivityFollowup } from "../_shared/followups.ts";
 import { aplicarOptout, responderTurno } from "../_shared/turno.ts";
@@ -7,6 +7,7 @@ import { pediuParaSair } from "../_shared/brain.ts";
 import { aindaDigitando, debounceInboundMs, pareceRespostaAutomatica } from "../_shared/inbound-guarda.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
 import { contactAvatarFromUazapiChat } from "../_shared/contact-avatar.ts";
+import { getBillingAccess } from "../_shared/billing-access.ts";
 import {
   extractUazapiMessageId,
   parseMessagesUpdate,
@@ -695,6 +696,14 @@ export async function handle(req: Request): Promise<Response> {
     }
     if (!inboundRow?.id) return ok();
 
+    if (!(await getBillingAccess(supabase)).allowed) {
+      const claim = await claimInbound(supabase, userId, conv.id);
+      if (claim.some((message: { content: string }) => pediuParaSair(message.content))) {
+        await aplicarOptout({ admin: supabase, userId, conversationId: conv.id, claim }, false);
+      }
+      return ok();
+    }
+
     // 8. legado byte a byte se não autenticado ou sem cérebro
     if (!autenticado || !modoCerebro(agent)) {
       await claimInbound(supabase, userId, conv.id);
@@ -807,6 +816,7 @@ async function caminhoLegado(params: {
   agent: AIConfig | null;
 }) {
   const { supabase, userId, conv, instRow, phone, agent } = params;
+  if (!(await getBillingAccess(supabase)).allowed) return ok();
   if (!conv.ai_enabled) return ok();
   if (!agent || !agent.enabled) return ok();
 
@@ -825,9 +835,9 @@ async function caminhoLegado(params: {
     })),
   ];
 
-  const groq = await callGroq(agent.apiKey, agent.model, chat);
-  if (!groq.ok || !groq.reply) {
-    console.error("[webhook] groq failed", groq.error);
+  const result = await callAI(agent.provider, agent.apiKey, agent.model, chat);
+  if (!result.ok || !result.reply) {
+    console.error("[webhook] AI provider failed", result.error);
     return ok();
   }
 
@@ -838,10 +848,11 @@ async function caminhoLegado(params: {
     console.error("[webhook] uazapi server/token missing", { hasServer: !!serverUrl, hasToken: !!token });
     return ok();
   }
+  if (!(await getBillingAccess(supabase)).allowed) return ok();
   const sendRes = await fetch(`${serverUrl}/send/text`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token },
-    body: JSON.stringify({ number: phone, text: groq.reply }),
+    body: JSON.stringify({ number: phone, text: result.reply }),
   });
   const sendBodyText = await sendRes.text();
   if (!sendRes.ok) {
@@ -861,7 +872,7 @@ async function caminhoLegado(params: {
     user_id: userId,
     direction: "outbound",
     sender: "ai",
-    content: groq.reply,
+    content: result.reply,
     external_id: aiExternalId,
     wa_status: aiExternalId ? "sent" : null,
   });
@@ -937,11 +948,11 @@ async function runDryRun(body: any, instRowPre: any) {
   checks.agent.has_key = !!agent?.apiKey;
   checks.agent.enabled = !!agent?.enabled;
   checks.agent.ok = checks.agent.has_key && checks.agent.enabled;
-  if (!checks.agent.has_key) checks.agent.error = "Chave da Groq não configurada";
+  if (!checks.agent.has_key) checks.agent.error = "Chave de IA não configurada";
   else if (!checks.agent.enabled) checks.agent.error = "Agente não está ativo";
 
   if (agent?.apiKey) {
-    const r = await callGroq(agent.apiKey, agent.model, [
+    const r = await callAI(agent.provider, agent.apiKey, agent.model, [
       { role: "system", content: "Responda apenas: ok" },
       { role: "user", content: "ping" },
     ]);

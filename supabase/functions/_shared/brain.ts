@@ -1,11 +1,10 @@
-// O "cérebro": monta o prompt, roda o loop de tool-calling contra a Groq, e
+// O "cérebro": monta o prompt, roda o loop de tool-calling no provedor configurado, e
 // aplica os guardrails em código (gate NAVT, contagem de "vou confirmar",
 // opt-out) — porta de codigo/src/{cerebro,ia,fluxo,conhecimento,tempo}.js do
-// 02.dryos_sdr_prospeccao para a stack multi-tenant do Q7 (Groq em vez de
-// OpenAI/OpenRouter, knowledge_base em tabela em vez de markdown bundlado).
+// 02.dryos_sdr_prospeccao para a stack do Q7, com knowledge_base em tabela.
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { CEREBRO } from "./cerebro.ts";
-import { callGroq, type AIConfig, type ChatMessage, type ToolDef, type GroqResult } from "./get-ai-config.ts";
+import { callAI, type AIConfig, type ChatMessage, type ToolDef, type GroqResult, type AIProvider } from "./get-ai-config.ts";
 import { ajustarFalaFeminina, sdrFalaNoFeminino } from "./voz-sdr.ts";
 import { extraAbordagem, modoDaConversa } from "./modo-conversa.ts";
 
@@ -165,10 +164,11 @@ export interface BrainResult {
   motivo_escalar: string | null;
 }
 
-/** Uma "rodada": chama a Groq, executa tools que ela pedir, até ela responder o JSON final. */
+/** Uma "rodada": chama o provedor, executa tools que ele pedir, até responder o JSON final. */
 async function chamarComTools(
   admin: ReturnType<typeof createClient>,
   userId: string,
+  provider: AIProvider,
   apiKey: string,
   model: string,
   mensagensIniciais: ChatMessage[],
@@ -183,7 +183,7 @@ async function chamarComTools(
     chamadas++;
     // ADR-01: a Groq não documenta tools + response_format juntos — a chamada com tools
     // nunca leva response_format; a resposta final é parseada por extrairJson.
-    const r = await callGroq(apiKey, model, mensagens, {
+    const r = await callAI(provider, apiKey, model, mensagens, {
       tools: TOOLS,
       temperature: 0.7,
       max_tokens: 800,
@@ -214,7 +214,8 @@ async function chamarComTools(
     // ADR-01: shape inválido ⇒ 1 chamada de formatação (json_object, sem tools) — conta contra
     // o mesmo teto de AC-A9 (design §5), não é uma rodada "de graça".
     chamadas++;
-    const formatado = await callGroq(
+    const formatado = await callAI(
+      agent.provider,
       apiKey,
       model,
       [
@@ -241,6 +242,7 @@ async function chamarComTools(
 async function pensar(
   admin: ReturnType<typeof createClient>,
   userId: string,
+  provider: AIProvider,
   apiKey: string,
   model: string,
   mensagens: ChatMessage[],
@@ -248,7 +250,7 @@ async function pensar(
   let ultimoErro: unknown = null;
   for (let tentativa = 0; tentativa < 2; tentativa++) {
     try {
-      return await chamarComTools(admin, userId, apiKey, model, mensagens);
+      return await chamarComTools(admin, userId, provider, apiKey, model, mensagens);
     } catch (e) {
       ultimoErro = e;
     }
@@ -339,7 +341,7 @@ function extraDaConversa(dados: Record<string, unknown>): string {
 
 /**
  * Roda um turno completo do cérebro: decide saída/humano por código sobre a janela (D5/D7,
- * antes de qualquer chamada à IA — AC-A5b), monta o prompt, chama a Groq (com tools), aplica
+ * antes de qualquer chamada à IA — AC-A5b), monta o prompt, chama o provedor (com tools), aplica
  * o gate NAVT com re-prompt de correção, conta "vou confirmar", e devolve o que o chamador
  * (turno.ts) precisa persistir e enviar.
  *
@@ -386,7 +388,7 @@ export async function runBrainTurn(params: {
     ...historyMessages,
   ];
 
-  let r = await pensar(admin, userId, agent.apiKey, agent.model, mensagens);
+  let r = await pensar(admin, userId, agent.provider, agent.apiKey, agent.model, mensagens);
 
   // Delta deste turno (pode vir de 2 chamadas, se o gate NAVT reprompta) — nunca mesclado com
   // conversa.dados aqui (quem persiste faz esse merge). `dados` é só uso interno pro gate NAVT.
@@ -404,7 +406,7 @@ Você tentou ir pra etapa "convidar", mas ainda falta descobrir: ${falta.join(",
 Não proponha reunião, diagnóstico, dia nem horário nesta mensagem.
 Faça UMA pergunta de descoberta sobre o que falta, e devolva "etapa": "descobrir".`;
     try {
-      const corrigida = await pensar(admin, userId, agent.apiKey, agent.model, [
+      const corrigida = await pensar(admin, userId, agent.provider, agent.apiKey, agent.model, [
         { role: "system", content: buildSystemPrompt(agent, conversa, extraCorrecao, historyMessages) },
         ...historyMessages,
       ]);

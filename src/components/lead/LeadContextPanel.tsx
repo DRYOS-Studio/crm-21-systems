@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, CircleSlash, Phone, StickyNote, Tag, Tags, User } from "lucide-react";
+import { Building2, CircleSlash, Phone, StickyNote, Tag, Tags, User, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +15,7 @@ import type { LeadTag } from "@/lib/lead-tags";
 import { ConversationOwnerActions } from "@/components/org/ConversationOwnerActions";
 import type { OrgMember } from "@/hooks/useOrgMembers";
 import { toast } from "@/hooks/use-toast";
+import type { Json } from "@/integrations/supabase/types";
 
 export type LeadConversation = {
   id: string;
@@ -25,6 +26,11 @@ export type LeadConversation = {
   contact_email: string | null;
   lead_context?: string | null;
   wa_phone?: string | null;
+  installation_at?: string | null;
+  custom_fields?: Json;
+  qualification?: Json;
+  confirmacoes?: number;
+  ai_stage?: string;
 };
 
 type ProspectRow = {
@@ -36,11 +42,13 @@ type ProspectRow = {
 };
 
 export type LeadEditableFields = {
-  contact_name: string | null;
-  contact_company: string | null;
-  contact_city: string | null;
-  contact_email: string | null;
+  contact_name?: string | null;
+  contact_company?: string | null;
+  contact_city?: string | null;
+  contact_email?: string | null;
   lead_context?: string | null;
+  installation_at?: string | null;
+  custom_fields?: Record<string, string>;
 };
 
 export function leadTitle(c: LeadConversation) {
@@ -110,13 +118,17 @@ export function LeadContextBody({
   onSaved?: (fields: LeadEditableFields) => void;
 }) {
   const { user } = useAuth();
+  const userId = user?.id;
   const [prospect, setProspect] = useState<ProspectRow | null>(null);
   const [form, setForm] = useState({ name: "", company: "", city: "", email: "" });
   const [leadContext, setLeadContext] = useState("");
+  const [installationAt, setInstallationAt] = useState("");
+  const [customDefinitions, setCustomDefinitions] = useState<{ label: string; field_key: string }[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let cancelled = false;
     const load = async () => {
       const phone = conversation.contact_phone || conversation.wa_phone;
@@ -147,7 +159,7 @@ export function LeadContextBody({
     return () => {
       cancelled = true;
     };
-  }, [user?.id, conversation.id, conversation.contact_phone, conversation.wa_phone]);
+  }, [userId, conversation.id, conversation.contact_phone, conversation.wa_phone]);
 
   const company = conversation.contact_company || prospect?.company || null;
   const importedName = prospect?.name || null;
@@ -168,6 +180,20 @@ export function LeadContextBody({
     });
     setLeadContext(conversation.lead_context || "");
   }, [conversation.id, conversation.contact_name, conversation.contact_company, conversation.contact_city, conversation.contact_email, conversation.lead_context, prospect?.name, prospect?.company, prospect?.city]);
+
+  useEffect(() => {
+    if (!userId) return;
+    void supabase.from("lead_custom_fields").select("label, field_key").order("label")
+      .then(({ data }) => setCustomDefinitions(data ?? []));
+  }, [userId]);
+
+  useEffect(() => {
+    const values = conversation.custom_fields;
+    setCustomValues(values && typeof values === "object" && !Array.isArray(values) ? values as Record<string, string> : {});
+    setInstallationAt(conversation.installation_at
+      ? new Date(new Date(conversation.installation_at).getTime() - new Date(conversation.installation_at).getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+      : "");
+  }, [conversation.id, conversation.custom_fields, conversation.installation_at]);
 
   const saveLead = async () => {
     setSaving(true);
@@ -202,6 +228,22 @@ export function LeadContextBody({
     onSaved?.({ lead_context: value });
     toast({ title: "Anotações salvas" });
   };
+
+  const saveOperations = async () => {
+    setSaving(true);
+    const value = installationAt ? new Date(installationAt).toISOString() : null;
+    const { error } = await supabase.from("conversations").update({ installation_at: value, custom_fields: customValues }).eq("id", conversation.id);
+    setSaving(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro ao salvar operação", description: error.message });
+      return;
+    }
+    onSaved?.({ installation_at: value, custom_fields: customValues });
+    toast({ title: "Dados operacionais salvos" });
+  };
+
+  const qualification = conversation.qualification && typeof conversation.qualification === "object" && !Array.isArray(conversation.qualification)
+    ? conversation.qualification as Record<string, unknown> : {};
 
   return (
     <Tabs defaultValue="informacoes" className="space-y-4">
@@ -267,6 +309,24 @@ export function LeadContextBody({
               <SectionHeading icon={Tags} label="Operação" />
             </AccordionTrigger>
             <AccordionContent className="space-y-3 pb-4">
+              <div className="space-y-1.5">
+                <Label htmlFor={`install-at-${conversation.id}`}>Data e hora da instalação</Label>
+                <Input id={`install-at-${conversation.id}`} type="datetime-local" value={installationAt} onChange={(e) => setInstallationAt(e.target.value)} />
+              </div>
+              {customDefinitions.map((field) => (
+                <div key={field.field_key} className="space-y-1.5">
+                  <Label htmlFor={`custom-${conversation.id}-${field.field_key}`}>{field.label}</Label>
+                  <Input id={`custom-${conversation.id}-${field.field_key}`} value={customValues[field.field_key] ?? ""} onChange={(e) => setCustomValues((prev) => ({ ...prev, [field.field_key]: e.target.value }))} />
+                </div>
+              ))}
+              {(customDefinitions.length > 0 || installationAt || conversation.installation_at) && <Button className="w-full" variant="outline" onClick={() => void saveOperations()} disabled={saving}>Salvar operação</Button>}
+              <div className="rounded-md border p-3 space-y-2">
+                <SectionHeading icon={CalendarClock} label="Qualificação NAVT" />
+                <p className="text-xs"><span className="text-muted-foreground">Estado: </span>{conversation.ai_stage || "inicial"}</p>
+                {Object.entries(qualification).filter(([, value]) => value != null && String(value).trim() !== "").map(([key, value]) => <div key={key} className="text-xs"><span className="text-muted-foreground">{key}: </span>{String(value)}</div>)}
+                {Object.keys(qualification).length === 0 && <p className="text-xs text-muted-foreground">Ainda sem dados de qualificação.</p>}
+                <p className="text-[11px] text-muted-foreground">Confirmações de promessa: {conversation.confirmacoes ?? 0}</p>
+              </div>
               {lossLabel && <Field icon={CircleSlash} label="Motivo da perda" value={lossLabel} />}
               {ownerUserId && orgMembers && orgMembers.length > 1 && onTransfer && (
                 <ConversationOwnerActions

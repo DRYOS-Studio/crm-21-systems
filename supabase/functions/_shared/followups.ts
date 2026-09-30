@@ -43,14 +43,14 @@ export async function scheduleInactivityFollowup(params: {
     .maybeSingle();
 
   const minutes = agent?.followup_inactivity_minutes ?? 0;
-  const max = agent?.followup_max_per_conversation ?? 1;
+  const max = Math.min(agent?.followup_max_per_conversation ?? 1, 3);
   if (!minutes || minutes <= 0) return;
   if (currentAutoCount >= max) return;
 
   // Cancela qualquer pendente e cria o novo
   await cancelPendingFollowups(admin, conversationId);
 
-  const sendAt = new Date(Date.now() + minutes * 60_000).toISOString();
+  const sendAt = new Date(Date.now() + Math.max(minutes * 60_000, 24 * 60 * 60_000)).toISOString();
 
   await admin.from("followups").insert({
     user_id: userId,

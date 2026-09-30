@@ -9,9 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 
 type Instance = { id: string; name: string; status: string };
+type SavedSegment = { id: string; name: string };
 
 export function OutreachSettings() {
   const { user } = useAuth();
+  const userId = user?.id;
   const [enabled, setEnabled] = useState(false);
   const [pausedReason, setPausedReason] = useState<string | null>(null);
   const [cap, setCap] = useState("40");
@@ -19,19 +21,21 @@ export function OutreachSettings() {
   const [weekdaysOnly, setWeekdaysOnly] = useState(true);
   const [saturdayMorning, setSaturdayMorning] = useState(false);
   const [instance, setInstance] = useState<Instance | null>(null);
+  const [segments, setSegments] = useState<SavedSegment[]>([]);
+  const [segmentId, setSegmentId] = useState("");
   const [saving, setSaving] = useState(false);
   const [capError, setCapError] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     void (async () => {
       const { data: cfg } = await supabase
         .from("agent_configs" as never)
         .select(
-          "outreach_enabled, outreach_paused_reason, outreach_instance_id, outreach_daily_cap, outreach_interval_sec, outreach_weekdays_only, outreach_saturday_morning",
+          "outreach_enabled, outreach_paused_reason, outreach_instance_id, outreach_daily_cap, outreach_interval_sec, outreach_weekdays_only, outreach_saturday_morning, outreach_segment_id",
         )
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .maybeSingle();
       const row = cfg as {
         outreach_enabled?: boolean;
@@ -41,6 +45,7 @@ export function OutreachSettings() {
         outreach_interval_sec?: number;
         outreach_weekdays_only?: boolean;
         outreach_saturday_morning?: boolean;
+        outreach_segment_id?: string | null;
       } | null;
       if (row) {
         setEnabled(!!row.outreach_enabled);
@@ -49,17 +54,20 @@ export function OutreachSettings() {
         setIntervalSec(String(row.outreach_interval_sec ?? 90));
         setWeekdaysOnly(row.outreach_weekdays_only ?? true);
         setSaturdayMorning(!!row.outreach_saturday_morning);
+        setSegmentId(row.outreach_segment_id ?? "");
       }
+      const { data: savedSegments } = await supabase.from("saved_prospect_segments" as never).select("id, name").order("name");
+      setSegments((savedSegments ?? []) as unknown as SavedSegment[]);
       const { data: inst } = await supabase
         .from("whatsapp_instances")
         .select("id, name, status")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       setInstance((inst as Instance | null) ?? null);
     })();
-  }, [user?.id]);
+  }, [userId]);
 
   const save = async () => {
     if (!user) return;
@@ -87,6 +95,7 @@ export function OutreachSettings() {
           outreach_interval_sec: gap,
           outreach_weekdays_only: weekdaysOnly,
           outreach_saturday_morning: weekdaysOnly ? false : saturdayMorning,
+          outreach_segment_id: segmentId || null,
         } as never,
         { onConflict: "user_id" },
       );
@@ -139,6 +148,14 @@ export function OutreachSettings() {
         Os toques de abordagem saem com os textos prontos. Groq não é necessário para disparar — só para a Edith
         responder depois que a pessoa falar.
       </p>
+      <div className="space-y-1.5">
+        <Label htmlFor="outreach-segment" className="text-xs">Segmento da cadência</Label>
+        <select id="outreach-segment" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={segmentId} disabled={saving} onChange={(e) => { setSegmentId(e.target.value); setSaved(false); }}>
+          <option value="">Todos os contatos elegíveis</option>
+          {segments.map((segment) => <option key={segment.id} value={segment.id}>{segment.name}</option>)}
+        </select>
+        <p className="text-xs text-muted-foreground">O filtro é aplicado antes da reserva, sem alterar opt-out ou limites da cadência.</p>
+      </div>
       <div className="space-y-1.5">
         <Label htmlFor="outreach-cap" className="text-xs">
           Teto diário

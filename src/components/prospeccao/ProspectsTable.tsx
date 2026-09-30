@@ -12,6 +12,7 @@ import { useViewFilters } from "@/hooks/useViewFilters";
 import { LeadTagChips, TagFilterSelect } from "@/components/lead/LeadTagEditor";
 import { conversationMatchesTagFilter } from "@/lib/tag-filter";
 import { UserFilterSelect } from "@/components/org/UserFilterSelect";
+import { SavedSegments, type ProspectSegment } from "@/components/prospeccao/SavedSegments";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,24 +60,32 @@ function openCsv() {
 
 export function ProspectsTable() {
   const { user } = useAuth();
+  const userId = user?.id;
   const [rows, setRows] = useState<Prospect[] | null>(null);
   const [enviados, setEnviados] = useState(0);
   const [responderam, setResponderam] = useState(0);
   const [toDelete, setToDelete] = useState<Prospect | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectedSegment, setSelectedSegment] = useState<ProspectSegment | null>(null);
+  const [customFieldsByConv, setCustomFieldsByConv] = useState<Record<string, Record<string, unknown>>>({});
   const { filters, update: updateFilters } = useViewFilters(user?.id);
   const { tagFilters, userFilter } = filters;
   const orgMembers = useOrgMembers();
   const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     const { data: prospects } = await supabase
       .from("prospects" as never)
       .select("id, phone, name, company, city, estado, tentativas, conversation_id, user_id")
       .order("created_at");
     const list = (prospects ?? []) as Prospect[];
     setRows(list);
+    const conversationIds = list.flatMap((p) => p.conversation_id ? [p.conversation_id] : []);
+    if (conversationIds.length) {
+      const { data: conversations } = await supabase.from("conversations").select("id, custom_fields").in("id", conversationIds);
+      setCustomFieldsByConv(Object.fromEntries((conversations ?? []).map((c) => [c.id, (c.custom_fields ?? {}) as Record<string, unknown>])));
+    }
 
     const { data: sends } = await supabase
       .from("outreach_sends" as never)
@@ -99,7 +108,7 @@ export function ProspectsTable() {
       );
     }).length;
     setResponderam(replied);
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     void load();
@@ -150,6 +159,11 @@ export function ProspectsTable() {
             ? (tagsByConv[p.conversation_id] ?? []).map((t) => t.id)
             : [];
           if (!conversationMatchesTagFilter(tagIds, tagFilters)) return false;
+          if (selectedSegment) {
+            if (selectedSegment.filters.tag_ids.some((id) => !tagIds.includes(id))) return false;
+            const custom = p.conversation_id ? customFieldsByConv[p.conversation_id] ?? {} : {};
+            if (selectedSegment.filters.fields.some((f) => String(custom[f.key] ?? "") !== f.value)) return false;
+          }
           if (userFilter !== "all" && p.user_id !== userFilter) return false;
           return true;
         });
@@ -169,6 +183,7 @@ export function ProspectsTable() {
           value={tagFilters}
           onChange={(next) => updateFilters({ tagFilters: next })}
         />
+        <SavedSegments catalog={tagCatalog} value={selectedSegment} onChange={setSelectedSegment} />
         <UserFilterSelect
           members={orgMembers}
           currentUserId={user?.id}

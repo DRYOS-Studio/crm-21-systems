@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
 const DEFAULT_PROMPT =
   "Você é um assistente de atendimento simpático e objetivo. Quando receber [áudio], [imagem], [vídeo] ou [documento], diga que ainda não consegue ouvir ou ver o conteúdo e peça para o cliente resumir por texto.";
@@ -9,6 +10,12 @@ const DEFAULT_PROMPT =
 export function useAgentConfigSettings() {
   const { user } = useAuth();
   const [loaded, setLoaded] = useState(false);
+  const [provider, setProviderState] = useState<"groq" | "openai" | "gemini" | "claude">("groq");
+  const [configuredProvider, setConfiguredProvider] = useState("groq");
+  const [configuredHasKey, setConfiguredHasKey] = useState(false);
+  const [groqHasKey, setGroqHasKey] = useState(false);
+  const [model, setModel] = useState("auto");
+  const [groqModel, setGroqModel] = useState("auto");
   const [apiKey, setApiKey] = useState("");
   const [hasKey, setHasKey] = useState(false);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
@@ -31,9 +38,17 @@ export function useAgentConfigSettings() {
       .eq("user_id", user.id)
       .maybeSingle();
     if (data) {
+      const currentProvider = (data.ai_provider || "groq") as typeof provider;
+      const currentHasKey = currentProvider === "groq" ? !!data.groq_api_key : !!data.ai_api_key;
+      setProviderState(currentProvider);
+      setConfiguredProvider(currentProvider);
+      setConfiguredHasKey(currentHasKey);
+      setGroqHasKey(!!data.groq_api_key);
+      setGroqModel(data.groq_model || "auto");
+      setModel(currentProvider === "groq" ? data.groq_model || "auto" : data.ai_model || "");
       setPrompt(data.system_prompt);
       setEnabled(data.enabled);
-      setHasKey(!!data.groq_api_key);
+      setHasKey(currentHasKey);
       const m = (data as { followup_inactivity_minutes?: number | null }).followup_inactivity_minutes;
       setFollowupOn(!!m && m > 0);
       setFollowupMinutes(m && m > 0 ? m : 60);
@@ -46,6 +61,13 @@ export function useAgentConfigSettings() {
     setLoaded(true);
   }, [user]);
 
+  const setProvider = (next: typeof provider) => {
+    setProviderState(next);
+    setApiKey("");
+    setHasKey(next === "groq" ? groqHasKey : next === configuredProvider && configuredHasKey);
+    setModel(next === "groq" ? groqModel : "");
+  };
+
   useEffect(() => {
     void loadAgent();
   }, [loadAgent]);
@@ -53,7 +75,7 @@ export function useAgentConfigSettings() {
   const testConnection = async () => {
     setTesting(true);
     const { data, error } = await supabase.functions.invoke("test-ai-connection", {
-      body: { apiKey: apiKey.trim() || undefined },
+      body: { apiKey: apiKey.trim() || undefined, provider, model },
     });
     setTesting(false);
     if (error || !data?.ok) {
@@ -70,6 +92,14 @@ export function useAgentConfigSettings() {
 
   const saveAgent = async (opts?: { testAfter?: boolean }) => {
     if (!user) return false;
+    if (provider !== "groq" && !model.trim()) {
+      toast({ variant: "destructive", title: "Informe o modelo", description: "Use o identificador do modelo fornecido pelo provedor." });
+      return false;
+    }
+    if (provider !== configuredProvider && !apiKey.trim()) {
+      toast({ variant: "destructive", title: "Informe uma chave", description: "Ao trocar de provedor, informe a chave correspondente." });
+      return false;
+    }
     setSaving(true);
     setPhoneError("");
     try {
@@ -88,17 +118,23 @@ export function useAgentConfigSettings() {
       }
 
       const context = businessContext.trim();
-      const payload: Record<string, unknown> = {
+      const payload: Database["public"]["Tables"]["agent_configs"]["Insert"] = {
         user_id: user.id,
+        ai_provider: provider,
+        ai_model: provider === "groq" ? null : model.trim(),
         system_prompt: prompt,
         enabled,
         followup_inactivity_minutes: followupOn ? followupMinutes : null,
-        followup_max_per_conversation: followupMax,
+        followup_max_per_conversation: Math.min(followupMax, 3),
         company_name: companyName.trim() || null,
         business_context: context || null,
         owner_notify_phone: ownerPhone,
       };
-      if (apiKey.trim()) payload.groq_api_key = apiKey.trim();
+      if (provider === "groq") {
+        payload.groq_model = model || "auto";
+        setGroqModel(model || "auto");
+        if (apiKey.trim()) payload.groq_api_key = apiKey.trim();
+      } else if (apiKey.trim()) payload.ai_api_key = apiKey.trim();
       const { error } = await supabase.from("agent_configs").upsert(payload, { onConflict: "user_id" });
       if (error) {
         toast({ variant: "destructive", title: "Erro", description: error.message });
@@ -132,6 +168,9 @@ export function useAgentConfigSettings() {
         setHasKey(true);
         setApiKey("");
       }
+      setConfiguredProvider(provider);
+      setConfiguredHasKey(hadKey);
+      if (provider === "groq") setGroqHasKey(hadKey);
       if (opts?.testAfter && hadKey) await testConnection();
       else toast({ title: "Salvo!" });
       return true;
@@ -142,6 +181,10 @@ export function useAgentConfigSettings() {
 
   return {
     loaded,
+    provider,
+    setProvider,
+    model,
+    setModel,
     needsGroqSetup: loaded && !hasKey,
     apiKey,
     setApiKey,
