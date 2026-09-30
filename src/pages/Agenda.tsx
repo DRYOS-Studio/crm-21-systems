@@ -30,7 +30,7 @@ export default function Agenda() {
       <h1 className="text-2xl font-bold">Agenda</h1>
       <p className="mt-1 text-sm text-muted-foreground">Agendamentos registrados nos leads.</p>
       <div className="mt-6 divide-y rounded-lg border">
-        {rows.map((row) => <Link key={row.id} to={`/?open=${row.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/50">
+        {rows.map((row) => <Link key={row.id} to={`/conversas?open=${row.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/50">
           <div className="min-w-0"><div className="truncate font-medium">{row.contact_company || row.contact_name || row.contact_phone || "Lead"}</div><div className="text-xs text-muted-foreground">{row.contact_phone}</div></div>
           <time className="shrink-0 text-sm">{new Date(row.installation_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</time>
         </Link>)}

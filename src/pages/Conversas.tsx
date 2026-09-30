@@ -441,8 +441,24 @@ export default function Conversas() {
     if (!user) return;
 
     const loadInbox = async () => {
-      const [{ data }, inbound, recent] = await Promise.all([
-        supabase.from("conversations").select("*").order("last_message_at", { ascending: false }),
+      const { data } = await supabase
+        .from("conversations")
+        .select("*")
+        .order("last_message_at", { ascending: false });
+      const list = (data as Conversation[]) || [];
+      setConversations(list);
+      const ranked = priorizarConversas(list, {}, emContatoStageIds);
+      setActiveId((current) => {
+        const want = pendingOpen.current;
+        if (want && list.some((c) => c.id === want)) {
+          pendingOpen.current = null;
+          return want;
+        }
+        if (current && list.some((c) => c.id === current)) return current;
+        return ranked[0]?.id ?? current;
+      });
+
+      const [inbound, recent] = await Promise.all([
         supabase
           .from("messages")
           .select("conversation_id, created_at")
@@ -466,18 +482,6 @@ export default function Conversas() {
       }
       setLastInboundAt(inboundMap);
       setLastByConv(lastMap);
-      const list = (data as Conversation[]) || [];
-      setConversations(list);
-      const ranked = priorizarConversas(list, inboundMap, emContatoStageIds);
-      setActiveId((current) => {
-        const want = pendingOpen.current;
-        if (want && list.some((c) => c.id === want)) {
-          pendingOpen.current = null;
-          return want;
-        }
-        if (current && list.some((c) => c.id === current)) return current;
-        return ranked[0]?.id ?? current;
-      });
     };
     loadInboxRef.current = loadInbox;
     void loadInbox();

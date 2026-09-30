@@ -92,7 +92,7 @@ function Card({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      onClick={() => navigate(`/?open=${c.id}`)}
+      onClick={() => navigate(`/conversas?open=${c.id}`)}
       className={`bg-background border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary transition ${
         isDragging ? "opacity-40" : ""
       }`}

@@ -110,6 +110,10 @@ Edge Function chama RPC via PostgREST no schema `public`, expor somente um wrapp
 `public.admin_save_member_access` com execução concedida exclusivamente a
 `service_role`.
 
+Conversas com `instance_id` nulo ficam visíveis ao responsável (`user_id`) e a
+admins. Conversas ligadas a um dispositivo exigem concessão desse dispositivo;
+mensagens herdam a mesma regra pela conversa.
+
 ### Navegação e autorização do membro
 
 Carregar as concessões do usuário atual em um hook compartilhado. Ocultar itens

@@ -11,7 +11,8 @@ function fixture() {
     join public.organization_member_modules pm on pm.org_id = peer.org_id and pm.user_id = peer.user_id and pm.module_key = 'crm_conversations'
     join public.organization_members admin_member on admin_member.org_id = owner.org_id
     join public.user_roles admin on admin.user_id = admin_member.user_id and admin.role = 'admin'
-    join lateral (select id from public.conversations c0 where c0.user_id = owner.user_id and c0.instance_id is null limit 1) shared on true
+    join lateral (select id from public.conversations c0 where c0.user_id = owner.user_id and c0.instance_id is null
+      and exists (select 1 from public.messages m where m.conversation_id = c0.id) limit 1) shared on true
     where c.instance_id is not null
       and exists (select 1 from public.organization_member_instances mi where mi.org_id=peer.org_id and mi.user_id=peer.user_id and mi.instance_id=c.instance_id)
     limit 1`).trim();
@@ -52,6 +53,19 @@ test("T3: RLS limita conversas à instância e ao módulo; associação não pod
     exception when insufficient_privilege then null;
     end $$;
     reset role;
+    set local role authenticated;
+    set local request.jwt.claims = '{"sub":"${f.peer}"}';
+    select count(*) from public.conversations where id='${f.sharedConversation}'::uuid;
+    select count(*) from public.messages where conversation_id='${f.sharedConversation}'::uuid;
+    reset role;
+    set local role authenticated;
+    set local request.jwt.claims = '{"sub":"${f.owner}"}';
+    select count(*) from public.conversations where id='${f.sharedConversation}'::uuid;
+    reset role;
+    set local role authenticated;
+    set local request.jwt.claims = '{"sub":"${f.admin}"}';
+    select count(*) from public.conversations where id='${f.sharedConversation}'::uuid;
+    reset role;
     delete from public.organization_member_modules
       where user_id='${f.peer}'::uuid and module_key='crm_conversations';
     set local role authenticated;
@@ -74,7 +88,7 @@ test("T3: RLS limita conversas à instância e ao módulo; associação não pod
     select count(*) from public.conversations where id='${f.conversation}'::uuid;
     rollback;
   `).trim().split("\n").filter((line) => /^[01]$/.test(line));
-  assert.deepEqual(out, ["0", "1", "0", "0", "1", "1"]);
+  assert.deepEqual(out, ["0", "1", "0", "0", "1", "1", "0", "0", "1", "1"]);
 });
 
 test("T3: authenticated não lê credenciais nem administra grants; mídia e prospecção respeitam o device", () => {
