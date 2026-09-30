@@ -105,6 +105,11 @@ transação, manter a operação idempotente e reconciliável: falha no ban/unba
 pode reativar acesso aos dados; permitir retry seguro até os dois estados
 convergirem.
 
+A implementação da gravação fica em `private.admin_save_member_access`. Como a
+Edge Function chama RPC via PostgREST no schema `public`, expor somente um wrapper
+`public.admin_save_member_access` com execução concedida exclusivamente a
+`service_role`.
+
 ### Navegação e autorização do membro
 
 Carregar as concessões do usuário atual em um hook compartilhado. Ocultar itens

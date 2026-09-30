@@ -125,8 +125,11 @@ test("T3: authenticated não lê credenciais nem administra grants; mídia e pro
 
 test("T4: operação administrativa grava grants juntos e rejeita dispositivos de outra organização", () => {
   const f = fixture();
+  assert.equal(psql("select has_function_privilege('service_role','public.admin_save_member_access(uuid,uuid,boolean,text[],uuid[])','execute')").trim(), "t");
+  assert.equal(psql("select has_function_privilege('authenticated','public.admin_save_member_access(uuid,uuid,boolean,text[],uuid[])','execute')").trim(), "f");
+  assert.equal(psql("select has_function_privilege('anon','public.admin_save_member_access(uuid,uuid,boolean,text[],uuid[])','execute')").trim(), "f");
   const output = psql(`begin;
-    select private.admin_save_member_access(
+    select public.admin_save_member_access(
       '${f.admin}'::uuid, '${f.peer}'::uuid, true,
       array['crm','prospecting'], array['${f.instance}'::uuid]
     );
@@ -135,7 +138,7 @@ test("T4: operação administrativa grava grants juntos e rejeita dispositivos d
     select count(*) from public.organization_member_instances
       where user_id='${f.peer}'::uuid and instance_id='${f.instance}'::uuid;
     do $$ begin
-      perform private.admin_save_member_access(
+      perform public.admin_save_member_access(
         '${f.admin}'::uuid, '${f.peer}'::uuid, true,
         array['unknown'], array[]::uuid[]
       );
@@ -143,7 +146,7 @@ test("T4: operação administrativa grava grants juntos e rejeita dispositivos d
     exception when sqlstate '22023' then null;
     end $$;
     do $$ begin
-      perform private.admin_save_member_access(
+      perform public.admin_save_member_access(
         '${f.admin}'::uuid, '${f.peer}'::uuid, true,
         array['crm'], array['00000000-0000-0000-0000-000000000000']::uuid[]
       );
