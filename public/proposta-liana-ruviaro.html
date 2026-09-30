@@ -569,6 +569,146 @@
       line-height: 1.5;
     }
 
+    /* Advantage Comparison Grid (Por Que Recorrência é Vantajosa) */
+    .advantage-comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 22px;
+      margin-bottom: 32px;
+      align-items: stretch;
+    }
+
+    .scenario-card {
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .pontual-scenario {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .recorrente-scenario {
+      background: #FFFFFF;
+      border: 2px solid var(--gold);
+      box-shadow: 0 16px 40px -8px rgba(30, 56, 43, 0.16);
+      position: relative;
+    }
+
+    .scenario-header {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .scenario-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .tag-pontual {
+      background: var(--secondary);
+      color: var(--muted);
+    }
+
+    .tag-recorrente {
+      background: var(--gold-light);
+      color: #8C6A34;
+      border: 1px solid rgba(200, 169, 126, 0.4);
+    }
+
+    .scenario-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .scenario-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .scenario-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      flex: 1;
+      margin-bottom: 22px;
+    }
+
+    .scenario-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--fg);
+    }
+
+    .scenario-list li strong {
+      display: block;
+      color: var(--primary);
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+
+    .icon-cross {
+      color: var(--destructive);
+      font-weight: 800;
+      font-size: 13px;
+      background: var(--destructive-bg);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .icon-check {
+      color: var(--success);
+      font-weight: 800;
+      font-size: 14px;
+      background: var(--success-bg);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .scenario-cta-box {
+      background: var(--gold-light);
+      border: 1px solid rgba(200, 169, 126, 0.45);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 8px;
+    }
+
+    .scenario-cta-text {
+      font-size: 12.5px;
+      color: #5C431A;
+      margin-bottom: 12px;
+      line-height: 1.45;
+    }
+
     /* Tabela Comparativa dos Modelos */
     .comparison-container {
       background: #FFFFFF;
@@ -919,7 +1059,7 @@
     @media (max-width: 900px) {
       .hero-title { font-size: 28px; }
       .hero-subtitle { font-size: 14.5px; }
-      .grid-2, .grid-3, .scope-box, .recorrente-grid, .pontual-cards-grid, .arch-flow-steps, .timeline-steps {
+      .grid-2, .grid-3, .scope-box, .recorrente-grid, .pontual-cards-grid, .arch-flow-steps, .timeline-steps, .advantage-comparison-grid {
         grid-template-columns: 1fr !important;
       }
       .target-card {
@@ -961,7 +1101,7 @@
     @media print {
       body { background: #FFF; padding: 0; }
       header, .header-actions, .cta-banner button, .btn, .model-picker-links { display: none !important; }
-      .card, .module-card, .plan-card, .target-card, .arch-container, .timeline-step, .scope-card-in, .scope-card-out, .warning-callout, .recorrente-card-highlight, .comparison-container {
+      .card, .module-card, .plan-card, .target-card, .arch-container, .timeline-step, .scope-card-in, .scope-card-out, .warning-callout, .recorrente-card-highlight, .comparison-container, .advantage-comparison-grid, .scenario-card {
         box-shadow: none !important;
         border: 1px solid #CCC !important;
         break-inside: avoid;
@@ -1184,6 +1324,126 @@
           <div class="warning-title">Aviso Importante de Escopo: Disparos Pontuais / Campanhas em Massa</div>
           <div class="warning-text">
             Ambos os modelos cobrem a <strong>esteira receptiva inteligente</strong> (acolhimento de quem chama no WhatsApp ou vem do Instagram, triagem, templates oficiais e transbordo humano). <strong>Disparos pontuais ativos em massa para base de contatos (broadcasts/campanhas promocionais) não estão incluídos</strong> e são orçados separadamente caso a cliente queira realizar disparos pontuais para sua lista.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção de Destaque: Por Que a Parceria Contínua (Recorrência) é Muito Mais Vantajosa? -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+          Visão Estratégica & Retorno Real
+        </div>
+        <h2 class="section-title font-display">Por que a Parceria Contínua (Recorrência) é Muito Mais Vantajosa?</h2>
+        <p class="section-desc">
+          À primeira vista, contratar apenas o setup pontual parece uma opção mais barata. No entanto, na rotina real de quem vende pelas redes sociais, a <strong>Parceria Contínua se paga logo no primeiro mês</strong> e evita dores de cabeça:
+        </p>
+      </div>
+
+      <!-- Comparativo Visual Lado a Lado: Esteira Engessada vs Esteira Viva -->
+      <div class="advantage-comparison-grid">
+        <!-- Cenário Pontual: Esteira Engessada -->
+        <div class="scenario-card pontual-scenario">
+          <div class="scenario-header">
+            <span class="scenario-tag tag-pontual">MODELO 1 · PONTUAL</span>
+            <h3 class="scenario-title">A "Esteira Engessada"</h3>
+            <p class="scenario-subtitle">O que acontece na prática com o setup avulso:</p>
+          </div>
+
+          <ul class="scenario-list">
+            <li>
+              <span class="icon-cross">✕</span>
+              <div>
+                <strong>Desembolso Inicial Alto:</strong>
+                <span>Você precisa pagar R$ 1.050,00 de entrada apenas para começar a rodar.</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-cross">✕</span>
+              <div>
+                <strong>Presa a Apenas 2 Posts Fixos:</strong>
+                <span>Se semana que vem você postar um Reel novo de outro produto, a automação antiga não serve.</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-cross">✕</span>
+              <div>
+                <strong>Custo a Cada Nova Ideia:</strong>
+                <span>Cada nova campanha, promoção ou evento exige contratar e pagar um novo setup avulso (R$ 350 a R$ 700 toda vez).</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-cross">✕</span>
+              <div>
+                <strong>Sem Suporte após 15 Dias:</strong>
+                <span>Se a Meta mudar termos de API, um link de checkout quebrar ou horários mudarem, você fica sem acompanhamento técnico.</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-cross">✕</span>
+              <div>
+                <strong>Conta mais cara no acumulado:</strong>
+                <span>Em apenas 3 campanhas no ano, você já gastou mais de R$ 3.000 em setups picados e perdeu vendas pelo caminho.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Cenário Recorrente: Esteira Viva & Parceria DRYOS -->
+        <div class="scenario-card recorrente-scenario">
+          <div class="scenario-header">
+            <span class="scenario-tag tag-recorrente">MODELO 2 · PARCERIA CONTÍNUA (TAHIS) ⭐</span>
+            <h3 class="scenario-title">A "Esteira Viva & Sem Amarras"</h3>
+            <p class="scenario-subtitle">A tranquilidade de ter um braço técnico sênior ao seu lado:</p>
+          </div>
+
+          <ul class="scenario-list">
+            <li>
+              <span class="icon-check">✓</span>
+              <div>
+                <strong>Setup 100% ISENTO (R$ 0,00):</strong>
+                <span>Você não desembolsa R$ 1.050 nem R$ 1.500 de entrada. A implantação completa inicial já está absorvida no 1º mês!</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-check">✓</span>
+              <div>
+                <strong>Novas Automações Mensais SEM CUSTO:</strong>
+                <span>Fez um Reel novo? Nova promoção? Criamos e ativamos novos fluxos todo mês sem cobrar nada extra de setup.</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-check">✓</span>
+              <div>
+                <strong>Braço Técnico no seu WhatsApp:</strong>
+                <span>Mudou link de pagamento, texto ou horário? É só pedir no WhatsApp do Rafael que ajustamos em minutos.</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-check">✓</span>
+              <div>
+                <strong>Monitoramento Ativo 365 Dias:</strong>
+                <span>Cuidamos dos webhooks e da API Oficial para sua linha nunca cair e responder sempre em menos de 2 segundos.</span>
+              </div>
+            </li>
+            <li>
+              <span class="icon-check">✓</span>
+              <div>
+                <strong>Sem Fidelidade (Risco Zero para Você):</strong>
+                <span>Você não fica presa a contratos longos. A parceria se sustenta pelo resultado e pode ser cancelada a qualquer momento com aviso de 30 dias.</span>
+              </div>
+            </li>
+          </ul>
+
+          <div class="scenario-cta-box">
+            <div class="scenario-cta-text">
+              Economia de <strong>R$ 11.100,00 no 1º ano</strong> com o desconto especial da Tahis (R$ 1.200/mês vs R$ 2.000 de tabela).
+            </div>
+            <a href="#modelo-recorrente" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 13.5px;">
+              Quero a Parceria Contínua (Setup Isento)
+            </a>
           </div>
         </div>
       </div>
