@@ -137,12 +137,6 @@
       border: 1px solid rgba(30, 107, 62, 0.2);
     }
 
-    .badge-warning {
-      background: var(--warning-bg);
-      color: var(--warning);
-      border: 1px solid rgba(217, 119, 6, 0.2);
-    }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -193,7 +187,7 @@
 
     /* Hero Section */
     .hero {
-      padding: 50px 0 30px;
+      padding: 48px 0 28px;
       text-align: center;
     }
 
@@ -225,7 +219,7 @@
     .hero-subtitle {
       font-size: 16.5px;
       color: var(--muted);
-      max-width: 780px;
+      max-width: 800px;
       margin: 0 auto 30px;
       line-height: 1.55;
     }
@@ -240,7 +234,7 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: var(--shadow-card);
-      margin-bottom: 36px;
+      margin-bottom: 32px;
       position: relative;
       overflow: hidden;
     }
@@ -289,37 +283,74 @@
       color: var(--primary);
     }
 
-    /* Callout de Alinhamento Prévio */
-    .intro-callout {
+    /* Quick Model Picker Banner */
+    .model-picker-banner {
       background: #FFFFFF;
-      border: 1px solid rgba(30, 56, 43, 0.15);
-      border-left: 4px solid var(--primary);
-      border-radius: var(--radius-md);
-      padding: 18px 20px;
+      border: 1px solid rgba(30, 56, 43, 0.16);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
       margin-bottom: 32px;
       display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 16px;
-      align-items: flex-start;
+      flex-wrap: wrap;
       box-shadow: var(--shadow-subtle);
     }
 
-    .intro-icon {
-      color: var(--primary);
-      flex-shrink: 0;
-      margin-top: 2px;
+    .model-picker-text {
+      text-align: left;
     }
 
-    .intro-title {
+    .model-picker-title {
       font-size: 15px;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
-    .intro-text {
-      font-size: 13.5px;
+    .model-picker-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .model-picker-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .model-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .model-pill-recorrente {
+      background: var(--primary);
+      color: #FAF9F5;
+      border: 1px solid var(--primary);
+    }
+
+    .model-pill-recorrente:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .model-pill-pontual {
+      background: var(--secondary);
       color: var(--fg);
-      line-height: 1.5;
+      border: 1px solid var(--card-border);
+    }
+
+    .model-pill-pontual:hover {
+      background: #EBE7DD;
     }
 
     /* Section Headers */
@@ -435,7 +466,7 @@
       background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
-      padding: 26px;
+      padding: 24px;
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
@@ -465,7 +496,7 @@
 
     .module-badge-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--primary);
       text-transform: uppercase;
@@ -506,22 +537,6 @@
       color: var(--primary);
     }
 
-    .module-price-tag {
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px dashed var(--card-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-
-    .module-price-val {
-      font-family: 'Funnel Display', sans-serif;
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
     /* Warning Callout para Disparos Pontuais */
     .warning-callout {
       background: #FFFDF9;
@@ -529,7 +544,7 @@
       border-left: 4px solid var(--warning);
       border-radius: var(--radius-md);
       padding: 16px 20px;
-      margin-top: 24px;
+      margin-top: 20px;
       display: flex;
       gap: 14px;
       align-items: flex-start;
@@ -552,6 +567,190 @@
       font-size: 12.5px;
       color: #78350F;
       line-height: 1.5;
+    }
+
+    /* Tabela Comparativa dos Modelos */
+    .comparison-container {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 32px;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    .comparison-table th, .comparison-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .comparison-table th {
+      background: #F4F1EA;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .highlight-col {
+      background: rgba(30, 56, 43, 0.03);
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* Card Modelo 2 (Recorrente Destaque) */
+    .recorrente-card-highlight {
+      background: #FFFFFF;
+      border: 2px solid var(--gold);
+      border-radius: var(--radius-lg);
+      padding: 34px 28px;
+      box-shadow: 0 16px 40px -8px rgba(30, 56, 43, 0.15);
+      position: relative;
+      margin-bottom: 32px;
+    }
+
+    .special-badge-top {
+      position: absolute;
+      top: -14px;
+      left: 28px;
+      background: linear-gradient(135deg, var(--gold) 0%, #A88652 100%);
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 10px rgba(168, 134, 82, 0.3);
+    }
+
+    .recorrente-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .recorrente-price-display {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .recorrente-price-num {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .savings-box {
+      background: var(--gold-light);
+      border: 1px solid rgba(200, 169, 126, 0.45);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-top: 14px;
+    }
+
+    .savings-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #7A5923;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .savings-desc {
+      font-size: 12px;
+      color: #5C431A;
+      line-height: 1.45;
+    }
+
+    /* Cards Modelo 1 (Pontual) */
+    .pontual-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .plan-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .plan-name {
+      font-size: 16.5px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .plan-scope {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .plan-price-block {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .plan-val-num {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .plan-check-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex: 1;
+    }
+
+    .plan-check-list li {
+      font-size: 12px;
+      color: var(--fg);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.35;
+    }
+
+    .plan-check-list li svg {
+      color: var(--success);
+      flex-shrink: 0;
+      margin-top: 2px;
     }
 
     /* Scope Comparison (Incluso vs Não Incluso) */
@@ -606,146 +805,6 @@
       align-items: flex-start;
       gap: 9px;
       color: var(--fg);
-    }
-
-    /* Pricing Options Grid (3 Cards) */
-    .pricing-cards-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1.25fr;
-      gap: 18px;
-      margin-top: 24px;
-      align-items: stretch;
-    }
-
-    .plan-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 24px 20px;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .plan-card.featured {
-      background: #FFFFFF;
-      border: 2px solid var(--gold);
-      box-shadow: 0 14px 34px -6px rgba(30, 56, 43, 0.16);
-      position: relative;
-    }
-
-    .featured-badge {
-      position: absolute;
-      top: -12px;
-      left: 20px;
-      background: linear-gradient(135deg, var(--gold) 0%, #A88652 100%);
-      color: #FFFFFF;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 9999px;
-      letter-spacing: 0.05em;
-    }
-
-    .plan-name {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
-
-    .plan-scope {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 16px;
-      line-height: 1.4;
-    }
-
-    .plan-price-block {
-      margin-bottom: 18px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--card-border);
-    }
-
-    .plan-price-amount {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-
-    .plan-currency {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--primary);
-    }
-
-    .plan-val-num {
-      font-family: 'Funnel Display', sans-serif;
-      font-size: 40px;
-      font-weight: 800;
-      color: var(--primary);
-      line-height: 1;
-    }
-
-    .plan-val-period {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .plan-check-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex: 1;
-    }
-
-    .plan-check-list li {
-      font-size: 12px;
-      color: var(--fg);
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      line-height: 1.35;
-    }
-
-    .plan-check-list li svg {
-      color: var(--success);
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    /* Optional Recurring Support Banner */
-    .recurring-addon-box {
-      background: linear-gradient(135deg, rgba(30, 56, 43, 0.03) 0%, rgba(200, 169, 126, 0.07) 100%);
-      border: 1px solid rgba(30, 56, 43, 0.16);
-      border-radius: var(--radius-lg);
-      padding: 22px 24px;
-      margin-top: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .recurring-content h4 {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
-
-    .recurring-content p {
-      font-size: 12.5px;
-      color: var(--muted);
-      max-width: 620px;
-      line-height: 1.45;
     }
 
     /* Timeline Box */
@@ -860,7 +919,7 @@
     @media (max-width: 900px) {
       .hero-title { font-size: 28px; }
       .hero-subtitle { font-size: 14.5px; }
-      .grid-2, .grid-3, .scope-box, .pricing-cards-3, .arch-flow-steps, .timeline-steps {
+      .grid-2, .grid-3, .scope-box, .recorrente-grid, .pontual-cards-grid, .arch-flow-steps, .timeline-steps {
         grid-template-columns: 1fr !important;
       }
       .target-card {
@@ -877,6 +936,18 @@
         justify-content: space-between;
         align-items: center;
       }
+      .model-picker-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .model-picker-links {
+        width: 100%;
+        flex-direction: column;
+      }
+      .model-pill {
+        width: 100%;
+        justify-content: center;
+      }
       .cta-actions {
         flex-direction: column;
         width: 100%;
@@ -889,8 +960,8 @@
     /* Print styles for PDF export */
     @media print {
       body { background: #FFF; padding: 0; }
-      header, .header-actions, .cta-banner button, .btn { display: none !important; }
-      .card, .module-card, .plan-card, .target-card, .arch-container, .timeline-step, .scope-card-in, .scope-card-out, .intro-callout, .warning-callout, .recurring-addon-box {
+      header, .header-actions, .cta-banner button, .btn, .model-picker-links { display: none !important; }
+      .card, .module-card, .plan-card, .target-card, .arch-container, .timeline-step, .scope-card-in, .scope-card-out, .warning-callout, .recorrente-card-highlight, .comparison-container {
         box-shadow: none !important;
         border: 1px solid #CCC !important;
         break-inside: avoid;
@@ -916,8 +987,8 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           PDF
         </button>
-        <a href="#investimento" class="btn btn-primary">
-          Ver Opções de Contratação
+        <a href="#modelos" class="btn btn-primary">
+          Ver Modelos de Contratação
         </a>
       </div>
     </div>
@@ -936,7 +1007,7 @@
         Proposta Técnica & Comercial · <span>Automações Meta</span>
       </h1>
       <p class="hero-subtitle">
-        Estruturação das esteiras de captação e atendimento oficial para Instagram e WhatsApp. Respostas instantâneas em segundos, triagem automática e transbordo qualificado para o atendimento humano.
+        Estruturação das esteiras de captação e atendimento oficial para Instagram e WhatsApp Cloud API. Apresentamos <strong>dois modelos de contratação</strong> para que você escolha o mais adequado à sua operação: Implantação Pontual ou Parceria Contínua.
       </p>
 
       <!-- Target Box -->
@@ -954,26 +1025,79 @@
         </div>
       </div>
 
-      <!-- Callout de Alinhamento com os Valores já Conversados -->
-      <div class="intro-callout">
-        <div class="intro-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      <!-- Quick Model Navigation Banner -->
+      <div class="model-picker-banner">
+        <div class="model-picker-text">
+          <div class="model-picker-title">Dois Modelos Disponíveis para Contratação:</div>
+          <div class="model-picker-desc">Escolha entre a Parceria Mensal Contínua (com setup isento) ou o Setup Pontual por Módulos Avulsos.</div>
         </div>
-        <div style="text-align: left;">
-          <div class="intro-title">Estrutura Modular & Valores Alinhados</div>
-          <div class="intro-text">
-            Conforme conversamos previamente, os canais foram modelados de forma <strong>independente e modular</strong>. Você pode optar por ativar apenas o <strong>Instagram (2 automações por R$ 350)</strong>, apenas o <strong>WhatsApp com API Oficial (setup e automação por R$ 700)</strong>, ou o <strong>Combo Integrado (R$ 1.050)</strong> conectando os dois canais.
+        <div class="model-picker-links">
+          <a href="#modelo-recorrente" class="model-pill model-pill-recorrente">
+            ★ Modelo 2: Parceria Contínua (R$ 1.200/mês)
+          </a>
+          <a href="#modelo-pontual" class="model-pill model-pill-pontual">
+            🔷 Modelo 1: Setup Pontual (R$ 350 a R$ 1.050)
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção 1: Arquitetura da Esteira -->
+    <section>
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Visão de Ponta a Ponta
+        </div>
+        <h2 class="section-title font-display">A Esteira de Conversão Oficial Meta</h2>
+        <p class="section-desc">
+          Como os dois canais operam integrados para transformar comentários e engajamento em conversas de vendas no WhatsApp:
+        </p>
+      </div>
+
+      <div class="arch-container">
+        <div class="arch-flow-steps">
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 01 · INSTAGRAM</span>
+            <h4 class="arch-step-title">Gatilho no Instagram</h4>
+            <p class="arch-step-desc">
+              Reels, posts de feed, respostas aos stories e menções disparam respostas em menos de 2 segundos.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 02 · DIRECT</span>
+            <h4 class="arch-step-title">Direct Inteligente (DM)</h4>
+            <p class="arch-step-desc">
+              Entrega imediata do material prometido e triagem interativa com captura de Nome e WhatsApp.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 03 · WHATSAPP</span>
+            <h4 class="arch-step-title">WhatsApp API Oficial</h4>
+            <p class="arch-step-desc">
+              Linha homologada na Meta Cloud API (zero ban), acolhimento 24/7 e templates oficiais aprovados.
+            </p>
+          </div>
+
+          <div class="arch-step-item">
+            <span class="arch-step-badge">ETAPA 04 · FECHAMENTO</span>
+            <h4 class="arch-step-title">Transbordo Humano</h4>
+            <p class="arch-step-desc">
+              Atendente recebe o lead aquecido com contexto completo da conversa + sincronização em CRM/Planilha.
+            </p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Seção 1: Escopo dos Módulos -->
+    <!-- Seção 2: Escopo dos Módulos -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          Módulos Independentes
+          Módulos Técnicos
         </div>
         <h2 class="section-title font-display">O Que Cada Módulo Entrega</h2>
         <p class="section-desc">
@@ -997,7 +1121,7 @@
           <ul class="feature-list">
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Automação 01 — Reels & Feed:</strong> Resposta automática e imediata nos comentários com entrega do link/material prometido via Direct (DM) em &lt; 2 segundos.</span>
+              <span><strong>Automação 01 — Reels & Feed:</strong> Resposta automática nos comentários com entrega imediata de link/material via Direct (DM) em &lt; 2 segundos.</span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -1005,18 +1129,13 @@
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span><strong>Triagem Interativa no Direct:</strong> Coleta amigável de Nome e WhatsApp dentro da DM, direcionando o seguidor aquecido para o WhatsApp da operação.</span>
+              <span><strong>Triagem Interativa no Direct:</strong> Coleta amigável de Nome e WhatsApp dentro da DM, direcionando o seguidor aquecido para o canal comercial.</span>
             </li>
             <li>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span><strong>Configuração & Homologação Oficial:</strong> Conexão 100% segura com a conta profissional do Instagram.</span>
             </li>
           </ul>
-
-          <div class="module-price-tag">
-            <span style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Setup das 2 automações:</span>
-            <span class="module-price-val">R$ 350,00</span>
-          </div>
         </div>
 
         <!-- Módulo 2: WhatsApp API Oficial -->
@@ -1027,7 +1146,7 @@
             </div>
             <div>
               <span class="module-badge-tag">MÓDULO 02 · WHATSAPP OFICIAL</span>
-              <h3 class="module-title">WhatsApp API Oficial (Setup & Automação)</h3>
+              <h3 class="module-title">WhatsApp API Oficial (Meta Cloud API)</h3>
             </div>
           </div>
 
@@ -1053,11 +1172,6 @@
               <span><strong>Integração de Contatos:</strong> Sincronização dos dados em CRM ou planilha de controle.</span>
             </li>
           </ul>
-
-          <div class="module-price-tag">
-            <span style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Setup & homologação oficial:</span>
-            <span class="module-price-val">R$ 700,00</span>
-          </div>
         </div>
       </div>
 
@@ -1067,65 +1181,310 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         </div>
         <div>
-          <div class="warning-title">Aviso de Escopo: Disparos Pontuais / Campanhas em Massa</div>
+          <div class="warning-title">Aviso Importante de Escopo: Disparos Pontuais / Campanhas em Massa</div>
           <div class="warning-text">
-            O valor de setup do WhatsApp (R$ 700) cobre a <strong>esteira receptiva inteligente</strong> (acolhimento de quem chama, triagem, templates oficiais e transbordo humano). <strong>Disparos pontuais ativos em massa para base de contatos (broadcasts/campanhas) não estão incluídos</strong> e são orçados separadamente caso a cliente queira realizar disparos promocionais para sua lista.
+            Ambos os modelos cobrem a <strong>esteira receptiva inteligente</strong> (acolhimento de quem chama no WhatsApp ou vem do Instagram, triagem, templates oficiais e transbordo humano). <strong>Disparos pontuais ativos em massa para base de contatos (broadcasts/campanhas promocionais) não estão incluídos</strong> e são orçados separadamente caso a cliente queira realizar disparos pontuais para sua lista.
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Seção 2: Arquitetura Integrada (Como funciona junto) -->
-    <section>
+    <!-- Seção 3: Tabela Comparativa Direta entre os Modelos -->
+    <section id="modelos">
       <div class="section-header">
         <div class="section-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          Esteira Completa
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Comparativo Direto
         </div>
-        <h2 class="section-title font-display">A Sinergia do Combo Integrado</h2>
+        <h2 class="section-title font-display">Tabela Comparativa: Pontual vs Recorrente</h2>
         <p class="section-desc">
-          Quando os dois canais operam juntos, você cria uma esteira fluida onde o seguidor do Instagram vira um lead qualificado conversando no seu WhatsApp em segundos:
+          Entenda as diferenças entre o modelo avulso sob demanda e a parceria de sustentação contínua:
         </p>
       </div>
 
-      <div class="arch-container">
-        <div class="arch-flow-steps">
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 01 · INSTAGRAM</span>
-            <h4 class="arch-step-title">Comentário / Story</h4>
-            <p class="arch-step-desc">
-              Seguidor comenta palavra-chave no Reel ou responde Story.
+      <div class="comparison-container">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Critério de Comparação</th>
+              <th>Modelo 1 · Implantação Pontual</th>
+              <th class="highlight-col">Modelo 2 · Parceria Contínua (Indicação Tahis) ⭐</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Investimento Inicial de Setup</strong></td>
+              <td>R$ 350 (IG) / R$ 700 (WA) / R$ 1.050 (Combo)</td>
+              <td class="highlight-col"><span style="color: var(--success); font-weight: 800;">R$ 0,00 (ISENTO · Incluso no plano)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Mensalidade de Operação</strong></td>
+              <td>Zero (sem suporte após entrega)</td>
+              <td class="highlight-col"><strong>R$ 1.200,00 / mês</strong> (tabela de R$ 2.000)</td>
+            </tr>
+            <tr>
+              <td><strong>Automações Iniciais (IG + WhatsApp)</strong></td>
+              <td>Entregues e homologadas no setup</td>
+              <td class="highlight-col">Entregues e homologadas no setup</td>
+            </tr>
+            <tr>
+              <td><strong>Novas Automações Todo Mês</strong></td>
+              <td>Cobradas avulsas por nova campanha</td>
+              <td class="highlight-col"><span style="color: var(--success); font-weight: 800;">✓ Inclusas todo mês</span> para novas campanhas</td>
+            </tr>
+            <tr>
+              <td><strong>Atualizações de Textos, Horários e Links</strong></td>
+              <td>Cobradas sob demanda</td>
+              <td class="highlight-col"><span style="color: var(--success); font-weight: 800;">✓ Inclusas continuamente</span></td>
+            </tr>
+            <tr>
+              <td><strong>Monitoramento de Webhooks & Estabilidade</strong></td>
+              <td>Garantia de 15 dias pós-go-live</td>
+              <td class="highlight-col"><span style="color: var(--success); font-weight: 800;">✓ Contínuo e preventivo 365 dias</span></td>
+            </tr>
+            <tr>
+              <td><strong>Suporte Técnico Direto com o Rafael</strong></td>
+              <td>Apenas na fase de entrega do setup</td>
+              <td class="highlight-col"><span style="color: var(--success); font-weight: 800;">✓ Canal prioritário contínuo no WhatsApp</span></td>
+            </tr>
+            <tr>
+              <td><strong>Contrato & Fidelidade</strong></td>
+              <td>Sem fidelidade</td>
+              <td class="highlight-col"><strong>Sem fidelidade</strong> (aviso prévio simples de 30 dias)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Bloco Modelo 2: Parceria & Sustentação Contínua (Recorrência) -->
+    <section id="modelo-recorrente">
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Opção Estratégica Recomendada
+        </div>
+        <h2 class="section-title font-display">Modelo 2: Parceria & Sustentação Contínua</h2>
+        <p class="section-desc">
+          Para quem quer a esteira rodando mês a mês, novas campanhas ativadas continuamente e suporte técnico direto sem pagar setups a cada post novo:
+        </p>
+      </div>
+
+      <div class="recorrente-card-highlight">
+        <span class="special-badge-top">★ CONDIÇÃO ESPECIAL · INDICAÇÃO TAHIS</span>
+
+        <div class="recorrente-grid">
+          <div>
+            <h3 class="font-display" style="font-size: 22px; color: var(--primary); margin-bottom: 6px;">
+              Parceria Técnica Recorrente · DRYOS
+            </h3>
+            <p style="font-size: 13.5px; color: var(--muted); line-height: 1.5;">
+              Nós cuidamos da implantação oficial completa da Meta, criamos os fluxos de conversão e mantemos sua operação rodando, ajustando e escalando mês a mês.
             </p>
+
+            <div class="savings-box">
+              <div class="savings-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Economia Real no Caixa (Indicação Tahis):
+              </div>
+              <div class="savings-desc">
+                • <strong>R$ 1.500,00 de economia imediata</strong> na isenção do setup.<br>
+                • <strong>R$ 800,00/mês de economia recorrente</strong> (tabela de R$ 2.000/mês).<br>
+                • Total de <strong>R$ 11.100,00 poupados</strong> no 1º ano de parceria!
+              </div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 4px;">
+                <span>Setup de Implantação Completo:</span>
+                <span><s style="color: #999;">R$ 1.500,00</s> <strong style="color: var(--success); font-weight: 800;">ISENTO (R$ 0,00)</strong></span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--muted);">
+                <span>Mensalidade de Tabela:</span>
+                <span><s style="color: #999;">R$ 2.000,00 / mês</s></span>
+              </div>
+            </div>
+
+            <div class="recorrente-price-display">
+              <span class="font-mono" style="font-size: 20px; font-weight: 700; color: var(--primary);">R$</span>
+              <span class="recorrente-price-num">1.200</span>
+              <span style="font-size: 14px; color: var(--muted); font-weight: 600;">/mês</span>
+            </div>
+            <div style="font-size: 12px; color: var(--success); font-weight: 700; margin-top: 6px;">
+              ✓ Sem fidelidade · Cancelamento livre com aviso prévio de 30 dias
+            </div>
           </div>
 
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 02 · DIRECT</span>
-            <h4 class="arch-step-title">DM em Menos de 2s</h4>
-            <p class="arch-step-desc">
-              Entrega imediata do material e coleta amigável de Nome e WhatsApp.
-            </p>
-          </div>
+          <div>
+            <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; margin-bottom: 14px;">
+              O que está incluso na entrega contínua dos R$ 1.200/mês:
+            </h4>
 
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 03 · WHATSAPP</span>
-            <h4 class="arch-step-title">WhatsApp API Oficial</h4>
-            <p class="arch-step-desc">
-              Acolhimento automático 24/7 com templates homologados e seguros.
-            </p>
-          </div>
+            <ul class="plan-check-list" style="margin-bottom: 22px;">
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Setup completo de Instagram + WhatsApp API Oficial</strong> já incluso no 1º ciclo</span>
+              </li>
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Criação contínua de novas automações mensais</strong> para novas campanhas, lançamentos e promoções</span>
+              </li>
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Monitoramento preventivo</strong> de estabilidade técnica dos webhooks e APIs Meta</span>
+              </li>
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Atualização dinâmica</strong> de textos, horários de atendimento, links e ofertas</span>
+              </li>
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Suporte prioritário e canal direto com o Rafael</strong> via WhatsApp</span>
+              </li>
+            </ul>
 
-          <div class="arch-step-item">
-            <span class="arch-step-badge">ETAPA 04 · FECHAMENTO</span>
-            <h4 class="arch-step-title">Transbordo Humano</h4>
-            <p class="arch-step-desc">
-              Atendente recebe o lead pronto para compra com histórico salvo.
-            </p>
+            <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20o%20Modelo%202%20(Parceria%20%26%20Sustenta%C3%A7%C3%A3o%20Cont%C3%ADnua%20por%20R%24%201.200%2Fm%C3%AAs%20com%20setup%20isento)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 14.5px;">
+              Ativar Parceria Contínua (R$ 1.200/mês)
+            </a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Seção 3: Transparência de Custos e Serviços -->
+    <!-- Bloco Modelo 1: Implantação Pontual por Módulos Avulsos -->
+    <section id="modelo-pontual">
+      <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Opção Sob Demanda
+        </div>
+        <h2 class="section-title font-display">Modelo 1: Implantação Pontual (Setup por Módulos)</h2>
+        <p class="section-desc">
+          Para quem deseja apenas a entrega técnica inicial pontual dos canais (valores alinhados previamente), sem mensalidade de sustentação:
+        </p>
+      </div>
+
+      <div class="pontual-cards-grid">
+        <!-- Opção A: Apenas Instagram -->
+        <div class="plan-card">
+          <div>
+            <div class="plan-name">Opção A · Apenas Instagram</div>
+            <div class="plan-scope">2 Automações no Instagram (Reels/Feed + Stories/DM com captura).</div>
+
+            <div class="plan-price-block">
+              <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span class="font-mono" style="font-size: 16px; font-weight: 700; color: var(--primary);">R$</span>
+                <span class="plan-val-num">350</span>
+              </div>
+              <span style="font-size: 12px; color: var(--muted); font-weight: 600;">Pagamento único de setup</span>
+            </div>
+
+            <ul class="plan-check-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>2 Automações no Instagram</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Gatilhos em Reels e Feed</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Captura em Stories e Menções</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Garantia técnica de 15 dias</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20A%20do%20Modelo%20Pontual%20(Apenas%20Instagram%20-%20R%24%20350)!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width: 100%; font-size: 13px;">
+            Contratar Instagram (R$ 350)
+          </a>
+        </div>
+
+        <!-- Opção B: Apenas WhatsApp API Oficial -->
+        <div class="plan-card">
+          <div>
+            <div class="plan-name">Opção B · Apenas WhatsApp</div>
+            <div class="plan-scope">Setup e homologação da linha na Meta Cloud API Oficial.</div>
+
+            <div class="plan-price-block">
+              <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span class="font-mono" style="font-size: 16px; font-weight: 700; color: var(--primary);">R$</span>
+                <span class="plan-val-num">700</span>
+              </div>
+              <span style="font-size: 12px; color: var(--muted); font-weight: 600;">Pagamento único de setup</span>
+            </div>
+
+            <ul class="plan-check-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Homologação Meta Cloud API</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Zero risco de banimento de número</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Templates oficiais homologados</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Triagem 24/7 e transbordo humano</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20B%20do%20Modelo%20Pontual%20(Apenas%20WhatsApp%20API%20Oficial%20-%20R%24%20700)!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width: 100%; font-size: 13px;">
+            Contratar WhatsApp (R$ 700)
+          </a>
+        </div>
+
+        <!-- Opção C: Combo Integrado -->
+        <div class="plan-card" style="border: 2px solid var(--primary); background: #FFFFFF;">
+          <div>
+            <div class="plan-name" style="color: var(--primary);">Opção C · Combo Pontual</div>
+            <div class="plan-scope">Instagram (2 automações) + WhatsApp API Oficial conectados.</div>
+
+            <div class="plan-price-block">
+              <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span class="font-mono" style="font-size: 16px; font-weight: 700; color: var(--primary);">R$</span>
+                <span class="plan-val-num">1.050</span>
+              </div>
+              <span style="font-size: 12px; color: var(--success); font-weight: 700;">Setup completo dos dois canais</span>
+            </div>
+
+            <ul class="plan-check-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Tudo da Opção A + Opção B</strong></span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Integração Instagram ➔ WhatsApp</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Linha oficial Meta Cloud (zero ban)</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Treinamento e garantia de 15 dias</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20C%20do%20Modelo%20Pontual%20(Combo%20Integrado%20por%20R%24%201.050)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; font-size: 13px;">
+            Contratar Combo (R$ 1.050)
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção 4: Transparência de Custos e Serviços -->
     <section>
       <div class="section-header">
         <div class="section-eyebrow">
@@ -1143,16 +1502,16 @@
         <div class="scope-card-in">
           <div class="scope-header-title in">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Incluído no Setup Técnico DRYOS
+            Incluído no Escopo Técnico DRYOS
           </div>
           <ul class="scope-list">
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Setup das 2 automações no Instagram:</strong> Reels/Feed + Stories/Menções com captura de dados.</span>
+              <span><strong>Implantação e setup técnico oficial Meta</strong> da esteira contratada.</span>
             </li>
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
-              <span><strong>Homologação da linha na Meta Cloud API:</strong> Verificação oficial sem risco de banimento de número.</span>
+              <span><strong>Homologação da linha na Meta Cloud API:</strong> Verificação oficial sem risco de banimento de chip.</span>
             </li>
             <li>
               <span style="color: var(--success); font-weight: 800;">✓</span>
@@ -1198,154 +1557,6 @@
             </li>
           </ul>
         </div>
-      </div>
-    </section>
-
-    <!-- Seção 4: Tabela de Investimento (Opções de Contratação) -->
-    <section id="investimento">
-      <div class="section-header">
-        <div class="section-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-          Opções de Contratação
-        </div>
-        <h2 class="section-title font-display">Tabela de Investimento</h2>
-        <p class="section-desc">
-          Escolha a modalidade que melhor se adapta à fase atual da sua operação:
-        </p>
-      </div>
-
-      <div class="pricing-cards-3">
-        <!-- Opção 1: Apenas Instagram -->
-        <div class="plan-card">
-          <div>
-            <div class="plan-name">Opção A · Instagram</div>
-            <div class="plan-scope">2 Automações estratégicas no Instagram (Reels/Feed + Stories/DM).</div>
-
-            <div class="plan-price-block">
-              <div class="plan-price-amount">
-                <span class="plan-currency">R$</span>
-                <span class="plan-val-num">350</span>
-              </div>
-              <span class="plan-val-period">Pagamento único de setup</span>
-            </div>
-
-            <ul class="plan-check-list">
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>2 Automações no Instagram</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Gatilhos em Reels e Feed</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Captura em Stories e Menções</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Coleta de Nome e WhatsApp</span>
-              </li>
-            </ul>
-          </div>
-
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20A%20(Apenas%20Instagram%20-%202%20automa%C3%A7%C3%B5es%20por%20R%24%20350)!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width: 100%; font-size: 13px;">
-            Contratar Instagram (R$ 350)
-          </a>
-        </div>
-
-        <!-- Opção 2: Apenas WhatsApp API Oficial -->
-        <div class="plan-card">
-          <div>
-            <div class="plan-name">Opção B · WhatsApp</div>
-            <div class="plan-scope">Setup completo e homologação da API Oficial Meta Cloud.</div>
-
-            <div class="plan-price-block">
-              <div class="plan-price-amount">
-                <span class="plan-currency">R$</span>
-                <span class="plan-val-num">700</span>
-              </div>
-              <span class="plan-val-period">Pagamento único de setup</span>
-            </div>
-
-            <ul class="plan-check-list">
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Homologação Meta Cloud API</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Zero risco de banimento de número</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Templates oficiais homologados</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Triagem 24/7 e transbordo humano</span>
-              </li>
-            </ul>
-          </div>
-
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20B%20(Apenas%20WhatsApp%20API%20Oficial%20-%20R%24%20700)!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width: 100%; font-size: 13px;">
-            Contratar WhatsApp (R$ 700)
-          </a>
-        </div>
-
-        <!-- Opção 3: Combo Completo Integrado -->
-        <div class="plan-card featured">
-          <span class="featured-badge">★ RECOMENDADO · INTEGRADO</span>
-
-          <div>
-            <div class="plan-name" style="color: var(--primary); font-size: 19px;">Opção C · Combo Integrado</div>
-            <div class="plan-scope">Instagram (2 automações) + WhatsApp API Oficial conectados.</div>
-
-            <div class="plan-price-block">
-              <div class="plan-price-amount">
-                <span class="plan-currency">R$</span>
-                <span class="plan-val-num">1.050</span>
-              </div>
-              <span class="plan-val-period" style="color: var(--success); font-weight: 700;">Setup completo dos dois canais</span>
-            </div>
-
-            <ul class="plan-check-list">
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span><strong>Tudo da Opção A + Opção B</strong></span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Integração direta Instagram ➔ WhatsApp</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Linha oficial Meta Cloud API com zero ban</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Sincronização de contatos em CRM/Planilha</span>
-              </li>
-            </ul>
-          </div>
-
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20quero%20ativar%20a%20Op%C3%A7%C3%A3o%20C%20(Combo%20Integrado%20Instagram%20%2B%20WhatsApp%20por%20R%24%201.050)!" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; font-size: 13.5px; padding: 12px;">
-            Contratar Combo Integrado (R$ 1.050)
-          </a>
-        </div>
-      </div>
-
-      <!-- Módulo Opcional de Sustentação Contínua -->
-      <div class="recurring-addon-box">
-        <div class="recurring-content">
-          <h4>💡 Precisa de novas automações e suporte contínuo todo mês?</h4>
-          <p>
-            Caso sua operação lance novos produtos e campanhas frequentemente, oferecemos nosso plano de <strong>Sustentação Contínua</strong> com monitoramento ativo, atualizações de textos/links e criação de novas automações mensais sem custos avulsos de setup.
-          </p>
-        </div>
-        <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20gostaria%20de%20entender%20mais%20sobre%20a%20op%C3%A7%C3%A3o%20de%20Sustenta%C3%A7%C3%A3o%20Cont%C3%ADnua%20mensal!" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 12.5px;">
-          Conversar sobre Sustentação Mensal
-        </a>
       </div>
     </section>
 
@@ -1400,16 +1611,16 @@
     <!-- CTA Final e Próximo Passo -->
     <section>
       <div class="cta-banner">
-        <h2 class="cta-title font-display">Pronta para estruturar seus canais de atendimento com a DRYOS?</h2>
+        <h2 class="cta-title font-display">Pronta para dar este passo com a DRYOS?</h2>
         <p class="cta-desc">
-          Basta escolher a opção desejada e sinalizar o seu aceite no WhatsApp para agendarmos o Kick-off técnico de 30 minutos e iniciarmos a homologação.
+          Basta escolher o modelo ideal para o seu momento e sinalizar seu aceite no WhatsApp para agendarmos o Kick-off técnico de 30 minutos e iniciarmos a homologação.
         </p>
         <div class="cta-actions">
           <button onclick="window.print()" class="btn btn-outline" style="color: #FAF9F5; border-color: rgba(255,255,255,0.3);">
             Salvar Proposta (PDF)
           </button>
-          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20analisei%20a%20proposta%20e%20quero%20iniciar%20o%20projeto!%20Vamos%20agendar%20o%20Kick-off%20t%C3%A9cnico%3F" target="_blank" rel="noopener noreferrer" class="btn btn-light">
-            Sinalizar Aceite via WhatsApp
+          <a href="https://wa.me/5521967287595?text=Ol%C3%A1%20Rafael%2C%20analisei%20a%20proposta%20com%20os%20dois%20modelos%20e%20gostaria%20de%20iniciar!%20Vamos%20agendar%20o%20Kick-off%20t%C3%A9cnico%3F" target="_blank" rel="noopener noreferrer" class="btn btn-light">
+            Sinalizar Escolha via WhatsApp
           </a>
         </div>
       </div>
