@@ -5,13 +5,13 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMemberAccess } from "@/hooks/useMemberAccess";
 
 const NAV = [
-  { to: "/conversas", label: "Conversas", match: (p: string) => p.startsWith("/conversas") },
-  { to: "/", label: "Dashboard", match: (p: string) => p === "/" || p.startsWith("/dashboard") },
-  { to: "/crm", label: "CRM", match: (p: string) => p === "/crm" || p.startsWith("/kanban") },
-  { to: "/agenda", label: "Agenda", match: (p: string) => p.startsWith("/agenda") },
-  { to: "/prospeccao", label: "Prospecção", match: (p: string) => p.startsWith("/prospeccao") },
+  { to: "/conversas", label: "Conversas", module: "crm_conversations", match: (p: string) => p.startsWith("/conversas") },
+  { to: "/crm", label: "CRM", module: "crm_conversations", match: (p: string) => p === "/crm" || p.startsWith("/kanban") },
+  { to: "/agenda", label: "Agenda", module: "crm_conversations", match: (p: string) => p.startsWith("/agenda") },
+  { to: "/prospeccao", label: "Prospecção", module: "prospecting", match: (p: string) => p.startsWith("/prospeccao") },
   {
     to: "/configuracoes",
     label: "Configurações",
@@ -27,6 +27,8 @@ type Props = {
 
 export function MainHeader({ onLogout, configNeedsAttention, trailing }: Props) {
   const { pathname } = useLocation();
+  const { hasModule } = useMemberAccess();
+  const visibleNav = NAV.filter((item) => !item.module || hasModule(item.module));
 
   return (
     <header className="border-b border-border px-4 h-14 flex items-center justify-between shrink-0 bg-background">
@@ -35,7 +37,7 @@ export function MainHeader({ onLogout, configNeedsAttention, trailing }: Props) 
           <Logo horizontal width={26} height={26} />
         </Link>
         <nav className="hidden sm:flex items-center gap-1 ml-2">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const active = item.match(pathname);
             return (
               <Link

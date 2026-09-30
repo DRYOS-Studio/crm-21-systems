@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { memberContext } from "../_shared/member-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,26 +39,14 @@ async function asaasRequest(path: string, method = "GET", body?: Record<string, 
   return result;
 }
 
-async function userFromJwt(admin: ReturnType<typeof createClient>, req: Request) {
-  const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token) return null;
-  const { data, error } = await admin.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "Método não permitido" });
 
-  const url = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !serviceKey) return json(500, { ok: false, error: "Servidor sem configuração" });
-  const admin = createClient(url, serviceKey);
-  const user = await userFromJwt(admin, req);
-  if (!user) return json(401, { ok: false, error: "Não autenticado" });
-  const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id);
-  if (!roles?.some((row: { role: string }) => row.role === "admin")) {
+  const member = await memberContext(req);
+  if (!member) return json(401, { ok: false, error: "Não autenticado ou membro inativo" });
+  const admin = member.admin;
+  if (!member.isAdmin) {
     return json(403, { ok: false, error: "Acesso restrito ao admin" });
   }
 

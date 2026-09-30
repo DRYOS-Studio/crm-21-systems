@@ -6,12 +6,12 @@ type Admin = {
         data: Uint8Array,
         opts: { contentType: string; upsert: boolean },
       ) => Promise<{ error: { message: string } | null }>;
-      getPublicUrl: (path: string) => { data: { publicUrl: string } };
     };
   };
 };
 
 export function isPlayableMediaUrl(url: string | null | undefined): boolean {
+  if (url?.startsWith("storage://chat-media/")) return true;
   if (!url || !/^https?:\/\//i.test(url)) return false;
   if (/mmg\.whatsapp\.net/i.test(url)) return false;
   if (/\.enc(\?|$)/i.test(url)) return false;
@@ -68,6 +68,7 @@ export async function downloadUazapiMedia(opts: {
 export async function persistWhatsappMedia(opts: {
   admin: Admin;
   userId: string;
+  instanceId: string | null | undefined;
   serverUrl: string | null | undefined;
   instanceToken: string | null | undefined;
   messageId: string | null | undefined;
@@ -86,6 +87,7 @@ export async function persistWhatsappMedia(opts: {
     asMp3,
   });
   if (!downloaded) return opts.fallbackUrl ?? null;
+  if (!opts.instanceId) return downloaded.fileURL;
 
   try {
     const fileRes = await fetch(downloaded.fileURL);
@@ -96,7 +98,7 @@ export async function persistWhatsappMedia(opts: {
       downloaded.mimetype ||
       fileRes.headers.get("content-type") ||
       (asMp3 ? "audio/mpeg" : "application/octet-stream");
-    const path = `${opts.userId}/${crypto.randomUUID()}.${extFromMime(mime, asMp3)}`;
+    const path = `${opts.instanceId}/${crypto.randomUUID()}.${extFromMime(mime, asMp3)}`;
     const { error } = await opts.admin.storage.from("chat-media").upload(path, buf, {
       contentType: mime.split(";")[0].trim(),
       upsert: false,
@@ -105,8 +107,7 @@ export async function persistWhatsappMedia(opts: {
       console.error("[persist-media] storage", error.message);
       return downloaded.fileURL;
     }
-    const { data } = opts.admin.storage.from("chat-media").getPublicUrl(path);
-    return data.publicUrl || downloaded.fileURL;
+    return `storage://chat-media/${path}`;
   } catch (e: any) {
     console.error("[persist-media] fetch/upload", e?.message);
     return downloaded.fileURL;

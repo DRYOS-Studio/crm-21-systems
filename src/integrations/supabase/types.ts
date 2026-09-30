@@ -679,6 +679,7 @@ export type Database = {
         Row: {
           cadencia_aplicada: boolean
           id: string
+          instance_id: string | null
           prospect_id: string
           reserved_at: string
           sent_at: string | null
@@ -689,6 +690,7 @@ export type Database = {
         Insert: {
           cadencia_aplicada?: boolean
           id?: string
+          instance_id?: string | null
           prospect_id: string
           reserved_at?: string
           sent_at?: string | null
@@ -699,6 +701,7 @@ export type Database = {
         Update: {
           cadencia_aplicada?: boolean
           id?: string
+          instance_id?: string | null
           prospect_id?: string
           reserved_at?: string
           sent_at?: string | null
@@ -707,6 +710,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "outreach_sends_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "outreach_sends_prospect_id_fkey"
             columns: ["prospect_id"]
@@ -1057,6 +1067,7 @@ export type Database = {
         Returns: boolean
       }
       my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
+      my_member_access: { Args: Record<PropertyKey, never>; Returns: Json }
       org_user_ids: { Args: { _uid: string }; Returns: string[] }
       same_org: { Args: { _uid: string }; Returns: boolean }
       my_webhook_secret: { Args: { p_instance: string }; Returns: string }

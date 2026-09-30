@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { callAI, listChatModels, resolveModelChain, type AIProvider } from "../_shared/get-ai-config.ts";
+import { hasModule, memberContext } from "../_shared/member-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,18 +11,16 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return json({ ok: false, error: "Não autorizado" }, 200);
-    }
+    const member = await memberContext(req);
+    if (!member) return json({ ok: false, error: "Não autorizado ou membro inativo" }, 401);
+    if (!(await hasModule(member, "settings"))) return json({ ok: false, error: "Sem acesso às configurações" }, 403);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
-    const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (!user) return json({ ok: false, error: "Usuário inválido" }, 200);
+    const user = { id: member.userId };
 
     const body = await req.json().catch(() => ({}));
     let { apiKey, model, provider } = body ?? {};

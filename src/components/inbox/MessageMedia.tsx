@@ -10,6 +10,7 @@ export type ChatMediaMessage = {
 
 function isPlayableMediaUrl(url: string | null | undefined): boolean {
   if (!url || !/^https?:\/\//i.test(url)) return false;
+  if (/\/storage\/v1\/object\/public\/chat-media\//i.test(url)) return false;
   if (/mmg\.whatsapp\.net/i.test(url)) return false;
   if (/\.enc(\?|$)/i.test(url)) return false;
   return true;

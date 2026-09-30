@@ -5,6 +5,7 @@ import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { montarWebhookUrl, redigirJson, redigirSecret } from "../_shared/webhook-url.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
 import { contactAvatarFromUazapiChat } from "../_shared/contact-avatar.ts";
+import { authorizedInstance, hasModule, memberContext } from "../_shared/member-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,43 +20,42 @@ function json(body: any, status = 200) {
   });
 }
 
-function bearer(req: Request): string {
-  const h = req.headers.get("Authorization") || "";
-  return h.replace(/^Bearer\s+/i, "").trim();
-}
-
-async function userFromJwt(admin: ReturnType<typeof createClient>, req: Request) {
-  const token = bearer(req);
-  if (!token) return null;
-  const { data, error } = await admin.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
+function storagePath(mediaUrl: string | null | undefined): string | null {
+  if (!mediaUrl) return null;
+  const marker = "storage://chat-media/";
+  if (mediaUrl.startsWith(marker)) return mediaUrl.slice(marker.length);
+  try {
+    const pathname = new URL(mediaUrl).pathname;
+    const match = pathname.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/chat-media\/(.+)$/);
+    return match?.[1] ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** set_webhook / get_webhooks: JWT + dono; nunca cai no token global (ADR-11). */
 async function handleWebhookAction(req: Request, body: any) {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) {
-    return json({ ok: false, error: "Servidor sem configuração" }, 500);
-  }
-  const admin = createClient(supabaseUrl, serviceKey);
-  const jwtUser = await userFromJwt(admin, req);
-  const instance_token = body.instance_token;
-  if (!instance_token) return json({ ok: false, error: "Token da instância não informado" });
-
-  let instQuery = admin
-    .from("whatsapp_instances")
-    .select("id, user_id, instance_token, server_url")
-    .eq("instance_token", instance_token);
-  if (jwtUser) instQuery = instQuery.eq("user_id", jwtUser.id);
-  const { data: inst } = await instQuery.maybeSingle();
-  if (!inst?.instance_token) return json({ ok: false, error: "Instância não encontrada" });
-  const user = jwtUser ?? { id: inst.user_id };
+  const ctx = await memberContext(req);
+  if (!ctx) return json({ ok: false, error: "Não autenticado ou membro inativo" }, 401);
+  const inst = await authorizedInstance(ctx, body.instance_id, { adminOnly: true });
+  if (!inst?.instance_token) return json({ ok: false, error: "Instância não encontrada ou sem permissão" }, 403);
+  const { admin } = ctx;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const user = { id: ctx.userId };
   if (!inst.server_url) return json({ ok: false, error: "Instância sem servidor Uazapi" });
 
   const baseUrl = String(inst.server_url).replace(/\/$/, "");
   const action = body.action;
+
+  if (action === "webhook_url") {
+    const { data: secret, error } = await admin.rpc("webhook_secret_for", { p_user: user.id, p_instance: inst.id });
+    if (error || !secret) return json({ ok: false, error: "Falha ao obter URL do webhook" }, 400);
+    return json({ ok: true, url: montarWebhookUrl(supabaseUrl, secret) });
+  }
+  if (action === "webhook_confirmed") {
+    const { data, error } = await admin.rpc("webhook_is_confirmed", { p_instance: inst.id });
+    return json({ ok: true, confirmed: !error && data === true });
+  }
 
   if (action === "get_webhooks") {
     const uazRes = await fetch(`${baseUrl}/webhook`, {
@@ -149,14 +149,9 @@ async function handleWebhookAction(req: Request, body: any) {
 }
 
 async function handleDownloadMedia(req: Request, body: any) {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) {
-    return json({ ok: false, error: "Servidor sem configuração" }, 500);
-  }
-  const admin = createClient(supabaseUrl, serviceKey);
-  const jwtUser = await userFromJwt(admin, req);
-  if (!jwtUser) return json({ ok: false, error: "Não autenticado" }, 401);
+  const ctx = await memberContext(req);
+  if (!ctx) return json({ ok: false, error: "Não autenticado ou membro inativo" }, 401);
+  const { admin } = ctx;
 
   const messageId = String(body.message_id || "").trim();
   if (!messageId) return json({ ok: false, error: "Mensagem não informada" });
@@ -168,43 +163,33 @@ async function handleDownloadMedia(req: Request, body: any) {
     .maybeSingle();
   if (!msg) return json({ ok: false, error: "Mensagem não encontrada" }, 404);
 
-  const orgIds = await admin.rpc("org_user_ids", { _uid: jwtUser.id });
-  const allowed = Array.isArray(orgIds.data)
-    ? orgIds.data.map((row: any) => (typeof row === "string" ? row : row?.org_user_ids)).filter(Boolean)
-    : [];
-  if (allowed.length && !allowed.includes(msg.user_id) && msg.user_id !== jwtUser.id) {
-    return json({ ok: false, error: "Sem permissão" }, 403);
-  }
-
-  if (isPlayableMediaUrl(msg.media_url)) {
-    return json({ ok: true, url: msg.media_url });
-  }
-
   const { data: conv } = await admin
     .from("conversations")
     .select("instance_id, user_id")
     .eq("id", msg.conversation_id)
     .maybeSingle();
+  if (!conv || !(await hasModule(ctx, "crm_conversations"))) return json({ ok: false, error: "Sem permissão" }, 403);
+  const conversationInstance = conv.instance_id
+    ? await authorizedInstance(ctx, conv.instance_id)
+    : null;
+  if (conv.instance_id && !conversationInstance) return json({ ok: false, error: "Sem acesso à instância desta conversa" }, 403);
+  const { data: owner } = await admin.from("organization_members").select("user_id")
+    .eq("org_id", ctx.orgId).eq("user_id", msg.user_id).maybeSingle();
+  if (!owner) return json({ ok: false, error: "Sem permissão" }, 403);
 
-  let inst: { server_url: string | null; instance_token: string | null } | null = null;
-  if (conv?.instance_id) {
-    const { data } = await admin
-      .from("whatsapp_instances")
-      .select("server_url, instance_token")
-      .eq("id", conv.instance_id)
-      .maybeSingle();
-    inst = data;
+  const path = storagePath(msg.media_url);
+  if (path) {
+    const { data, error } = await admin.storage.from("chat-media").createSignedUrl(path, 300);
+    if (error || !data?.signedUrl) return json({ ok: false, error: "Arquivo indisponível" }, 404);
+    if (!msg.media_url?.startsWith("storage://")) {
+      await admin.from("messages").update({ media_url: `storage://chat-media/${path}` }).eq("id", msg.id);
+    }
+    const url = data.signedUrl.startsWith("http") ? data.signedUrl : `${Deno.env.get("SUPABASE_URL")}${data.signedUrl}`;
+    return json({ ok: true, url });
   }
-  if (!inst?.server_url || !inst?.instance_token) {
-    const { data } = await admin
-      .from("whatsapp_instances")
-      .select("server_url, instance_token")
-      .eq("user_id", msg.user_id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    inst = data;
-  }
+  if (isPlayableMediaUrl(msg.media_url)) return json({ ok: true, url: msg.media_url });
+
+  const inst = conversationInstance;
   if (!inst?.server_url || !inst?.instance_token) {
     return json({ ok: false, error: "Instância WhatsApp não encontrada" });
   }
@@ -215,28 +200,33 @@ async function handleDownloadMedia(req: Request, body: any) {
   const url = await persistWhatsappMedia({
     admin,
     userId: msg.user_id,
+    instanceId: inst.id,
     serverUrl: inst.server_url,
     instanceToken: inst.instance_token,
     messageId: msg.external_id,
     mediaType: msg.media_type,
     fallbackUrl: msg.media_url,
   });
-  if (!url || !isPlayableMediaUrl(url)) {
+  const storedPath = storagePath(url);
+  if (!url || (!isPlayableMediaUrl(url) && !storedPath)) {
     return json({ ok: false, error: "Falha ao baixar o áudio" });
+  }
+  await admin.from("messages").update({ media_url: url }).eq("id", msg.id);
+  if (storedPath) {
+    await admin.from("messages").update({ media_url: url }).eq("id", msg.id);
+    const signed = await admin.storage.from("chat-media").createSignedUrl(storedPath, 300);
+    if (signed.error || !signed.data?.signedUrl) return json({ ok: false, error: "Arquivo indisponível" }, 404);
+    const signedUrl = signed.data.signedUrl.startsWith("http") ? signed.data.signedUrl : `${Deno.env.get("SUPABASE_URL")}${signed.data.signedUrl}`;
+    return json({ ok: true, url: signedUrl });
   }
   await admin.from("messages").update({ media_url: url }).eq("id", msg.id);
   return json({ ok: true, url });
 }
 
 async function handleEnrichContactAvatar(req: Request, body: any) {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) {
-    return json({ ok: false, error: "Servidor sem configuração" }, 500);
-  }
-  const admin = createClient(supabaseUrl, serviceKey);
-  const jwtUser = await userFromJwt(admin, req);
-  if (!jwtUser) return json({ ok: false, error: "Não autenticado" }, 401);
+  const ctx = await memberContext(req);
+  if (!ctx) return json({ ok: false, error: "Não autenticado ou membro inativo" }, 401);
+  const { admin } = ctx;
 
   const conversationId = String(body.conversation_id || "").trim();
   const number = String(body.number || "").replace(/\D/g, "");
@@ -251,39 +241,19 @@ async function handleEnrichContactAvatar(req: Request, body: any) {
     .maybeSingle();
   if (!conv) return json({ ok: false, error: "Conversa não encontrada" }, 404);
 
-  const orgRes = await admin.rpc("org_user_ids", { _uid: jwtUser.id });
-  const allowed = Array.isArray(orgRes.data)
-    ? orgRes.data
-        .map((row: unknown) => (typeof row === "string" ? row : (row as { org_user_ids?: string })?.org_user_ids))
-        .filter(Boolean)
-    : [];
-  const canAccess =
-    conv.user_id === jwtUser.id || (allowed.length > 0 && allowed.includes(conv.user_id));
-  if (!canAccess) return json({ ok: false, error: "Sem permissão" }, 403);
+  if (!(await hasModule(ctx, "crm_conversations"))) return json({ ok: false, error: "Sem permissão" }, 403);
+  const { data: owner } = await admin.from("organization_members").select("user_id")
+    .eq("org_id", ctx.orgId).eq("user_id", conv.user_id).maybeSingle();
+  if (!owner) return json({ ok: false, error: "Sem permissão" }, 403);
+  const inst = conv.instance_id ? await authorizedInstance(ctx, conv.instance_id) : null;
+  if (conv.instance_id && !inst) {
+    return json({ ok: false, error: "Sem acesso à instância desta conversa" }, 403);
+  }
 
   if (conv.contact_avatar_url) {
     return json({ ok: true, avatar_url: conv.contact_avatar_url, cached: true });
   }
 
-  let inst: { server_url: string | null; instance_token: string | null } | null = null;
-  if (conv.instance_id) {
-    const { data } = await admin
-      .from("whatsapp_instances")
-      .select("server_url, instance_token")
-      .eq("id", conv.instance_id)
-      .maybeSingle();
-    inst = data;
-  }
-  if (!inst?.server_url || !inst?.instance_token) {
-    const { data } = await admin
-      .from("whatsapp_instances")
-      .select("server_url, instance_token")
-      .eq("user_id", conv.user_id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    inst = data;
-  }
   if (!inst?.server_url || !inst?.instance_token) {
     return json({ ok: false, error: "Instância WhatsApp não encontrada" });
   }
@@ -320,7 +290,7 @@ export async function handle(req: Request): Promise<Response> {
 
   try {
     const body = await req.json();
-    const { action, name, phone, instance_token: bodyInstanceToken } = body;
+    const { action, name, phone } = body;
 
     if (action === "set_webhook" || action === "get_webhooks") {
       return await handleWebhookAction(req, body);
@@ -333,50 +303,62 @@ export async function handle(req: Request): Promise<Response> {
     if (action === "enrich_contact_avatar") {
       return await handleEnrichContactAvatar(req, body);
     }
+    const ctx = await memberContext(req);
+    if (!ctx) return json({ ok: false, error: "Não autenticado ou membro inativo" }, 401);
 
-    // Resolve configuração preferencialmente pela instância do usuário
-    let baseUrl: string | null = null;
-    let instance_token = bodyInstanceToken || null;
-    let adminToken: string | null = null;
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (supabaseUrl && serviceKey && instance_token) {
-      const admin = createClient(supabaseUrl, serviceKey);
-      const { data: instRow } = await admin
-        .from("whatsapp_instances")
-        .select("server_url, instance_token, user_id")
-        .eq("instance_token", instance_token)
-        .maybeSingle();
-      if (instRow?.server_url) {
-        baseUrl = instRow.server_url.replace(/\/$/, "");
-        instance_token = instRow.instance_token;
-      }
+    if (action === "get_config") {
+      if (!ctx.isAdmin) return json({ ok: false, error: "Apenas admin" }, 403);
+      const { data: inst } = await ctx.admin.from("whatsapp_instances")
+        .select("id,name,phone,status,server_url,instance_token")
+        .eq("user_id", ctx.userId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      return json({ ok: true, instance: inst ? {
+        id: inst.id, name: inst.name, phone: inst.phone, status: inst.status,
+        server_url: inst.server_url, has_instance_token: !!inst.instance_token,
+      } : null });
     }
 
-    // Fallback para configuração global (admin)
-    const globalConfig = await getUazapiConfig();
-    if (!baseUrl) {
-      if (!globalConfig) {
-        console.error("Missing Uazapi config");
-        return json({
-          ok: false,
-          error: "Uazapi não configurado. Configure em Configurações > Uazapi.",
-        });
+    if (action === "save_config") {
+      if (!ctx.isAdmin) return json({ ok: false, error: "Apenas admin" }, 403);
+      const serverUrl = typeof body.server_url === "string" ? body.server_url.trim().replace(/\/$/, "") : "";
+      const instanceToken = typeof body.instance_token === "string" ? body.instance_token.trim() : "";
+      if (!serverUrl || !/^https?:\/\//i.test(serverUrl)) return json({ ok: false, error: "Server URL inválida" }, 400);
+      if (body.instance_id && !instanceToken) {
+        const { data: existing } = await ctx.admin.from("whatsapp_instances").select("instance_token")
+          .eq("id", body.instance_id).eq("user_id", ctx.userId).maybeSingle();
+        if (!existing?.instance_token) return json({ ok: false, error: "Instance Token obrigatório" }, 400);
       }
+      const values = { server_url: serverUrl, ...(instanceToken ? { instance_token: instanceToken } : {}), status: "disconnected" };
+      const write = body.instance_id
+        ? await ctx.admin.from("whatsapp_instances").update(values).eq("id", body.instance_id).eq("user_id", ctx.userId).select("id").maybeSingle()
+        : await ctx.admin.from("whatsapp_instances").insert({ ...values, user_id: ctx.userId, name: "Instância WhatsApp" }).select("id").single();
+      if (write.error || !write.data) return json({ ok: false, error: "Falha ao salvar instância" }, 400);
+      if (typeof body.admin_token === "string" && body.admin_token.trim()) {
+        const { error } = await ctx.admin.from("app_settings").upsert([
+          { key: "uazapi_server_url", value: serverUrl },
+          { key: "uazapi_admin_token", value: body.admin_token.trim() },
+        ], { onConflict: "key" });
+        if (error) return json({ ok: false, error: "Falha ao salvar configuração Uazapi" }, 400);
+      }
+      return json({ ok: true, instance_id: write.data.id });
+    }
+
+    if (!action) return json({ ok: false, error: "Ação não informada" }, 400);
+    const adminOnly = ["create", "connect", "disconnect", "delete"].includes(action);
+    const inst = action === "create" ? null : await authorizedInstance(ctx, body.instance_id, { adminOnly });
+    if (action !== "create" && !inst) return json({ ok: false, error: "Instância não encontrada ou sem permissão" }, 403);
+    const instance_token = inst?.instance_token || null;
+    let baseUrl = inst?.server_url?.replace(/\/$/, "") || null;
+    let UAZAPI_ADMIN_TOKEN: string | null = null;
+    if (action === "create") {
+      if (!ctx.isAdmin) return json({ ok: false, error: "Apenas admin" }, 403);
+      const globalConfig = await getUazapiConfig();
+      if (!globalConfig) return json({ ok: false, error: "Uazapi não configurado" }, 400);
       baseUrl = globalConfig.serverUrl;
-      adminToken = globalConfig.adminToken;
-      if (!instance_token) instance_token = globalConfig.instanceToken;
+      UAZAPI_ADMIN_TOKEN = globalConfig.adminToken;
     }
-
-    const UAZAPI_ADMIN_TOKEN = adminToken;
+    if (!baseUrl || !instance_token && action !== "create") return json({ ok: false, error: "Instância sem credenciais configuradas" }, 400);
 
     console.log(`[manage-instance] action=${action}, name=${name || ""}, phone=${phone || ""}`);
-
-    if (!action) {
-      return json({ ok: false, error: "Ação não informada" });
-    }
-
 
     // === CREATE (init) ===
     if (action === "create") {
@@ -387,7 +369,7 @@ export async function handle(req: Request): Promise<Response> {
 
       const uazRes = await fetch(`${baseUrl}/instance/init`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", AdminToken: UAZAPI_ADMIN_TOKEN },
+        headers: { "Content-Type": "application/json", AdminToken: UAZAPI_ADMIN_TOKEN! },
         body: JSON.stringify({ name }),
       });
 
@@ -513,29 +495,33 @@ export async function handle(req: Request): Promise<Response> {
       }
 
       const data = JSON.parse(responseText);
-      
+
       // Normalize status from various Uazapi response formats
       // data.status can be an object like { connected: true } or a string like "connected"
       const statusObj = data?.status;
       const instanceStatus = data?.instance?.status;
-      const isConnected = 
+      const isConnected =
         (typeof statusObj === 'object' && statusObj?.connected === true) ||
         (typeof statusObj === 'string' && (statusObj === "open" || statusObj === "connected" || statusObj === "CONNECTED")) ||
         (typeof instanceStatus === 'string' && (instanceStatus === "open" || instanceStatus === "connected" || instanceStatus === "CONNECTED")) ||
         data?.loggedIn === true ||
         data?.instance?.loggedIn === true;
-      
+
       // O token já identifica a instância: nome, telefone e perfil vêm de graça.
       // Isso dispensa o usuário de digitar o nome à mão.
       const inst = data?.instance ?? {};
+      await ctx.admin.from("whatsapp_instances").update({
+        status: isConnected ? "connected" : "disconnected",
+        ...(inst.owner || data?.owner ? { phone: inst.owner || data?.owner } : {}),
+        ...(inst.name || data?.name ? { name: inst.name || data?.name } : {}),
+        ...(inst.profileName ? { profile_name: inst.profileName } : {}),
+      }).eq("id", body.instance_id);
       return json({
         ok: true,
         connected: isConnected,
         name: inst.name || data?.name || null,
         phone: inst.owner || data?.owner || null,
         profile_name: inst.profileName || null,
-        raw_status: statusObj,
-        raw_response: data,
       });
     }
 

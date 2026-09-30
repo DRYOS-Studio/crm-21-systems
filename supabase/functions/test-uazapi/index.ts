@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { memberContext } from "../_shared/member-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,6 +49,9 @@ serve(async (req) => {
   }
 
   try {
+    const member = await memberContext(req);
+    if (!member) return json({ ok: false, message: "Não autenticado ou membro inativo." }, 401);
+    if (!member.isAdmin) return json({ ok: false, message: "Apenas admin pode testar a conexão Uazapi." }, 403);
     const body = await req.json();
     const serverUrl = String(body.serverUrl || "").trim();
     if (!serverUrl) {

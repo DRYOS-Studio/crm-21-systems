@@ -27,7 +27,7 @@ export default function Agenda() {
   return <div className="dryos h-screen flex flex-col bg-background text-foreground">
     <MainHeader onLogout={async () => { await signOut(); navigate("/login"); }} />
     <main className="mx-auto w-full max-w-4xl flex-1 overflow-y-auto px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-bold">Agenda de instalações</h1>
+      <h1 className="text-2xl font-bold">Agenda</h1>
       <p className="mt-1 text-sm text-muted-foreground">Agendamentos registrados nos leads.</p>
       <div className="mt-6 divide-y rounded-lg border">
         {rows.map((row) => <Link key={row.id} to={`/?open=${row.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/50">

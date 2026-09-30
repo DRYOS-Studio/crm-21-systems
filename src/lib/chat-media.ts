@@ -64,16 +64,16 @@ function extFromFile(file: File) {
   return map[file.type] || "bin";
 }
 
-export async function uploadChatFile(userId: string, file: File) {
-  const path = `${userId}/${crypto.randomUUID()}.${extFromFile(file)}`;
+export async function uploadChatFile(instanceId: string, file: File) {
+  const path = `${instanceId}/${crypto.randomUUID()}.${extFromFile(file)}`;
   const { error } = await supabase.storage.from("chat-media").upload(path, file, {
     contentType: file.type || "application/octet-stream",
     upsert: false,
   });
   if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
-  if (!data.publicUrl) throw new Error("Falha ao gerar URL do arquivo");
-  return { path, url: data.publicUrl };
+  const { data, error: signedError } = await supabase.storage.from("chat-media").createSignedUrl(path, 600);
+  if (signedError || !data.signedUrl) throw new Error(signedError?.message || "Falha ao assinar arquivo");
+  return { path, url: data.signedUrl };
 }
 
 export async function emojiToSticker(emoji: string): Promise<File> {

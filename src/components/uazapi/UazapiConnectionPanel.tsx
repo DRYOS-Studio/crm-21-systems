@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { SUPABASE_URL } from "@/lib/env";
-import { resolveWebhookUrl } from "@/lib/webhookUrl";
 import { translateError } from "@/lib/translateError";
 
 function toQrSrc(raw: string | null | undefined): string | null {
@@ -62,14 +60,17 @@ export function UazapiConnectionPanel() {
   const [fetchingQr, setFetchingQr] = useState(false);
 
   const refreshWebhook = async (id: string | null) => {
-    const url = await resolveWebhookUrl(supabase, SUPABASE_URL, id);
-    setWebhookUrl(url || "");
     if (!id) {
+      setWebhookUrl("");
       setWebhookConfirmed(false);
       return;
     }
-    const { data, error } = await supabase.rpc("webhook_is_confirmed", { p_instance: id });
-    setWebhookConfirmed(!error && data === true);
+    const [{ data: urlData }, { data: confirmedData }] = await Promise.all([
+      supabase.functions.invoke("manage-instance", { body: { action: "webhook_url", instance_id: id } }),
+      supabase.functions.invoke("manage-instance", { body: { action: "webhook_confirmed", instance_id: id } }),
+    ]);
+    setWebhookUrl(urlData?.url || "");
+    setWebhookConfirmed(confirmedData?.confirmed === true);
   };
 
   const load = async () => {
@@ -89,22 +90,15 @@ export function UazapiConnectionPanel() {
       }
       return;
     }
-    const { data } = await supabase
-      .from("whatsapp_instances")
-      .select("id,name,phone,status,server_url,instance_token")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data: config } = await supabase.functions.invoke("manage-instance", { body: { action: "get_config" } });
+    const data = config?.instance;
     if (data) {
       setInstanceId(data.id);
       setInstanceName(data.name || "");
       setInstancePhone(data.phone || "");
       setInstanceConnected(data.status === "connected");
-      setHasInstanceToken(!!data.instance_token);
+      setHasInstanceToken(!!data.has_instance_token);
       await refreshWebhook(data.id);
-      const { data: confirmed } = await supabase.rpc("webhook_is_confirmed", { p_instance: data.id });
-      if (confirmed === true) setWebhookOk(true);
       url = data.server_url || url;
     }
     if (url) {
@@ -117,28 +111,13 @@ export function UazapiConnectionPanel() {
     void load();
   }, [user?.id]);
 
-  const resolveToken = async (): Promise<string> => {
-    const typed = instanceToken.trim();
-    if (typed) return typed;
-    if (!user) return "";
-    const { data } = await supabase
-      .from("whatsapp_instances")
-      .select("instance_token")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    return data?.instance_token || "";
-  };
-
   useEffect(() => {
     if (instanceConnected !== false || (!qrSrc && !paircode)) return;
     let cancelled = false;
     const tick = async () => {
-      const token = await resolveToken();
-      if (!token || cancelled) return;
+      if (!instanceId || cancelled) return;
       const { data } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "status", instance_token: token },
+        body: { action: "status", instance_id: instanceId },
       });
       if (cancelled || !data?.ok || !data.connected) return;
       setInstanceConnected(true);
@@ -146,17 +125,6 @@ export function UazapiConnectionPanel() {
       setPaircode(null);
       if (data.phone) setInstancePhone(data.phone);
       if (data.name) setInstanceName(data.name);
-      if (instanceId) {
-        await supabase
-          .from("whatsapp_instances")
-          .update({
-            status: "connected",
-            phone: data.phone || undefined,
-            name: data.name || undefined,
-            profile_name: data.profile_name || undefined,
-          })
-          .eq("id", instanceId);
-      }
       toast({ title: "WhatsApp conectado" });
     };
     const id = window.setInterval(tick, 3000);
@@ -166,16 +134,15 @@ export function UazapiConnectionPanel() {
     };
   }, [instanceConnected, qrSrc, paircode, instanceId]);
 
-  const fetchQr = async (tokenOverride?: string) => {
-    const token = tokenOverride || (await resolveToken());
-    if (!token) {
-      toast({ variant: "destructive", title: "Informe o Instance Token" });
+  const fetchQr = async (targetId = instanceId) => {
+    if (!targetId) {
+      toast({ variant: "destructive", title: "Salve a instância primeiro" });
       return;
     }
     setFetchingQr(true);
     try {
       const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "connect", instance_token: token },
+        body: { action: "connect", instance_id: targetId },
       });
       if (error || !data?.ok) {
         throw new Error(data?.error || error?.message || "Não consegui gerar o QR.");
@@ -237,8 +204,8 @@ export function UazapiConnectionPanel() {
       return;
     }
     const urlChanged = !!savedServerUrl && !sameHost(url, savedServerUrl);
-    const token = instanceToken.trim() || (urlChanged ? "" : await resolveToken());
-    if (!token) {
+    const token = instanceToken.trim();
+    if (!token && (urlChanged || !hasInstanceToken)) {
       toast({
         variant: "destructive",
         title: urlChanged ? "Cole o Instance Token do servidor novo" : "Informe o Instance Token",
@@ -254,46 +221,15 @@ export function UazapiConnectionPanel() {
     setHookReport(null);
     try {
       setConnectStep("Salvando credenciais...");
-      let id = instanceId;
-      if (id) {
-        const { error } = await supabase
-          .from("whatsapp_instances")
-          .update({ server_url: url, instance_token: token, status: "disconnected" })
-          .eq("id", id)
-          .eq("user_id", user.id);
-        if (error) throw new Error(error.message);
-      } else {
-        const { data, error } = await supabase
-          .from("whatsapp_instances")
-          .insert({
-            user_id: user.id,
-            server_url: url,
-            instance_token: token,
-            name: "Instância WhatsApp",
-            status: "disconnected",
-          })
-          .select("id")
-          .single();
-        if (error) throw new Error(error.message);
-        id = data.id;
-        setInstanceId(id);
-      }
-
-      const { data: adminRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (adminRow) {
-        const settings: { key: string; value: string }[] = [
-          { key: "uazapi_server_url", value: url },
-          { key: "uazapi_instance_token", value: token },
-        ];
-        if (adminToken.trim()) settings.push({ key: "uazapi_admin_token", value: adminToken.trim() });
-        const { error: settingsErr } = await supabase.from("app_settings").upsert(settings, { onConflict: "key" });
-        if (settingsErr) throw new Error(settingsErr.message);
-      }
+      const { data: saved, error: saveError } = await supabase.functions.invoke("manage-instance", {
+        body: {
+          action: "save_config", instance_id: instanceId || undefined,
+          server_url: url, instance_token: token || undefined, admin_token: adminToken.trim() || undefined,
+        },
+      });
+      if (saveError || !saved?.ok) throw new Error(saved?.error || saveError?.message || "Falha ao salvar credenciais");
+      const id = saved.instance_id as string;
+      setInstanceId(id);
       setSavedServerUrl(url);
       if (adminToken.trim()) {
         setHasAdminToken(true);
@@ -302,14 +238,9 @@ export function UazapiConnectionPanel() {
 
       setConnectStep("Identificando a instância...");
       const { data: st, error: stErr } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "status", instance_token: token },
+        body: { action: "status", instance_id: id },
       });
       if (stErr || !st?.ok) {
-        await supabase
-          .from("whatsapp_instances")
-          .update({ status: "disconnected" })
-          .eq("id", id)
-          .eq("user_id", user.id);
         setInstanceConnected(false);
         throw new Error(
           st?.error ||
@@ -318,11 +249,6 @@ export function UazapiConnectionPanel() {
         );
       }
 
-      const detected: Record<string, string> = { status: st.connected ? "connected" : "disconnected" };
-      if (st.name) detected.name = st.name;
-      if (st.phone) detected.phone = st.phone;
-      if (st.profile_name) detected.profile_name = st.profile_name;
-      await supabase.from("whatsapp_instances").update(detected).eq("id", id).eq("user_id", user.id);
       if (st.name) setInstanceName(st.name);
       if (st.phone) setInstancePhone(st.phone);
       setInstanceConnected(!!st.connected);
@@ -330,14 +256,14 @@ export function UazapiConnectionPanel() {
 
       setConnectStep("Registrando o webhook...");
       const { data: wh, error: whErr } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "set_webhook", instance_token: token },
+        body: { action: "set_webhook", instance_id: id },
       });
       const hookRegistered = !whErr && !!wh?.ok;
       setWebhookOk(hookRegistered);
       await refreshWebhook(id);
 
       setConnectStep("Testando ponta a ponta...");
-      await runWebhookDiagnostic(token, st.name || instanceName, id);
+      await runWebhookDiagnostic(st.name || instanceName, id);
       setInstanceToken("");
 
       if (!hookRegistered) {
@@ -348,7 +274,7 @@ export function UazapiConnectionPanel() {
         });
       } else if (!st.connected) {
         setConnectStep("Gerando QR Code...");
-        await fetchQr(token);
+        await fetchQr(id);
         toast({
           title: "Configurado!",
           description: "Leia o QR abaixo com o WhatsApp do número de atendimento.",
@@ -373,8 +299,11 @@ export function UazapiConnectionPanel() {
     }
   };
 
-  const runWebhookDiagnostic = async (token: string, name: string, id = instanceId) => {
-    const url = webhookUrl || (await resolveWebhookUrl(supabase, SUPABASE_URL, id));
+  const runWebhookDiagnostic = async (name: string, id = instanceId) => {
+    const { data: link } = id ? await supabase.functions.invoke("manage-instance", {
+      body: { action: "webhook_url", instance_id: id },
+    }) : { data: null };
+    const url = webhookUrl || link?.url;
     if (!url) {
       toast({ variant: "destructive", title: "Webhook sem secret — conecte a instância" });
       return;
@@ -383,7 +312,7 @@ export function UazapiConnectionPanel() {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event: "dry_run", instance: { name, token } }),
+      body: JSON.stringify({ event: "dry_run", instance: { name } }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -394,7 +323,10 @@ export function UazapiConnectionPanel() {
   };
 
   const copyWebhook = async () => {
-    const url = webhookUrl || (await resolveWebhookUrl(supabase, SUPABASE_URL, instanceId));
+    const { data } = instanceId ? await supabase.functions.invoke("manage-instance", {
+      body: { action: "webhook_url", instance_id: instanceId },
+    }) : { data: null };
+    const url = webhookUrl || data?.url;
     if (!url) {
       toast({ variant: "destructive", title: "Conecte a instância para gerar a URL" });
       return;
@@ -412,7 +344,7 @@ export function UazapiConnectionPanel() {
     setTestingHook(true);
     setHookReport(null);
     try {
-      await runWebhookDiagnostic(await resolveToken(), instanceName);
+      await runWebhookDiagnostic(instanceName);
     } catch (e: unknown) {
       toast({ variant: "destructive", title: "Falha no webhook", description: translateError(e) });
     } finally {
@@ -423,20 +355,19 @@ export function UazapiConnectionPanel() {
   const reconfigureWebhook = async () => {
     setTestingHook(true);
     try {
-      const token = await resolveToken();
-      if (!token) {
+      if (!instanceId) {
         toast({ variant: "destructive", title: "Configure a instância primeiro" });
         return;
       }
       const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "set_webhook", instance_token: token, rotate: true },
+        body: { action: "set_webhook", instance_id: instanceId, rotate: true },
       });
       const ok = !error && !!data?.ok;
       setWebhookOk(ok);
       if (ok) {
         toast({ title: "Webhook registrado na Uazapi" });
         await refreshWebhook(instanceId);
-        await runWebhookDiagnostic(token, instanceName);
+        await runWebhookDiagnostic(instanceName);
       } else {
         toast({
           variant: "destructive",

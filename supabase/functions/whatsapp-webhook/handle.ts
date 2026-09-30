@@ -631,6 +631,7 @@ export async function handle(req: Request): Promise<Response> {
       ? await persistWhatsappMedia({
           admin: supabase,
           userId,
+          instanceId: instRow.id,
           serverUrl: instRow.server_url,
           instanceToken: instRow.instance_token,
           messageId: externalId,

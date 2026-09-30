@@ -65,6 +65,18 @@ export async function handle(req: Request): Promise<Response> {
         continue;
       }
 
+      const { data: member } = await supabase.from("organization_members")
+        .select("org_id,is_active").eq("user_id", conv.user_id).maybeSingle();
+      const { data: adminRole } = await supabase.from("user_roles")
+        .select("user_id").eq("user_id", conv.user_id).eq("role", "admin").maybeSingle();
+      const { data: moduleGrant } = adminRole ? { data: true } : await supabase.from("organization_member_modules")
+        .select("user_id").eq("org_id", member?.org_id).eq("user_id", conv.user_id)
+        .eq("module_key", "crm_conversations").maybeSingle();
+      if (!member?.is_active || !moduleGrant) {
+        await supabase.from("followups").update({ status: "cancelled", error: "member access revoked" }).eq("id", f.id);
+        continue;
+      }
+
       if (conv.ai_enabled === false && f.kind === "auto_inactivity") {
         await supabase
           .from("followups")
@@ -77,8 +89,16 @@ export async function handle(req: Request): Promise<Response> {
         .from("whatsapp_instances")
         .select("instance_token, server_url")
         .eq("id", conv.instance_id)
-        .eq("user_id", conv.user_id)
         .maybeSingle();
+      if (!adminRole) {
+        const { data: deviceGrant } = await supabase.from("organization_member_instances")
+          .select("instance_id").eq("org_id", member.org_id).eq("user_id", conv.user_id)
+          .eq("instance_id", conv.instance_id).maybeSingle();
+        if (!deviceGrant) {
+          await supabase.from("followups").update({ status: "cancelled", error: "device access revoked" }).eq("id", f.id);
+          continue;
+        }
+      }
       if (!inst?.instance_token) {
         await supabase.from("followups").update({ status: "failed", error: "no instance token" }).eq("id", f.id);
         continue;
@@ -128,6 +148,21 @@ export async function handle(req: Request): Promise<Response> {
       const { data: fresh } = await supabase.from("conversations").select("optout").eq("id", conv.id).maybeSingle();
       if (fresh?.optout) {
         await supabase.from("followups").update({ status: "cancelled", error: "optout" }).eq("id", f.id);
+        continue;
+      }
+
+      const { data: currentMember } = await supabase.from("organization_members")
+        .select("org_id,is_active").eq("user_id", conv.user_id).maybeSingle();
+      const { data: currentAdmin } = await supabase.from("user_roles")
+        .select("user_id").eq("user_id", conv.user_id).eq("role", "admin").maybeSingle();
+      const { data: currentModule } = currentAdmin ? { data: true } : await supabase.from("organization_member_modules")
+        .select("user_id").eq("org_id", currentMember?.org_id).eq("user_id", conv.user_id)
+        .eq("module_key", "crm_conversations").maybeSingle();
+      const { data: currentDevice } = currentAdmin ? { data: true } : await supabase.from("organization_member_instances")
+        .select("instance_id").eq("org_id", currentMember?.org_id).eq("user_id", conv.user_id)
+        .eq("instance_id", conv.instance_id).maybeSingle();
+      if (!currentMember?.is_active || !currentModule || !currentDevice) {
+        await supabase.from("followups").update({ status: "cancelled", error: "member or device access revoked" }).eq("id", f.id);
         continue;
       }
 

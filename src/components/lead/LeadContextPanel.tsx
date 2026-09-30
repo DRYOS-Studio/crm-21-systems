@@ -310,7 +310,7 @@ export function LeadContextBody({
             </AccordionTrigger>
             <AccordionContent className="space-y-3 pb-4">
               <div className="space-y-1.5">
-                <Label htmlFor={`install-at-${conversation.id}`}>Data e hora da instalação</Label>
+                <Label htmlFor={`install-at-${conversation.id}`}>Agendar reunião</Label>
                 <Input id={`install-at-${conversation.id}`} type="datetime-local" value={installationAt} onChange={(e) => setInstallationAt(e.target.value)} />
               </div>
               {customDefinitions.map((field) => (

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Bot, Building2, BookOpen, CircleSlash, CreditCard, Server, Smartphone, Tags } from "lucide-react";
+import { Bot, Building2, BookOpen, CircleSlash, CreditCard, Server, Smartphone, Tags, Users } from "lucide-react";
 
 export type SettingsNavItem = {
   to: string;
@@ -24,6 +24,13 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         icon: CreditCard,
         description: "Status da assinatura, prazo de regularização e cobranças.",
       },
+      {
+        to: "/configuracoes/usuarios",
+        label: "Usuários",
+        icon: Users,
+        description: "Convites, módulos e dispositivos por usuário.",
+        adminOnly: true,
+      },
     ],
   },
   {
@@ -34,6 +41,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         label: "WhatsApp",
         icon: Smartphone,
         description: "Servidor Uazapi, tokens, webhook e QR Code.",
+        adminOnly: true,
       },
     ],
   },

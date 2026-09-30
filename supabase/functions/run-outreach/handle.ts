@@ -1,6 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getAgentConfig, type AIConfig } from "../_shared/get-ai-config.ts";
-import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
 import { getBillingAccess } from "../_shared/billing-access.ts";
 import { runBrainTurn, type ConversaState } from "../_shared/brain.ts";
 import {
@@ -106,6 +105,18 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
       break;
     }
 
+    const { data: member } = await supabase.from("organization_members")
+      .select("org_id,is_active").eq("user_id", agent.user_id).maybeSingle();
+    const { data: adminRole } = await supabase.from("user_roles")
+      .select("user_id").eq("user_id", agent.user_id).eq("role", "admin").maybeSingle();
+    const { data: moduleGrant } = adminRole ? { data: true } : await supabase.from("organization_member_modules")
+      .select("user_id").eq("org_id", member?.org_id).eq("user_id", agent.user_id)
+      .eq("module_key", "prospecting").maybeSingle();
+    if (!member?.is_active || !moduleGrant) {
+      skip.push("acesso_revogado");
+      continue;
+    }
+
     await supabase
       .from("agent_configs")
       .update({ outreach_last_tick_at: new Date().toISOString() })
@@ -114,18 +125,26 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
     const { data: inst } = await supabase
       .from("whatsapp_instances")
       .select("id, instance_token, server_url, status, user_id")
-      .eq("user_id", agent.user_id)
       .not("instance_token", "is", null)
       .order("updated_at", { ascending: false })
+      .eq("user_id", agent.user_id)
       .limit(1)
       .maybeSingle();
-    const uaz = await getUazapiConfig();
-    const token = inst?.instance_token || uaz?.instanceToken;
-    const serverUrl = (inst?.server_url || uaz?.serverUrl || "").replace(/\/$/, "");
-    if (!inst?.id || !token || !serverUrl || inst.status === "disconnected") {
+    if (!inst?.id || !inst.instance_token || !inst.server_url || inst.status === "disconnected") {
       skip.push(inst?.status === "disconnected" ? "desconectado" : "sem_instancia");
       continue;
     }
+    if (!adminRole) {
+      const { data: deviceGrant } = await supabase.from("organization_member_instances")
+        .select("instance_id").eq("org_id", member.org_id).eq("user_id", agent.user_id)
+        .eq("instance_id", inst.id).maybeSingle();
+      if (!deviceGrant) {
+        skip.push("device_sem_acesso");
+        continue;
+      }
+    }
+    const token = inst.instance_token;
+    const serverUrl = inst.server_url.replace(/\/$/, "");
     const { data: confirmed } = await supabase.rpc("webhook_is_confirmed", { p_instance: inst.id });
     if (confirmed !== true) {
       skip.push("webhook");
@@ -160,6 +179,7 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
       skip.push("sem_reserva");
       continue;
     }
+    await supabase.from("outreach_sends").update({ instance_id: inst.id }).eq("id", row.send_id);
 
     const prospect = row.prospect ?? {};
     const conv = row.conversation ?? {};
@@ -236,6 +256,21 @@ export async function handle(req: Request, deps: TickDeps = {}): Promise<Respons
     if (!(await getBillingAccess(supabase)).allowed) {
       await supabase.rpc("outreach_release", { p_user: agent.user_id, p_send: row.send_id, p_motivo: "billing blocked" });
       break;
+    }
+    const { data: currentMember } = await supabase.from("organization_members")
+      .select("org_id,is_active").eq("user_id", agent.user_id).maybeSingle();
+    const { data: currentAdmin } = await supabase.from("user_roles")
+      .select("user_id").eq("user_id", agent.user_id).eq("role", "admin").maybeSingle();
+    const { data: currentModule } = currentAdmin ? { data: true } : await supabase.from("organization_member_modules")
+      .select("user_id").eq("org_id", currentMember?.org_id).eq("user_id", agent.user_id)
+      .eq("module_key", "prospecting").maybeSingle();
+    const { data: currentDevice } = currentAdmin ? { data: true } : await supabase.from("organization_member_instances")
+      .select("instance_id").eq("org_id", currentMember?.org_id).eq("user_id", agent.user_id)
+      .eq("instance_id", inst.id).maybeSingle();
+    if (!currentMember?.is_active || !currentModule || !currentDevice) {
+      await supabase.rpc("outreach_release", { p_user: agent.user_id, p_send: row.send_id, p_motivo: "member or device access revoked" });
+      skip.push("acesso_revogado");
+      continue;
     }
     let sendRes: Response;
     try {

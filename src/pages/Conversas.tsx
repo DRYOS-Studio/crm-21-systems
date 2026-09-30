@@ -214,7 +214,6 @@ export default function Conversas() {
   const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
     useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const instanceTokenCache = useRef<{ key: string; token: string } | null>(null);
   const inboxReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { activeReasons, reasonById } = useLossReasons();
   const [pendingLossStage, setPendingLossStage] = useState<string | null>(null);
@@ -862,27 +861,6 @@ export default function Conversas() {
     }
   };
 
-  const resolveInstanceToken = async (conv: Conversation) => {
-    const key = conv.instance_id ?? `user:${user!.id}`;
-    if (instanceTokenCache.current?.key === key) return instanceTokenCache.current.token;
-    const { data: inst } = conv.instance_id
-      ? await supabase
-          .from("whatsapp_instances")
-          .select("instance_token")
-          .eq("id", conv.instance_id)
-          .maybeSingle()
-      : await supabase
-          .from("whatsapp_instances")
-          .select("instance_token")
-          .eq("user_id", user!.id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-    if (!inst?.instance_token) throw new Error("Nenhuma instância WhatsApp conectada");
-    instanceTokenCache.current = { key, token: inst.instance_token };
-    return inst.instance_token;
-  };
-
   const sendPayload = async (payload: ComposerPayload) => {
     if (!active) return;
     if (encerrado(active)) {
@@ -924,7 +902,8 @@ export default function Conversas() {
 
     setSending(true);
     try {
-      const instanceToken = await resolveInstanceToken(active);
+      const instanceId = active.instance_id;
+      if (!instanceId) throw new Error("Esta conversa não está vinculada a uma instância WhatsApp");
 
       let mediaUrl: string | null = null;
       let mediaType: string | null = null;
@@ -935,7 +914,7 @@ export default function Conversas() {
         const { data, error } = await supabase.functions.invoke("manage-instance", {
           body: {
             action: "send_text",
-            instance_token: instanceToken,
+            instance_id: instanceId,
             number,
             text: payload.text,
           },
@@ -944,14 +923,14 @@ export default function Conversas() {
         sendExternalId = extractUazapiMessageId(data?.data ?? data);
       } else {
         assertMediaSize(payload.file, payload.type);
-        const uploaded = await uploadChatFile(user!.id, payload.file);
-        mediaUrl = uploaded.url;
+        const uploaded = await uploadChatFile(instanceId, payload.file);
+        mediaUrl = `storage://chat-media/${uploaded.path}`;
         mediaType = payload.type;
         mediaName = payload.name || payload.file.name;
         const { data, error } = await supabase.functions.invoke("manage-instance", {
           body: {
             action: "send_media",
-            instance_token: instanceToken,
+            instance_id: instanceId,
             number,
             type: payload.type,
             file: uploaded.url,

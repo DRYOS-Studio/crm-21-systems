@@ -142,16 +142,18 @@ export function useAgentConfigSettings() {
       }
 
       if (context) {
-        const { data: inst } = await supabase
+        const { data: adminRole } = await supabase.from("user_roles").select("role")
+          .eq("user_id", user.id).eq("role", "admin").maybeSingle();
+        const { data: inst } = adminRole ? await supabase
           .from("whatsapp_instances")
-          .select("instance_token, status")
+          .select("id, status")
           .eq("user_id", user.id)
           .order("updated_at", { ascending: false })
           .limit(1)
-          .maybeSingle();
-        if (inst?.instance_token && inst.status === "connected") {
+          .maybeSingle() : { data: null };
+        if (inst?.id && inst.status === "connected") {
           const { data: wh, error: whErr } = await supabase.functions.invoke("manage-instance", {
-            body: { action: "set_webhook", instance_token: inst.instance_token },
+            body: { action: "set_webhook", instance_id: inst.id },
           });
           if (whErr || !wh?.ok) {
             toast({
