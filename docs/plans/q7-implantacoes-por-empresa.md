@@ -38,9 +38,10 @@ migrations aplicadas e funcionalidades promovidas para cada instalação.
   `brain.dryos.com.br` e `crm-21.vercel.app`. O preview de validação permanece
   em `crm-21-rppcdvuc6-dryos-studio.vercel.app`.
 - **Pendente nas instalações de clientes:** publicar `sync-billing-state`,
-  frontend e demais funções em projetos dedicados. O webhook ainda precisa ser
-  cadastrado e testado no Asaas Sandbox; cobrança real e atualização canário
-  também permanecem pendentes.
+  frontend e demais funções em projetos dedicados. O webhook foi cadastrado no
+  Asaas Sandbox e a confirmação de uma cobrança de teste atualizou o status da
+  instalação para `active`. Cobrança em produção e atualização canário seguem
+  pendentes.
 - **Arquitetura definida:** o Supabase atual da DRYOS será o plano de controle,
   com webhook Asaas e registro das instalações. Cada empresa terá Supabase e
   Vercel próprios, fixados numa release, seguindo o modelo de stack dedicado do
@@ -61,19 +62,18 @@ migrations aplicadas e funcionalidades promovidas para cada instalação.
   evento e responder rapidamente; processamento e reconciliação de estado ficam
   assíncronos.
 - **Pendente de execução:** publicar o frontend e a função de sincronização nas
-  instalações de clientes; cadastrar o webhook central com o e-mail de alertas,
-  homologar no Asaas Sandbox e validar uma cobrança de teste.
-  Provisionamento dos projetos Supabase/Vercel, DNS e promoção de releases
-  continuam manuais.
-- **Validação pendente:** webhooks reais, cobrança e atualização canário. O
-  teste local de processamento Asaas cobre atraso, evento pago de fatura antiga
-  fora de ordem e confirmação da fatura atual; os cinco testes unitários de
-  cobrança e provedores de IA passaram. O teste isolado de bloqueio confirmou
+  instalações de clientes. Provisionamento dos projetos Supabase/Vercel, DNS e
+  promoção de releases continuam manuais.
+- **Validação pendente:** webhook e cobrança em produção, além da atualização
+  canário. No Sandbox, o webhook central foi cadastrado, uma assinatura de teste
+  foi criada e a confirmação simulada atualizou o status da instalação para
+  `active`. O teste local de processamento Asaas cobre atraso, evento pago de
+  fatura antiga fora de ordem e confirmação da fatura atual; os cinco testes
+  unitários de cobrança e provedores de IA passaram. O teste isolado de bloqueio confirmou
   persistência do inbound sem chamada à IA ou resposta. A suíte ampla de
   webhook não passou porque 13 casos falharam ao criar usuários sintéticos no
-  Auth local; o banco foi preservado, sem reset de dados. Webhooks reais,
-  cobrança e atualização canário permanecem pendentes. No
-  remoto, foram conferidos o histórico até `20260930180000`, as tabelas, colunas e
+  Auth local; o banco foi preservado, sem reset de dados. No remoto, foram
+  conferidos o histórico até `20260930180000`, as tabelas, colunas e
   triggers criados pelas migrations. Em transações revertidas no banco local,
   passaram as cotas de usuários e canais e os eventos de qualificação, passagem
   ao humano, conversão e follow-up. Testes HTTP locais confirmaram autenticação,
@@ -120,6 +120,8 @@ com revisão adversarial no Design e validação do diff antes da promoção.
 
 ## Implantação e atualização por cliente
 
+- Criar um setup por empresa para escolher as personalizações e os módulos
+  entregues.
 - Manter inventário operacional com subdomínio, projeto Supabase, projeto
   Vercel e versões verificadas de banco, funções e frontend de cada empresa.
   Provisionar sem criar forks do código.

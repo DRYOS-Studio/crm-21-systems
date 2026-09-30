@@ -18,8 +18,10 @@ projetos dedicados dos clientes não entram nesse teto.
 No ambiente atual, os secrets do Asaas já estão configurados no Supabase DRYOS,
 e as funções centrais `asaas-webhook`, `process-asaas-events`,
 `billing-snapshot` e `manage-installation` estão publicadas. O cron de
-processamento está ativo a cada minuto. Ainda falta cadastrar o webhook na conta
-Sandbox e validar a entrega de eventos.
+processamento está ativo a cada minuto. O webhook Sandbox foi cadastrado; uma
+assinatura de teste foi criada e a confirmação simulada atualizou a instalação
+para `active`. A configuração de produção e o teste de cobrança real continuam
+pendentes.
 
 1. Configure `ASAAS_API_KEY` como secret de Edge Functions no Supabase DRYOS.
    Use a chave sandbox durante a homologação.
