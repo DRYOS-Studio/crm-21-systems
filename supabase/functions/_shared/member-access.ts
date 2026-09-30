@@ -47,6 +47,7 @@ export type AuthorizedInstance = {
   phone: string | null;
   profile_name: string | null;
   status: string;
+  is_organization_shared: boolean;
   server_url: string | null;
   instance_token: string | null;
 };
@@ -62,7 +63,7 @@ export async function authorizedInstance(
 
   const { data: instance } = await ctx.admin
     .from("whatsapp_instances")
-    .select("id,user_id,name,phone,profile_name,status,server_url,instance_token")
+    .select("id,user_id,name,phone,profile_name,status,is_organization_shared,server_url,instance_token")
     .eq("id", instanceId)
     .maybeSingle();
   if (!instance) return null;

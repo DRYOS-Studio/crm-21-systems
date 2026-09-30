@@ -74,24 +74,10 @@ export function UazapiConnectionPanel() {
   };
 
   const load = async () => {
-    const { data: settings } = await supabase
-      .from("app_settings")
-      .select("key,value")
-      .in("key", ["uazapi_server_url", "uazapi_admin_token"]);
-    let url = "";
-    for (const row of settings || []) {
-      if (row.key === "uazapi_server_url") url = row.value || "";
-      if (row.key === "uazapi_admin_token" && row.value) setHasAdminToken(true);
-    }
-    if (!user) {
-      if (url) {
-        setServerUrl(url);
-        setSavedServerUrl(url);
-      }
-      return;
-    }
+    if (!user) return;
     const { data: config } = await supabase.functions.invoke("manage-instance", { body: { action: "get_config" } });
     const data = config?.instance;
+    setHasAdminToken(config?.has_admin_token === true);
     if (data) {
       setInstanceId(data.id);
       setInstanceName(data.name || "");
@@ -99,8 +85,8 @@ export function UazapiConnectionPanel() {
       setInstanceConnected(data.status === "connected");
       setHasInstanceToken(!!data.has_instance_token);
       await refreshWebhook(data.id);
-      url = data.server_url || url;
     }
+    const url = data?.server_url || config?.server_url || "";
     if (url) {
       setServerUrl(url);
       setSavedServerUrl(url);

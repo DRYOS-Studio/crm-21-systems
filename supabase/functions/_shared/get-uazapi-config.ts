@@ -6,11 +6,27 @@ interface UazapiConfig {
   instanceToken: string | null;
 }
 
+export function isUazapiManagedMode(): boolean {
+  return Deno.env.get("UAZAPI_MANAGED_MODE") === "true";
+}
+
 let cache: { data: UazapiConfig | null; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
 export async function getUazapiConfig(): Promise<UazapiConfig | null> {
   if (cache && cache.expires > Date.now()) return cache.data;
+
+  if (isUazapiManagedMode()) {
+    const serverUrl = Deno.env.get("OUTREE_UAZAPI_SERVER_URL")?.trim() || null;
+    const adminToken = Deno.env.get("OUTREE_UAZAPI_ADMIN_TOKEN")?.trim() || null;
+    const data = serverUrl && adminToken ? {
+      serverUrl: serverUrl.replace(/\/$/, ""),
+      adminToken,
+      instanceToken: null,
+    } : null;
+    cache = { data, expires: Date.now() + CACHE_TTL_MS };
+    return data;
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

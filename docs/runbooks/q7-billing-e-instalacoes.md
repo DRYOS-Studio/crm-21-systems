@@ -65,6 +65,22 @@ pendentes.
 6. Registre no inventário a release de banco, funções e frontend depois de
    conferir a instalação.
 
+## Conexão WhatsApp gerenciada pela DRYOS
+
+Cada empresa recebe 1 QR compartilhado. QR adicionais custam R$29 cada e só
+podem ser criados depois que a contratação for registrada na cota da empresa.
+
+Em cada projeto Supabase de cliente, configure os secrets `UAZAPI_MANAGED_MODE=true`,
+`OUTREE_UAZAPI_SERVER_URL` e `OUTREE_UAZAPI_ADMIN_TOKEN`. Os dois últimos são
+credenciais de backend; nunca os configure como variáveis `VITE_*`. A instalação
+central DRYOS não ativa esse flag e mantém a tela de configuração administrativa.
+
+Publique as Edge Functions antes do frontend. `manage-instance` cria a instância
+no servidor UazAPI, guarda o token no banco e registra o webhook; o frontend do
+cliente recebe somente QR, status e número conectado. Para cada QR extra
+contratado, incremente `organizations.extra_whatsapp_channels` no projeto do
+cliente. A cota do banco continua bloqueando criações acima do total contratado.
+
 O acesso começa liberado. Após o vencimento, o cliente permanece liberado até
 completar cinco dias inteiros de atraso. O sistema então bloqueia a interface e
 todos os envios; o webhook de WhatsApp continua gravando mensagens recebidas.

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { getBillingAccess } from "../_shared/billing-access.ts";
-import { getUazapiConfig } from "../_shared/get-uazapi-config.ts";
+import { getUazapiConfig, isUazapiManagedMode } from "../_shared/get-uazapi-config.ts";
 import { montarWebhookUrl, redigirJson, redigirSecret } from "../_shared/webhook-url.ts";
 import { isPlayableMediaUrl, persistWhatsappMedia } from "../_shared/persist-media.ts";
 import { contactAvatarFromUazapiChat } from "../_shared/contact-avatar.ts";
@@ -283,6 +283,169 @@ async function handleEnrichContactAvatar(req: Request, body: any) {
   return json({ ok: true, avatar_url: avatarUrl });
 }
 
+function uazapiConnected(data: any): boolean {
+  const status = data?.status;
+  const instanceStatus = data?.instance?.status;
+  return data?.connected === true || data?.loggedIn === true || data?.instance?.loggedIn === true ||
+    (typeof status === "object" && status?.connected === true) ||
+    (typeof status === "string" && ["open", "connected", "CONNECTED"].includes(status)) ||
+    (typeof instanceStatus === "string" && ["open", "connected", "CONNECTED"].includes(instanceStatus));
+}
+
+function uazapiQr(data: any): string | null {
+  const value = data?.instance?.qrcode || data?.qrcode;
+  return typeof value === "string" && value ? value : null;
+}
+
+async function handleManagedConnect(req: Request, ctx: NonNullable<Awaited<ReturnType<typeof memberContext>>>, body: any) {
+  if (!ctx.isAdmin) return json({ ok: false, error: "Apenas admin pode conectar o WhatsApp da empresa." }, 403);
+  const config = await getUazapiConfig();
+  if (!config?.serverUrl || !config.adminToken) return json({ ok: false, error: "Serviço de WhatsApp não configurado pela DRYOS." }, 503);
+
+  let instance = body.instance_id
+    ? await authorizedInstance(ctx, body.instance_id, { adminOnly: true })
+    : null;
+  if (body.instance_id && (!instance?.is_organization_shared || instance.server_url !== config.serverUrl)) {
+    return json({ ok: false, error: "QR Code não encontrado nesta empresa." }, 404);
+  }
+
+  if (!instance) {
+    const billing = await getBillingAccess(ctx.admin);
+    if (!billing.allowed) return json({ ok: false, error: "Conexão indisponível pela situação da assinatura." }, 402);
+
+    const [{ data: org }, { data: members }] = await Promise.all([
+      ctx.admin.from("organizations").select("name,extra_whatsapp_channels").eq("id", ctx.orgId).maybeSingle(),
+      ctx.admin.from("organization_members").select("user_id").eq("org_id", ctx.orgId),
+    ]);
+    const memberIds = (members ?? []).map((member) => member.user_id);
+    if (!memberIds.length) return json({ ok: false, error: "Empresa sem usuários ativos." }, 400);
+    const { data: organizationInstances } = await ctx.admin.from("whatsapp_instances")
+      .select("id").in("user_id", memberIds);
+    const channelLimit = 1 + Math.max(0, Number(org?.extra_whatsapp_channels ?? 0));
+    if ((organizationInstances?.length ?? 0) >= channelLimit) {
+      return json({ ok: false, error: "Limite de QR Codes contratado atingido. QR extra precisa ser contratado com a DRYOS." }, 409);
+    }
+
+    const slot = (organizationInstances?.length ?? 0) + 1;
+    const displayName = String(org?.name || "Empresa").trim().slice(0, 100);
+    const instanceName = `q7-${ctx.orgId.replace(/-/g, "").slice(0, 12)}-${slot}`;
+    const { data: reservation, error: reserveError } = await ctx.admin.from("whatsapp_instances")
+      .insert({
+        user_id: ctx.userId,
+        name: instanceName,
+        server_url: config.serverUrl,
+        status: "provisioning",
+        is_organization_shared: true,
+      })
+      .select("id,name,phone,status,server_url,instance_token,is_organization_shared,user_id,profile_name")
+      .single();
+    if (reserveError || !reservation) {
+      return reserveError?.code === "23514"
+        ? json({ ok: false, error: "Limite de QR Codes contratado atingido. QR extra precisa ser contratado com a DRYOS." }, 409)
+        : json({ ok: false, error: "Não consegui preparar o QR Code da empresa." }, 400);
+    }
+
+    let created: any;
+    try {
+      const response = await fetch(`${config.serverUrl}/instance/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", admintoken: config.adminToken },
+        body: JSON.stringify({ name: instanceName, systemName: displayName }),
+      });
+      const raw = await response.text();
+      if (!response.ok) {
+        await ctx.admin.from("whatsapp_instances").delete().eq("id", reservation.id);
+        console.error(`[managed-connect] Uazapi create status=${response.status}`);
+        return json({ ok: false, error: response.status === 429
+          ? "O serviço WhatsApp está sem capacidade agora. Tente novamente mais tarde."
+          : "Não consegui criar a conexão WhatsApp. Tente novamente." }, 502);
+      }
+      created = JSON.parse(raw);
+    } catch (error) {
+      await ctx.admin.from("whatsapp_instances").delete().eq("id", reservation.id);
+      console.error("[managed-connect] Uazapi create failed", error instanceof Error ? error.message : "unknown");
+      return json({ ok: false, error: "Não consegui criar a conexão WhatsApp. Tente novamente." }, 502);
+    }
+
+    const instanceToken = created?.token || created?.instance?.token;
+    if (typeof instanceToken !== "string" || !instanceToken) {
+      await ctx.admin.from("whatsapp_instances").delete().eq("id", reservation.id);
+      return json({ ok: false, error: "O serviço WhatsApp não confirmou a criação da conexão." }, 502);
+    }
+    const { data: saved, error: saveError } = await ctx.admin.from("whatsapp_instances")
+      .update({ instance_token: instanceToken, status: "disconnected" })
+      .eq("id", reservation.id)
+      .select("id,name,phone,status,server_url,instance_token,is_organization_shared,user_id,profile_name")
+      .single();
+    if (saveError || !saved) {
+      try {
+        await fetch(`${config.serverUrl}/instance`, { method: "DELETE", headers: { token: instanceToken } });
+      } catch { /* best-effort cleanup */ }
+      await ctx.admin.from("whatsapp_instances").delete().eq("id", reservation.id);
+      return json({ ok: false, error: "Não consegui salvar a conexão WhatsApp." }, 500);
+    }
+    instance = saved;
+  }
+
+  const webhookResponse = await handleWebhookAction(req, { action: "set_webhook", instance_id: instance.id });
+  const webhookResult = await webhookResponse.json().catch(() => ({}));
+  if (!webhookResult?.ok) {
+    return json({ ok: false, error: "Não consegui preparar a conexão. Tente gerar o QR novamente.", instance_id: instance.id }, 502);
+  }
+
+  const baseUrl = instance.server_url!.replace(/\/$/, "");
+  let statusData: any = null;
+  try {
+    const statusResponse = await fetch(`${baseUrl}/instance/status`, { headers: { token: instance.instance_token! } });
+    if (statusResponse.ok) statusData = await statusResponse.json();
+  } catch { /* a connect request below will return the actionable error */ }
+
+  let connected = uazapiConnected(statusData);
+  let qrcode = uazapiQr(statusData);
+  let paircode = statusData?.instance?.paircode || statusData?.paircode || null;
+  if (!connected && !qrcode) {
+    try {
+      const connectResponse = await fetch(`${baseUrl}/instance/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", token: instance.instance_token! },
+        body: JSON.stringify({}),
+      });
+      const connectData = await connectResponse.json().catch(() => ({}));
+      if (connectResponse.status === 409) {
+        const retryStatus = await fetch(`${baseUrl}/instance/status`, { headers: { token: instance.instance_token! } });
+        if (retryStatus.ok) statusData = await retryStatus.json();
+      } else if (!connectResponse.ok) {
+        console.error(`[managed-connect] Uazapi connect status=${connectResponse.status}`);
+        return json({ ok: false, error: "Não consegui gerar o QR Code. Tente novamente.", instance_id: instance.id }, 502);
+      } else {
+        statusData = connectData;
+      }
+      connected = uazapiConnected(statusData);
+      qrcode = uazapiQr(statusData);
+      paircode = statusData?.instance?.paircode || statusData?.paircode || null;
+    } catch {
+      return json({ ok: false, error: "Não consegui gerar o QR Code. Tente novamente.", instance_id: instance.id }, 502);
+    }
+  }
+
+  if (!connected && !qrcode) {
+    return json({ ok: false, error: "O QR Code ainda não está disponível. Tente novamente em alguns segundos.", instance_id: instance.id }, 502);
+  }
+  const details = statusData?.instance ?? {};
+  await ctx.admin.from("whatsapp_instances").update({
+    status: connected ? "connected" : "connecting",
+    ...(details.owner || statusData?.owner ? { phone: details.owner || statusData?.owner } : {}),
+    ...(details.profileName ? { profile_name: details.profileName } : {}),
+  }).eq("id", instance.id);
+  return json({
+    ok: true,
+    connected,
+    instance: { id: instance.id, name: instance.name, phone: details.owner || statusData?.owner || instance.phone || null },
+    qrcode,
+    paircode,
+  });
+}
+
 export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -293,7 +456,11 @@ export async function handle(req: Request): Promise<Response> {
     const { action, name, phone } = body;
 
     if (action === "set_webhook" || action === "get_webhooks") {
+      if (isUazapiManagedMode()) return json({ ok: false, error: "Configuração gerenciada pela DRYOS." }, 403);
       return await handleWebhookAction(req, body);
+    }
+    if (isUazapiManagedMode() && ["webhook_url", "webhook_confirmed"].includes(action)) {
+      return json({ ok: false, error: "Configuração gerenciada pela DRYOS." }, 403);
     }
 
     if (action === "download_media") {
@@ -306,18 +473,51 @@ export async function handle(req: Request): Promise<Response> {
     const ctx = await memberContext(req);
     if (!ctx) return json({ ok: false, error: "Não autenticado ou membro inativo" }, 401);
 
+    if (action === "connect_managed") {
+      if (!isUazapiManagedMode()) return json({ ok: false, error: "Modo de conexão gerenciada não está ativo." }, 403);
+      return await handleManagedConnect(req, ctx, body);
+    }
+
     if (action === "get_config") {
       if (!ctx.isAdmin) return json({ ok: false, error: "Apenas admin" }, 403);
-      const { data: inst } = await ctx.admin.from("whatsapp_instances")
-        .select("id,name,phone,status,server_url,instance_token")
-        .eq("user_id", ctx.userId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      if (isUazapiManagedMode()) {
+        const [{ data: org }, { data: members }] = await Promise.all([
+          ctx.admin.from("organizations").select("extra_whatsapp_channels").eq("id", ctx.orgId).maybeSingle(),
+          ctx.admin.from("organization_members").select("user_id").eq("org_id", ctx.orgId),
+        ]);
+        const memberIds = (members ?? []).map((member) => member.user_id);
+        if (!memberIds.length) return json({ ok: true, managed: true, instances: [], channel_count: 0, channel_limit: 1 });
+        const { data: allInstances } = await ctx.admin.from("whatsapp_instances")
+          .select("id,user_id,name,phone,status,is_organization_shared,created_at")
+          .in("user_id", memberIds)
+          .order("created_at", { ascending: true });
+        const channelLimit = 1 + Math.max(0, Number(org?.extra_whatsapp_channels ?? 0));
+        const instances = (allInstances ?? []).filter((row) => row.is_organization_shared)
+          .map(({ id, name, phone, status }) => ({ id, name, phone, status }));
+        return json({
+          ok: true,
+          managed: true,
+          instances,
+          channel_count: allInstances?.length ?? 0,
+          channel_limit: channelLimit,
+        });
+      }
+      const [{ data: inst }, { data: settings }] = await Promise.all([
+        ctx.admin.from("whatsapp_instances")
+          .select("id,name,phone,status,server_url,instance_token")
+          .eq("user_id", ctx.userId).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        ctx.admin.from("app_settings").select("key,value")
+          .in("key", ["uazapi_server_url", "uazapi_admin_token"]),
+      ]);
+      const setting = Object.fromEntries((settings ?? []).map((row) => [row.key, row.value || ""]));
       return json({ ok: true, instance: inst ? {
         id: inst.id, name: inst.name, phone: inst.phone, status: inst.status,
-        server_url: inst.server_url, has_instance_token: !!inst.instance_token,
-      } : null });
+        server_url: inst.server_url || setting.uazapi_server_url || "", has_instance_token: !!inst.instance_token,
+      } : null, server_url: setting.uazapi_server_url || "", has_admin_token: !!setting.uazapi_admin_token, managed: false });
     }
 
     if (action === "save_config") {
+      if (isUazapiManagedMode()) return json({ ok: false, error: "Configuração gerenciada pela DRYOS." }, 403);
       if (!ctx.isAdmin) return json({ ok: false, error: "Apenas admin" }, 403);
       const serverUrl = typeof body.server_url === "string" ? body.server_url.trim().replace(/\/$/, "") : "";
       const instanceToken = typeof body.instance_token === "string" ? body.instance_token.trim() : "";
@@ -344,6 +544,9 @@ export async function handle(req: Request): Promise<Response> {
 
     if (!action) return json({ ok: false, error: "Ação não informada" }, 400);
     const adminOnly = ["create", "connect", "disconnect", "delete"].includes(action);
+    if (action === "create" && isUazapiManagedMode()) {
+      return json({ ok: false, error: "Crie QR Codes pela conexão WhatsApp da empresa." }, 403);
+    }
     const inst = action === "create" ? null : await authorizedInstance(ctx, body.instance_id, { adminOnly });
     if (action !== "create" && !inst) return json({ ok: false, error: "Instância não encontrada ou sem permissão" }, 403);
     const instance_token = inst?.instance_token || null;

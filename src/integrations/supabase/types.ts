@@ -968,6 +968,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_organization_shared: boolean
           instance_token: string | null
           last_disconnected_at: string | null
           name: string
@@ -981,6 +982,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_organization_shared?: boolean
           instance_token?: string | null
           last_disconnected_at?: string | null
           name: string
@@ -994,6 +996,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_organization_shared?: boolean
           instance_token?: string | null
           last_disconnected_at?: string | null
           name?: string

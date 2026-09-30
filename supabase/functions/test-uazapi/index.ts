@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { memberContext } from "../_shared/member-access.ts";
+import { isUazapiManagedMode } from "../_shared/get-uazapi-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,6 +53,7 @@ serve(async (req) => {
     const member = await memberContext(req);
     if (!member) return json({ ok: false, message: "Não autenticado ou membro inativo." }, 401);
     if (!member.isAdmin) return json({ ok: false, message: "Apenas admin pode testar a conexão Uazapi." }, 403);
+    if (isUazapiManagedMode()) return json({ ok: false, message: "Configuração gerenciada pela DRYOS." }, 403);
     const body = await req.json();
     const serverUrl = String(body.serverUrl || "").trim();
     if (!serverUrl) {
@@ -88,7 +90,7 @@ serve(async (req) => {
 
     if (adminToken) {
       const url = `${base}/instance/all`;
-      const attempts = [{ AdminToken: adminToken }, { admintoken: adminToken }];
+      const attempts: Record<string, string>[] = [{ AdminToken: adminToken }, { admintoken: adminToken }];
       let lastStatus = 0;
       let lastBody = "";
 

@@ -24,6 +24,9 @@ migrations aplicadas e funcionalidades promovidas para cada instalação.
 - **Cotas no CRM:** há 2 membros e 2 canais registrados, com adicionais em zero.
   A cota-base comporta 5 membros e 1 canal; novas conexões ficam bloqueadas até
   a operação registrar eventual adicional contratado.
+- **WhatsApp das empresas:** cada instalação cliente usa o serviço UazAPI da
+  DRYOS, com 1 QR compartilhado pela empresa incluído. QR adicionais precisam
+  ser contratados a R$29 cada e registrados na cota da organização.
 - **Promoção central:** as Edge Functions `asaas-webhook`,
   `process-asaas-events`, `billing-snapshot` e `manage-installation` foram
   publicadas no Supabase DRYOS. As funções `whatsapp-webhook`,
