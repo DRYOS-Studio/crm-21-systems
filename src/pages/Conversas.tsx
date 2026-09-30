@@ -206,11 +206,11 @@ export default function Conversas() {
   const { inboxFilter, tagFilters, userFilter, instanceFilter, followupOnly } = filters;
   const pendingFollowupConvIds = usePendingFollowupConversationIds();
   const orgMembers = useOrgMembers();
-  const whatsappInstances = useOrgWhatsappInstances();
+  const { instances: whatsappInstances, loading: instancesLoading } = useOrgWhatsappInstances();
   useEffect(() => {
-    const next = coerceInstanceFilter(instanceFilter, userFilter, whatsappInstances);
+    const next = coerceInstanceFilter(instanceFilter, userFilter, whatsappInstances, !instancesLoading);
     if (next !== instanceFilter) updateFilters({ instanceFilter: next });
-  }, [instanceFilter, userFilter, whatsappInstances, updateFilters]);
+  }, [instanceFilter, userFilter, whatsappInstances, instancesLoading, updateFilters]);
   const { catalog: tagCatalog, byConv: tagsByConv, createTag, assign: assignTag, unassign: unassignTag } =
     useLeadTags();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -361,9 +361,18 @@ export default function Conversas() {
   );
 
   const active = useMemo(
-    () => orderedConversations.find((c) => c.id === activeId) || null,
-    [orderedConversations, activeId],
+    () => scopedConversations.find((c) => c.id === activeId) || null,
+    [scopedConversations, activeId],
   );
+
+  useEffect(() => {
+    if (instancesLoading || conversations.length === 0) return;
+    if (activeId && scopedConversations.some((c) => c.id === activeId)) return;
+    const wanted = pendingOpen.current;
+    const next = scopedConversations.find((c) => c.id === wanted) ?? scopedConversations[0];
+    pendingOpen.current = null;
+    setActiveId(next?.id ?? null);
+  }, [activeId, conversations.length, instancesLoading, scopedConversations]);
 
   const autoEncerradosOpen = useRef<string | null>(null);
 
@@ -387,8 +396,9 @@ export default function Conversas() {
 
   useEffect(() => {
     if (!initialOpen.current || activeId !== initialOpen.current) return;
-    if (typeof window !== "undefined" && window.innerWidth < 1280) setLeadOpen(true);
-  }, [activeId]);
+    if (!active?.id || typeof window === "undefined" || window.innerWidth >= 1280) return;
+    setLeadOpen(true);
+  }, [active?.id, activeId]);
 
   useEffect(() => {
     const openParam = initialOpen.current;
@@ -525,43 +535,49 @@ export default function Conversas() {
 
   // Load followups for active conversation
   useEffect(() => {
-    if (!activeId) {
+    const conversationId = active?.id;
+    if (!conversationId) {
       setFollowups([]);
       setFollowupHistory([]);
       return;
     }
+    let cancelled = false;
+    setFollowups([]);
+    setFollowupHistory([]);
     const load = async () => {
       const [{ data: pending }, { data: hist }] = await Promise.all([
         supabase
           .from("followups")
           .select("id, send_at, kind, text_override")
-          .eq("conversation_id", activeId)
+          .eq("conversation_id", conversationId)
           .eq("status", "pending")
           .order("send_at", { ascending: true }),
         supabase
           .from("followups")
           .select("id, send_at, sent_at, kind, status, text_override, error, created_at")
-          .eq("conversation_id", activeId)
+          .eq("conversation_id", conversationId)
           .neq("status", "pending")
           .order("created_at", { ascending: false })
           .limit(10),
       ]);
+      if (cancelled) return;
       setFollowups((pending as Followup[]) || []);
       setFollowupHistory((hist as FollowupHistoryItem[]) || []);
     };
     load();
     const ch = supabase
-      .channel(`followups-${activeId}`)
+      .channel(`followups-${conversationId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "followups", filter: `conversation_id=eq.${activeId}` },
+        { event: "*", schema: "public", table: "followups", filter: `conversation_id=eq.${conversationId}` },
         () => load(),
       )
       .subscribe();
     return () => {
+      cancelled = true;
       supabase.removeChannel(ch);
     };
-  }, [activeId]);
+  }, [active?.id]);
 
   // Tick para atualizar contagem regressiva dos follow-ups
   useEffect(() => {
@@ -572,25 +588,28 @@ export default function Conversas() {
 
   // Load messages for active + realtime
   useEffect(() => {
-    if (!activeId) {
+    const conversationId = active?.id;
+    if (!conversationId) {
       setMessages([]);
       return;
     }
+    let cancelled = false;
+    setMessages([]);
     const load = async () => {
       const { data } = await supabase
         .from("messages")
         .select("*")
-        .eq("conversation_id", activeId)
+        .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
-      setMessages((data as Message[]) || []);
+      if (!cancelled) setMessages((data as Message[]) || []);
     };
     load();
 
     const ch = supabase
-      .channel(`messages-${activeId}`)
+      .channel(`messages-${conversationId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeId}` },
+        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           const row = payload.new as Message;
           setMessages((prev) => {
@@ -609,7 +628,7 @@ export default function Conversas() {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${activeId}` },
+        { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           const row = payload.new as Message;
           setMessages((prev) => prev.map((m) => (m.id === row.id ? { ...m, ...row } : m)));
@@ -617,9 +636,10 @@ export default function Conversas() {
       )
       .subscribe();
     return () => {
+      cancelled = true;
       supabase.removeChannel(ch);
     };
-  }, [activeId]);
+  }, [active?.id]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });

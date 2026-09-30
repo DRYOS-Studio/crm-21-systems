@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   DEFAULT_VIEW_FILTERS,
+  coerceInstanceFilter,
   conversationMatchesInstanceFilter,
   INSTANCE_FILTER_NONE,
   parseViewFilters,
@@ -50,6 +51,11 @@ test("conversationMatchesInstanceFilter", () => {
   assert.equal(conversationMatchesInstanceFilter("dev-a", INSTANCE_FILTER_NONE, "u1", inst), false);
   assert.equal(conversationMatchesInstanceFilter(null, "dev-a", "u1", inst), true);
   assert.equal(conversationMatchesInstanceFilter(null, "dev-a", "u2", inst), false);
+});
+
+test("coerceInstanceFilter preserves saved selection until devices load", () => {
+  assert.equal(coerceInstanceFilter("dev-a", "all", [], false), "dev-a");
+  assert.equal(coerceInstanceFilter("dev-a", "all", [], true), "all");
 });
 
 test("viewFiltersKey isola por login", () => {

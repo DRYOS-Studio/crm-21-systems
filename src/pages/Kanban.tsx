@@ -238,11 +238,11 @@ export default function Kanban() {
   const { tagFilters, userFilter, instanceFilter, followupOnly } = filters;
   const pendingFollowupConvIds = usePendingFollowupConversationIds();
   const orgMembers = useOrgMembers();
-  const whatsappInstances = useOrgWhatsappInstances();
+  const { instances: whatsappInstances, loading: instancesLoading } = useOrgWhatsappInstances();
   useEffect(() => {
-    const next = coerceInstanceFilter(instanceFilter, userFilter, whatsappInstances);
+    const next = coerceInstanceFilter(instanceFilter, userFilter, whatsappInstances, !instancesLoading);
     if (next !== instanceFilter) updateFilters({ instanceFilter: next });
-  }, [instanceFilter, userFilter, whatsappInstances, updateFilters]);
+  }, [instanceFilter, userFilter, whatsappInstances, instancesLoading, updateFilters]);
   const { catalog: tagCatalog, byConv: tagsByConv } = useLeadTags();
   const { activeReasons } = useLossReasons();
   const [pendingLoss, setPendingLoss] = useState<{ convId: string; stageId: string } | null>(null);

@@ -49,7 +49,9 @@ export function coerceInstanceFilter(
   instanceFilter: string,
   userFilter: string,
   instances: InstanceFilterRow[],
+  instancesLoaded = true,
 ): string {
+  if (!instancesLoaded) return instanceFilter;
   if (instanceFilter === "all" || instanceFilter === INSTANCE_FILTER_NONE) return instanceFilter;
   const inst = instances.find((i) => i.id === instanceFilter);
   if (!inst) return "all";
