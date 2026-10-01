@@ -122,18 +122,27 @@ function Card({
           </Badge>
         </div>
       </div>
-      {leadPerson(c) && <div className="text-xs text-foreground truncate">{leadPerson(c)}</div>}
-      {c.contact_city && <div className="text-xs text-muted-foreground truncate">{c.contact_city}</div>}
-      <div className="text-xs text-muted-foreground truncate">{c.contact_phone || c.contact_email}</div>
-      {ownerLabel && <div className="text-[10px] text-muted-foreground truncate mt-1">{ownerLabel}</div>}
+      {(leadPerson(c) || c.contact_city) && (
+        <div className="text-xs text-muted-foreground truncate">
+          {[leadPerson(c), c.contact_city].filter(Boolean).join(" · ")}
+        </div>
+      )}
+      {(c.contact_phone || c.contact_email) && (
+        <div className="text-xs text-muted-foreground truncate">{c.contact_phone || c.contact_email}</div>
+      )}
       {tags && tags.length > 0 && (
         <div className="mt-2">
           <LeadTagChips tags={tags} max={2} />
         </div>
       )}
-      {c.inactivity_followup_at && (
-        <div className="mt-2 flex items-center gap-1 text-[11px] text-primary">
-          <Clock className="w-3 h-3" /> Follow-up agendado
+      {(ownerLabel || c.inactivity_followup_at) && (
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/70 pt-2">
+          {ownerLabel ? <span className="min-w-0 truncate text-[10px] text-muted-foreground">{ownerLabel}</span> : <span />}
+          {c.inactivity_followup_at && (
+            <span className="flex shrink-0 items-center gap-1 text-[11px] text-primary">
+              <Clock className="h-3 w-3" /> Follow-up
+            </span>
+          )}
         </div>
       )}
     </div>

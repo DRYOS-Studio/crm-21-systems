@@ -1017,6 +1017,13 @@ export default function Conversas() {
     const title = leadTitle(c);
     const stage = stages.find((s) => s.id === c.stage_id);
     const prefix = last?.direction === "outbound" ? (last.sender === "ai" ? "Edith: " : "Você: ") : "";
+    const secondaryMeta = [
+      stage?.name,
+      !closed ? (c.ai_enabled ? "IA" : "Você") : null,
+      orgMembers.length > 1 && userFilter === "all"
+        ? orgMembers.find((m) => m.user_id === c.user_id)?.name || (c.user_id === user?.id ? "Você" : "Conta")
+        : null,
+    ].filter(Boolean).join(" · ");
     return (
       <button
         key={c.id}
@@ -1054,19 +1061,8 @@ export default function Conversas() {
                   Respondeu
                 </Badge>
               )}
-              {stage && (
-                <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{stage.name}</span>
-              )}
-              {!closed && (
-                <span className="text-[10px] text-muted-foreground">{c.ai_enabled ? "IA" : "Você"}</span>
-              )}
-              {orgMembers.length > 1 && userFilter === "all" && (
-                <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
-                  {orgMembers.find((m) => m.user_id === c.user_id)?.name ||
-                    (c.user_id === user?.id ? "Você" : "Conta")}
-                </span>
-              )}
             </div>
+            {secondaryMeta && <div className="mt-1 truncate text-[10px] text-muted-foreground">{secondaryMeta}</div>}
             {(tagsByConv[c.id] ?? []).length > 0 && (
               <div className="mt-1">
                 <LeadTagChips tags={tagsByConv[c.id] ?? []} max={2} />

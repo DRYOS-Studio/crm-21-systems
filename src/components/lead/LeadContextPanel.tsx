@@ -320,7 +320,7 @@ export function LeadContextBody({
                 </div>
               ))}
               {(customDefinitions.length > 0 || installationAt || conversation.installation_at) && <Button className="w-full" variant="outline" onClick={() => void saveOperations()} disabled={saving}>Salvar operação</Button>}
-              <div className="rounded-md border p-3 space-y-2">
+              <div className="space-y-2 border-t border-border/70 pt-3">
                 <SectionHeading icon={CalendarClock} label="Qualificação NAVT" />
                 <p className="text-xs"><span className="text-muted-foreground">Estado: </span>{conversation.ai_stage || "inicial"}</p>
                 {Object.entries(qualification).filter(([, value]) => value != null && String(value).trim() !== "").map(([key, value]) => <div key={key} className="text-xs"><span className="text-muted-foreground">{key}: </span>{String(value)}</div>)}

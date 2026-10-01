@@ -61,14 +61,18 @@ export default function Dashboard() {
           </select>
         </label>
       </div>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {[
           ["Conversas iniciadas", conversations],
+          ["Conversões", counts.converted ?? 0],
+        ].map(([label, value]) => <article key={label} className="rounded-lg border border-border bg-card p-5"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-3xl font-semibold tabular-nums">{loading ? "—" : value}</p></article>)}
+      </div>
+      <div className="mt-3 grid grid-cols-1 divide-y rounded-lg border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {[
           ["Qualificações atualizadas", counts.qualification_updated ?? 0],
           ["Passagens ao humano", counts.human_handoff ?? 0],
           ["Follow-ups enviados", counts.followup_sent ?? 0],
-          ["Conversões", counts.converted ?? 0],
-        ].map(([label, value]) => <article key={label} className="rounded-lg border border-border bg-card p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{loading ? "—" : value}</p></article>)}
+        ].map(([label, value]) => <div key={label} className="flex items-baseline justify-between gap-3 px-3 py-3 sm:flex-col sm:items-start"><p className="text-xs text-muted-foreground">{label}</p><p className="text-lg font-medium tabular-nums">{loading ? "—" : value}</p></div>)}
       </div>
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
         <h2 className="font-medium">Eventos por dia</h2>
