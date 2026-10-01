@@ -53,7 +53,10 @@ pendentes.
 
 ## Preparar o Supabase de cada cliente
 
-1. Aplique migrations pendentes antes de publicar funções ou frontend.
+1. Aplique migrations pendentes antes de publicar funções ou frontend. A release
+   WhatsApp gerenciado inclui `20260930230000_managed_whatsapp_instances.sql`.
+   A migration `20261001120000_whatsapp_installation_inventory.sql` altera
+   somente a ficha no Supabase central DRYOS; não aplique no banco do cliente.
 2. Configure os secrets `Q7_CONTROL_PLANE_URL`, `Q7_CONTROL_PLANE_ANON_KEY`,
    `Q7_INSTALLATION_ID` e `Q7_INSTALLATION_TOKEN` no projeto do cliente.
    Use o ID e token da instalação registrados no controle central.
@@ -70,16 +73,34 @@ pendentes.
 Cada empresa recebe 1 QR compartilhado. QR adicionais custam R$29 cada e só
 podem ser criados depois que a contratação for registrada na cota da empresa.
 
-Em cada projeto Supabase de cliente, configure os secrets `UAZAPI_MANAGED_MODE=true`,
-`OUTREE_UAZAPI_SERVER_URL` e `OUTREE_UAZAPI_ADMIN_TOKEN`. Os dois últimos são
+Em cada projeto Supabase de cliente, configure os secrets
+`UAZAPI_MANAGED_MODE=true`, `OUTREE_UAZAPI_SERVER_URL` e
+`OUTREE_UAZAPI_ADMIN_TOKEN`. Os dois últimos são
 credenciais de backend; nunca os configure como variáveis `VITE_*`. A instalação
 central DRYOS não ativa esse flag e mantém a tela de configuração administrativa.
 
-Publique as Edge Functions antes do frontend. `manage-instance` cria a instância
-no servidor UazAPI, guarda o token no banco e registra o webhook; o frontend do
-cliente recebe somente QR, status e número conectado. Para cada QR extra
-contratado, incremente `organizations.extra_whatsapp_channels` no projeto do
-cliente. A cota do banco continua bloqueando criações acima do total contratado.
+Antes do primeiro cliente, inclua estes itens na ficha de inventário e release:
+
+- Modo WhatsApp: DRYOS gerenciado.
+- QR incluídos: 1 por empresa.
+- QR extras contratados: quantidade e confirmação de que o total coincide com
+  `organizations.extra_whatsapp_channels` no projeto do cliente.
+- Secrets UazAPI configurados: sim/não. Nunca registre os valores.
+- Release de banco, Edge Functions e frontend verificada.
+
+A tela central **Configurações > Instalações > Inventário e release** guarda
+o modo, a quantidade de QR extras e o estado dos secrets. Ela nunca guarda os
+valores dos secrets. `20261001120000_whatsapp_installation_inventory.sql` está
+aplicada somente no Supabase central; `manage-installation` versão 5 e a tela
+estão publicadas em produção.
+
+Configure os secrets e publique as Edge Functions antes do frontend. A release
+gerenciada inclui `manage-instance`, `test-uazapi`, `whatsapp-webhook` e
+`run-followups`. `manage-instance` cria a instância no servidor UazAPI, guarda
+o token no banco e registra o webhook; o frontend do cliente recebe somente QR,
+status e número conectado. Para cada QR extra contratado, incremente
+`organizations.extra_whatsapp_channels` no projeto do cliente. A cota do banco
+continua bloqueando criações acima do total contratado.
 
 O acesso começa liberado. Após o vencimento, o cliente permanece liberado até
 completar cinco dias inteiros de atraso. O sistema então bloqueia a interface e

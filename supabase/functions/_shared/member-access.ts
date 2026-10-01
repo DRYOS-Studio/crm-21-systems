@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.4
 export type MemberContext = {
   admin: SupabaseClient;
   userId: string;
+  email: string | null;
   orgId: string;
   isAdmin: boolean;
 };
@@ -22,7 +23,7 @@ export async function memberContext(req: Request): Promise<MemberContext | null>
     admin.from("user_roles").select("role").eq("user_id", auth.user.id).eq("role", "admin").maybeSingle(),
   ]);
   if (!membership?.org_id || membership.is_active !== true) return null;
-  return { admin, userId: auth.user.id, orgId: membership.org_id, isAdmin: !!role };
+  return { admin, userId: auth.user.id, email: auth.user.email ?? null, orgId: membership.org_id, isAdmin: !!role };
 }
 
 export async function hasModule(ctx: MemberContext, moduleKey: string): Promise<boolean> {

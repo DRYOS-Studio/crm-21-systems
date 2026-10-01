@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
 
   if (body.action === "list") {
     const { data, error } = await admin.from("q7_installations").select(
-      "id, company_name, slug, subdomain, supabase_project_ref, vercel_project_ref, release_tag, database_version, functions_version, frontend_version, asaas_customer_id, asaas_subscription_id, billing_status, billing_due_date, grace_ends_at, payment_url, last_paid_at, created_at, updated_at",
+      "id, company_name, slug, subdomain, supabase_project_ref, vercel_project_ref, release_tag, database_version, functions_version, frontend_version, whatsapp_managed_mode, whatsapp_extra_qr_count, whatsapp_secrets_configured, asaas_customer_id, asaas_subscription_id, billing_status, billing_due_date, grace_ends_at, payment_url, last_paid_at, created_at, updated_at",
     ).order("created_at", { ascending: false });
     if (error) return json(500, { ok: false, error: "Não foi possível listar instalações" });
     return json(200, { ok: true, installations: data ?? [] });
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   if (body.action === "update_inventory") {
     if (typeof body.id !== "string") return json(400, { ok: false, error: "ID da instalação obrigatório" });
     const columns = ["subdomain", "supabase_project_ref", "vercel_project_ref", "release_tag", "database_version", "functions_version", "frontend_version"] as const;
-    const patch: Record<string, string | null> = {};
+    const patch: Record<string, unknown> = {};
     for (const column of columns) {
       if (column in body) {
         if (body[column] !== null && (typeof body[column] !== "string" || body[column].length > 200)) {
@@ -103,10 +103,22 @@ Deno.serve(async (req) => {
         patch[column] = body[column];
       }
     }
+    if ("whatsapp_extra_qr_count" in body) {
+      if (!Number.isInteger(body.whatsapp_extra_qr_count) || body.whatsapp_extra_qr_count < 0) {
+        return json(400, { ok: false, error: "Quantidade de QR extras inválida" });
+      }
+      patch.whatsapp_extra_qr_count = body.whatsapp_extra_qr_count;
+    }
+    if ("whatsapp_secrets_configured" in body) {
+      if (typeof body.whatsapp_secrets_configured !== "boolean") {
+        return json(400, { ok: false, error: "Estado dos secrets UazAPI inválido" });
+      }
+      patch.whatsapp_secrets_configured = body.whatsapp_secrets_configured;
+    }
     if (!Object.keys(patch).length) return json(400, { ok: false, error: "Nenhum campo de inventário enviado" });
     patch.updated_at = new Date().toISOString();
     const { data, error } = await admin.from("q7_installations").update(patch).eq("id", body.id)
-      .select("id, company_name, slug, subdomain, supabase_project_ref, vercel_project_ref, release_tag, database_version, functions_version, frontend_version")
+      .select("id, company_name, slug, subdomain, supabase_project_ref, vercel_project_ref, release_tag, database_version, functions_version, frontend_version, whatsapp_managed_mode, whatsapp_extra_qr_count, whatsapp_secrets_configured")
       .maybeSingle();
     if (error) return json(500, { ok: false, error: "Não foi possível atualizar o inventário" });
     if (!data) return json(404, { ok: false, error: "Instalação não encontrada" });
@@ -116,7 +128,7 @@ Deno.serve(async (req) => {
   if (body.action === "configure_asaas_webhook") {
     const token = Deno.env.get("ASAAS_WEBHOOK_TOKEN") ?? "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") ?? "";
-    const email = typeof body.email === "string" ? body.email.trim() : user.email ?? "";
+    const email = typeof body.email === "string" ? body.email.trim() : member.email ?? "";
     if (token.length < 32 || !supabaseUrl || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return json(503, { ok: false, error: "Configure ASAAS_WEBHOOK_TOKEN e um e-mail válido" });
     }

@@ -12,39 +12,48 @@ migrations aplicadas e funcionalidades promovidas para cada instalação.
   métricos; cotas-base aplicadas no banco; registro central de instalações,
   assinatura Asaas, sincronização de cobrança, bloqueio de envios e tela de
   faturamento.
-- **Migrations:** CRM e banco local estão alinhados até `20260930180000`. No
-  CRM, foram aplicadas `agent_ai_providers`, `organization_brand_logo`,
-  `saved_prospect_segments`, `organization_quotas`, `conversation_metrics`,
-  `billing_control_plane` e `control_plane_access`;
-  o histórico remoto registra os mesmos IDs dos arquivos locais. A aplicação
-  remota ocorreu sem backup, conforme autorização. O projeto atual foi marcado
-  como plano de controle; instalações de clientes começam com o flag desligado.
-  No banco local, as migrations foram aplicadas após backup e `db lint` passou
-  sem erros.
+- **Migrations:** o banco local estava alinhado até `20260930180000` na última
+  validação local. No CRM, o histórico remoto chega a `20261001120000`.
+  `20260930230000_managed_whatsapp_instances` habilita instâncias
+  compartilhadas e restringe o acesso direto às configurações globais UazAPI;
+  `20261001120000_whatsapp_installation_inventory` adiciona os campos do
+  inventário central. Ambas foram aplicadas em 1º de outubro de 2026. O CRM
+  permanece no plano de controle; instalações de clientes ativam o modo
+  gerenciado por secret.
 - **Cotas no CRM:** há 2 membros e 2 canais registrados, com adicionais em zero.
   A cota-base comporta 5 membros e 1 canal; novas conexões ficam bloqueadas até
   a operação registrar eventual adicional contratado.
 - **WhatsApp das empresas:** cada instalação cliente usa o serviço UazAPI da
   DRYOS, com 1 QR compartilhado pela empresa incluído. QR adicionais precisam
-  ser contratados a R$29 cada e registrados na cota da organização.
+  ser contratados a R$29 cada e registrados em
+  `organizations.extra_whatsapp_channels`. O fluxo e os secrets necessários
+  estão descritos no runbook para novas instalações.
 - **Promoção central:** as Edge Functions `asaas-webhook`,
   `process-asaas-events`, `billing-snapshot` e `manage-installation` foram
   publicadas no Supabase DRYOS. As funções `whatsapp-webhook`,
-  `run-followups`, `run-outreach`, `manage-instance` e
-  `test-ai-connection` também foram atualizadas para acompanhar o frontend.
+  `run-followups`, `manage-instance` e `test-uazapi` foram atualizadas em
+  1º de outubro de 2026 para suportar o modo gerenciado. `run-outreach` e
+  `test-ai-connection` já estavam publicadas. `manage-installation` versão 5
+  foi publicada com os campos do inventário WhatsApp.
   O cron central executa o processamento a cada minuto. Os secrets
   `ASAAS_API_KEY`, `ASAAS_ENVIRONMENT=sandbox` e `ASAAS_WEBHOOK_TOKEN` estão
   configurados sem registrar seus valores neste repositório. Os endpoints
   centrais responderam HTTP 401 a chamadas com credenciais inválidas.
-- **Frontend de produção:** deployment Vercel
-  `dpl_FmmK2zWwAp58XrRTxzyxEm9V6E3M` ficou `READY` e foi associado a
-  `brain.dryos.com.br` e `crm-21.vercel.app`. O preview de validação permanece
-  em `crm-21-rppcdvuc6-dryos-studio.vercel.app`.
-- **Pendente nas instalações de clientes:** publicar `sync-billing-state`,
-  frontend e demais funções em projetos dedicados. O webhook foi cadastrado no
-  Asaas Sandbox e a confirmação de uma cobrança de teste atualizou o status da
+- **Frontend de produção:** commit `89b9aa1` está em `main`; o deployment
+  inicial ficou `READY` como `dpl_3zA2ZMmrrmhGpUYnbCD1ann21YGB`. A tela de
+  inventário atualizada foi publicada como `dpl_5MQyo2yucQWLCh2Q5MakRP4QQNUZ`
+  e está associada ao alias
+  `crm-21.vercel.app`.
+- **Próximas instalações:** ainda não há empresa cadastrada. No onboarding,
+  publicar `sync-billing-state`, as demais Edge Functions e o frontend em
+  projetos dedicados seguindo o runbook. O webhook foi cadastrado no Asaas
+  Sandbox e a confirmação de uma cobrança de teste atualizou o status da
   instalação para `active`. Cobrança em produção e atualização canário seguem
   pendentes.
+- **Inventário WhatsApp:** a tela agora prepara campos para modo gerenciado,
+  adicionais contratados e estado dos secrets, sem guardar credenciais. A
+  migration central e `manage-installation` estão publicadas. Ainda não há
+  empresa cadastrada.
 - **Arquitetura definida:** o Supabase atual da DRYOS será o plano de controle,
   com webhook Asaas e registro das instalações. Cada empresa terá Supabase e
   Vercel próprios, fixados numa release, seguindo o modelo de stack dedicado do
@@ -127,10 +136,15 @@ com revisão adversarial no Design e validação do diff antes da promoção.
   entregues.
 - Manter inventário operacional com subdomínio, projeto Supabase, projeto
   Vercel e versões verificadas de banco, funções e frontend de cada empresa.
-  Provisionar sem criar forks do código.
+  Para o WhatsApp, registrar o modo gerenciado, 1 QR incluído, quantidade de QR
+  adicionais contratados e confirmação de que os secrets estão configurados;
+  nunca registrar os valores dos secrets. Provisionar sem criar forks do
+  código.
 - Criar releases imutáveis. Validar em staging; para cada cliente, conferir
   histórico de migrations, fazer backup, aplicar migrations pendentes,
-  publicar Edge Functions e então promover o frontend da mesma release.
+  configurar os secrets UazAPI, publicar as Edge Functions que usam o helper
+  UazAPI (`manage-instance`, `test-uazapi`, `whatsapp-webhook` e `run-followups`)
+  e então promover o frontend da mesma release.
   Começar por um cliente canário e avançar gradualmente.
 - Usar migrations progressivas e compatíveis com a versão anterior. Rollback
   de código não será tratado como rollback de banco; uma migration incompatível

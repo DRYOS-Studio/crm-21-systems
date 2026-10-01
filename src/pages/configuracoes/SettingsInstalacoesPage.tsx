@@ -17,6 +17,9 @@ type Installation = {
   database_version: string | null;
   functions_version: string | null;
   frontend_version: string | null;
+  whatsapp_managed_mode: boolean;
+  whatsapp_extra_qr_count: number;
+  whatsapp_secrets_configured: boolean;
   asaas_customer_id: string | null;
   asaas_subscription_id: string | null;
   billing_status: string;
@@ -63,6 +66,8 @@ export default function SettingsInstalacoesPage() {
         database_version: row.database_version ?? "",
         functions_version: row.functions_version ?? "",
         frontend_version: row.frontend_version ?? "",
+        whatsapp_extra_qr_count: String(row.whatsapp_extra_qr_count ?? 0),
+        whatsapp_secrets_configured: String(row.whatsapp_secrets_configured),
       }])));
     } catch (error) {
       toast({ variant: "destructive", title: "Erro ao carregar instalações", description: (error as Error).message });
@@ -126,8 +131,15 @@ export default function SettingsInstalacoesPage() {
     setSaving(true);
     try {
       const fields = inventory[installation.id] ?? {};
-      const data = Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, value.trim() || null]));
-      await call({ action: "update_inventory", id: installation.id, ...data });
+      const { whatsapp_extra_qr_count, whatsapp_secrets_configured, ...textFields } = fields;
+      const data = Object.fromEntries(Object.entries(textFields).map(([key, value]) => [key, value.trim() || null]));
+      await call({
+        action: "update_inventory",
+        id: installation.id,
+        ...data,
+        whatsapp_extra_qr_count: Number(whatsapp_extra_qr_count || "0"),
+        whatsapp_secrets_configured: whatsapp_secrets_configured === "true",
+      });
       toast({ title: "Inventário atualizado" });
       await load();
     } catch (error) {
@@ -207,6 +219,26 @@ export default function SettingsInstalacoesPage() {
                     {[["subdomain", "Subdomínio"], ["supabase_project_ref", "Projeto Supabase"], ["vercel_project_ref", "Projeto Vercel"], ["release_tag", "Release"], ["database_version", "Versão do banco"], ["functions_version", "Versão das funções"], ["frontend_version", "Versão do frontend"]].map(([key, label]) => (
                       <div key={key} className="space-y-1"><Label htmlFor={`${installation.id}-${key}`}>{label}</Label><Input id={`${installation.id}-${key}`} value={inventoryFields[key] ?? ""} onChange={(e) => setInventoryField(installation.id, key, e.target.value)} /></div>
                     ))}
+                    <div className="space-y-1">
+                      <Label htmlFor={`${installation.id}-whatsapp-mode`}>Modo WhatsApp</Label>
+                      <Input id={`${installation.id}-whatsapp-mode`} value={installation.whatsapp_managed_mode ? "Gerenciado pela DRYOS" : "Não gerenciado"} disabled />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${installation.id}-whatsapp-included-qr`}>QR incluídos</Label>
+                      <Input id={`${installation.id}-whatsapp-included-qr`} value={installation.whatsapp_managed_mode ? "1 por empresa" : "0"} disabled />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${installation.id}-whatsapp-extra-qr`}>QR extras contratados (R$29/unidade)</Label>
+                      <Input id={`${installation.id}-whatsapp-extra-qr`} type="number" min={0} step={1} value={inventoryFields.whatsapp_extra_qr_count ?? "0"} onChange={(e) => setInventoryField(installation.id, "whatsapp_extra_qr_count", e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${installation.id}-whatsapp-secrets`}>Secrets UazAPI</Label>
+                      <select id={`${installation.id}-whatsapp-secrets`} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={inventoryFields.whatsapp_secrets_configured ?? "false"} onChange={(e) => setInventoryField(installation.id, "whatsapp_secrets_configured", e.target.value)}>
+                        <option value="false">Pendente</option>
+                        <option value="true">Configurados</option>
+                      </select>
+                      <p className="text-xs text-muted-foreground">Registre o status, nunca os valores.</p>
+                    </div>
                   </div>
                   <Button className="mt-3" size="sm" variant="outline" disabled={saving} onClick={() => void updateInventory(installation)}>Salvar inventário</Button>
                 </details>
