@@ -1014,6 +1014,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      conversation_message_summaries: {
+        Args: { p_conversation_ids: string[] }
+        Returns: {
+          conversation_id: string
+          last_content: string | null
+          last_created_at: string | null
+          last_direction: string | null
+          last_inbound_at: string | null
+          last_message_id: string | null
+          last_sender: string | null
+        }[]
+      }
       brain_bump_confirmacoes: {
         Args: { p_conv: string; p_delta: number; p_user: string }
         Returns: number

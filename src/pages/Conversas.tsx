@@ -118,21 +118,10 @@ function stripMediaPrefix(content: string) {
   return content.replace(/^\[(imagem|vídeo|áudio|figurinha|documento)\]\s*/i, "").trim();
 }
 
-function priorizarConversas(
-  conversas: Conversation[],
-  lastInboundAt: Record<string, string>,
-  emContatoStageIds: Set<string>,
-) {
-  const peso = (c: Conversation) => {
-    const respondeu = !!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id));
-    const quando = lastInboundAt[c.id] || c.last_message_at;
-    return { respondeu, quando };
-  };
+function ordenarConversas(conversas: Conversation[]) {
   return [...conversas].sort((a, b) => {
-    const pa = peso(a);
-    const pb = peso(b);
-    if (pa.respondeu !== pb.respondeu) return pa.respondeu ? -1 : 1;
-    return new Date(pb.quando).getTime() - new Date(pa.quando).getTime();
+    const byDate = new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+    return byDate || a.id.localeCompare(b.id);
   });
 }
 
@@ -231,8 +220,8 @@ export default function Conversas() {
   const encerrado = (c: Conversation) => !!c.stage_id && perdidoStageIds.has(c.stage_id);
 
   const orderedConversations = useMemo(
-    () => priorizarConversas(conversations, lastInboundAt, emContatoStageIds),
-    [conversations, lastInboundAt, emContatoStageIds],
+    () => ordenarConversas(conversations),
+    [conversations],
   );
 
   useContactAvatarEnrichment(conversations);
@@ -253,16 +242,6 @@ export default function Conversas() {
           conversationMatchesInstanceFilter(c.instance_id, instanceFilter, c.user_id, whatsappInstances),
       ),
     [orderedConversations, userFilter, instanceFilter, whatsappInstances],
-  );
-
-  const priorityConversations = useMemo(
-    () =>
-      scopedConversations.filter(
-        (c) =>
-          !encerrado(c) &&
-          (!!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id))),
-      ),
-    [scopedConversations, lastInboundAt, emContatoStageIds, perdidoStageIds],
   );
 
   const visibleConversations = useMemo(() => {
@@ -312,21 +291,6 @@ export default function Conversas() {
     emContatoStageIds,
   ]);
 
-  const filteredPriority = useMemo(
-    () => visibleConversations.filter((c) => priorityConversations.some((p) => p.id === c.id)),
-    [visibleConversations, priorityConversations],
-  );
-  const filteredWaiting = useMemo(
-    () => visibleConversations.filter((c) => !priorityConversations.some((p) => p.id === c.id)),
-    [visibleConversations, priorityConversations],
-  );
-  const flattenList =
-    inboxFilter !== "todas" ||
-    !!inboxQuery.trim() ||
-    tagFilters.length > 0 ||
-    userFilter !== "all" ||
-    instanceFilter !== "all" ||
-    followupOnly;
   const hasActiveFilters =
     inboxFilter !== "todas" ||
     tagFilters.length > 0 ||
@@ -418,8 +382,15 @@ export default function Conversas() {
   }, [searchParams, activeId]);
 
   const applyMessageToInbox = useCallback((row: Message & { conversation_id: string }) => {
-    const snap = lastSnapFromMessage(row);
-    setLastByConv((prev) => ({ ...prev, [row.conversation_id]: snap }));
+    setLastByConv((prev) => {
+      const current = prev[row.conversation_id];
+      if (
+        current &&
+        (current.created_at > row.created_at ||
+          (current.created_at === row.created_at && current.id >= row.id))
+      ) return prev;
+      return { ...prev, [row.conversation_id]: lastSnapFromMessage(row) };
+    });
     if (row.direction === "inbound") {
       setLastInboundAt((prev) => {
         const prevAt = prev[row.conversation_id];
@@ -431,7 +402,9 @@ export default function Conversas() {
       const idx = prev.findIndex((c) => c.id === row.conversation_id);
       if (idx < 0) return prev;
       const next = [...prev];
-      next[idx] = { ...next[idx], last_message_at: row.created_at };
+      if (next[idx].last_message_at < row.created_at) {
+        next[idx] = { ...next[idx], last_message_at: row.created_at };
+      }
       return next;
     });
   }, []);
@@ -457,7 +430,11 @@ export default function Conversas() {
         .order("last_message_at", { ascending: false });
       const list = (data as Conversation[]) || [];
       setConversations(list);
-      const ranked = priorizarConversas(list, {}, emContatoStageIds);
+      const summaries = list.length
+        ? await supabase.rpc("conversation_message_summaries", {
+            p_conversation_ids: list.map((c) => c.id),
+          })
+        : { data: [], error: null };
       setActiveId((current) => {
         const want = pendingOpen.current;
         if (want && list.some((c) => c.id === want)) {
@@ -465,33 +442,47 @@ export default function Conversas() {
           return want;
         }
         if (current && list.some((c) => c.id === current)) return current;
-        return ranked[0]?.id ?? current;
+        return ordenarConversas(list)[0]?.id ?? current;
       });
-
-      const [inbound, recent] = await Promise.all([
-        supabase
-          .from("messages")
-          .select("conversation_id, created_at")
-          .eq("direction", "inbound"),
-        supabase
-          .from("messages")
-          .select("conversation_id, content, direction, sender, created_at")
-          .order("created_at", { ascending: false })
-          .limit(800),
-      ]);
       const inboundMap: Record<string, string> = {};
-      for (const row of (inbound.data ?? []) as { conversation_id: string; created_at: string }[]) {
-        const prev = inboundMap[row.conversation_id];
-        if (!prev || row.created_at > prev) inboundMap[row.conversation_id] = row.created_at;
-      }
       const lastMap: Record<string, LastSnap> = {};
-      for (const row of (recent.data ?? []) as (LastSnap & { conversation_id: string })[]) {
-        if (!lastMap[row.conversation_id]) {
-          lastMap[row.conversation_id] = lastSnapFromMessage(row);
+      if (summaries.error) {
+        console.error("[inbox] failed to load conversation summaries", summaries.error.message);
+      }
+      for (const row of summaries.data ?? []) {
+        if (row.last_inbound_at) inboundMap[row.conversation_id] = row.last_inbound_at;
+        if (
+          row.last_message_id && row.last_content != null && row.last_direction && row.last_sender && row.last_created_at
+        ) {
+          lastMap[row.conversation_id] = lastSnapFromMessage({
+            id: row.last_message_id,
+            content: row.last_content,
+            direction: row.last_direction as Message["direction"],
+            sender: row.last_sender as Message["sender"],
+            created_at: row.last_created_at,
+          });
         }
       }
-      setLastInboundAt(inboundMap);
-      setLastByConv(lastMap);
+      if (!summaries.error) {
+        setLastInboundAt((prev) => {
+          const next = { ...prev };
+          for (const [id, at] of Object.entries(inboundMap)) {
+            if (!next[id] || next[id] < at) next[id] = at;
+          }
+          return next;
+        });
+        setLastByConv((prev) => {
+          const next = { ...prev };
+          for (const [id, snap] of Object.entries(lastMap)) {
+            if (
+              !next[id] ||
+              next[id].created_at < snap.created_at ||
+              (next[id].created_at === snap.created_at && next[id].id < snap.id)
+            ) next[id] = snap;
+          }
+          return next;
+        });
+      }
     };
     loadInboxRef.current = loadInbox;
     void loadInbox();
@@ -521,7 +512,7 @@ export default function Conversas() {
       if (inboxReloadTimer.current) clearTimeout(inboxReloadTimer.current);
       supabase.removeChannel(ch);
     };
-  }, [user, applyMessageToInbox, scheduleInboxReload, emContatoStageIds]);
+  }, [user, applyMessageToInbox, scheduleInboxReload]);
 
   // Load stages
   useEffect(() => {
@@ -1217,29 +1208,12 @@ export default function Conversas() {
             {orderedConversations.length > 0 && visibleConversations.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground text-center">Nada neste filtro.</div>
             )}
-            {flattenList
-              ? visibleConversations.map((c) =>
-                  conversationRow(
-                    c,
-                    !!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id)),
-                  ),
-                )
-              : (
-                <>
-                  {filteredPriority.length > 0 && (
-                    <div className="px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
-                      Responderam · {filteredPriority.length}
-                    </div>
-                  )}
-                  {filteredPriority.map((c) => conversationRow(c, true))}
-                  {filteredWaiting.length > 0 && (
-                    <div className="px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
-                      Aguardando · {filteredWaiting.length}
-                    </div>
-                  )}
-                  {filteredWaiting.map((c) => conversationRow(c, false))}
-                </>
-              )}
+            {visibleConversations.map((c) =>
+              conversationRow(
+                c,
+                !!lastInboundAt[c.id] || (!!c.stage_id && emContatoStageIds.has(c.stage_id)),
+              ),
+            )}
           </div>
         </div>
 

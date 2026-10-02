@@ -7,6 +7,7 @@ export type InboxFilter =
   | "encerrados";
 
 export type LastSnap = {
+  id: string;
   content: string;
   direction: "inbound" | "outbound";
   sender: "contact" | "ai" | "human";
@@ -14,12 +15,14 @@ export type LastSnap = {
 };
 
 export function lastSnapFromMessage(row: {
+  id: string;
   content: string;
   direction: "inbound" | "outbound";
   sender: "contact" | "ai" | "human";
   created_at: string;
 }): LastSnap {
   return {
+    id: row.id,
     content: row.content,
     direction: row.direction,
     sender: row.sender,
